@@ -50,7 +50,7 @@
       <a href="#praticas" data-page="praticas" onclick="showPage('praticas')">Boas Práticas</a>
       <a href="#casos" data-page="casos" onclick="showPage('casos')">Casos de Sucesso</a>
       <a href="#curiosidades" data-page="curiosidades" onclick="showPage('curiosidades')">Curiosidades</a>
-      <a data-page="comunidade" onclick="showPage('comunidade')">Comunidade</a>
+      <a href="#comunidade" data-page="comunidade" onclick="showPage('comunidade')">Comunidade</a>
       <a href="#links" data-page="links" onclick="showPage('links')">Links e Dicas</a>
     </nav>
   </div>
@@ -306,274 +306,141 @@
       </div>
     </section>
 <section id="comunidade" class="page">
-
-  <div class="comunidade-topo">
-    <span class="comunidade-tag">COMUNIDADE</span>
-
-    <h2>Ideias que transformam 🌱</h2>
-
-    <p>
-      Compartilhe ideias, participe de discussões e informe
-      problemas ambientais da sua comunidade.
-    </p>
-  </div>
-
-
-  <!-- MENSAGENS -->
-  <div id="comunidade-mensagem"></div>
-
-
-  <!-- LOGIN / CADASTRO -->
-  <div id="area-auth" class="auth-container">
-
-    <div class="auth-card">
-
-      <h3>Entrar</h3>
-
-      <p>
-        Entre na sua conta para publicar e comentar.
-      </p>
-
-      <form id="form-login">
-
-        <label>E-mail</label>
-
-        <input
-          type="email"
-          id="login-email"
-          placeholder="seuemail@gmail.com"
-          required
-        >
-
-        <label>Senha</label>
-
-        <input
-          type="password"
-          id="login-senha"
-          placeholder="Sua senha"
-          required
-        >
-
-        <button type="submit" class="btn-comunidade">
-          Entrar
-        </button>
-
-      </form>
-
-    </div>
-
-
-    <div class="auth-card">
-
-      <h3>Criar conta</h3>
-
-      <p>
-        Crie sua conta gratuitamente.
-      </p>
-
-      <form id="form-cadastro">
-
-        <label>Nome</label>
-
-        <input
-          type="text"
-          id="cadastro-nome"
-          placeholder="Seu nome"
-          maxlength="40"
-          required
-        >
-
-        <label>E-mail</label>
-
-        <input
-          type="email"
-          id="cadastro-email"
-          placeholder="seuemail@gmail.com"
-          required
-        >
-
-        <label>Senha</label>
-
-        <input
-          type="password"
-          id="cadastro-senha"
-          minlength="6"
-          placeholder="Mínimo de 6 caracteres"
-          required
-        >
-
-        <button type="submit" class="btn-comunidade">
-          Criar conta
-        </button>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- USUÁRIO LOGADO -->
-  <div id="usuario-logado" class="usuario-logado" hidden>
-
-    <div>
-      <small>Você está conectado como</small>
-      <strong id="nome-usuario">Usuário</strong>
-    </div>
-
-    <button id="btn-sair" class="btn-sair">
-      Sair
-    </button>
-
-  </div>
-
-
-  <!-- CRIAR PUBLICAÇÃO -->
-  <div id="criar-publicacao" class="criar-publicacao" hidden>
-
-    <div class="publicacao-cabecalho">
-
-      <div>
-        <span class="comunidade-tag">PARTICIPE</span>
-        <h3>Nova publicação</h3>
+      <div class="comunidade-topo">
+        <span class="comunidade-tag">COMUNIDADE</span>
+        <h2>Ideias que transformam 🌱</h2>
+        <p>Compartilhe ideias, participe de discussões e informe problemas ambientais da sua comunidade.</p>
       </div>
 
-    </div>
+      <div id="comunidade-mensagem" aria-live="polite"></div>
 
+      <!-- AUTENTICAÇÃO: mostra apenas um painel por vez -->
+      <div id="area-auth" class="auth-container">
+        <div class="auth-card auth-card-single">
 
-    <form id="form-publicacao">
+          <div id="painel-cadastro">
+            <span class="auth-kicker">FAÇA PARTE</span>
+            <h3>Criar conta</h3>
+            <p>Crie sua conta para publicar, comentar e avaliar ideias da comunidade.</p>
 
-      <label>Tipo de publicação</label>
+            <form id="form-cadastro">
+              <label for="cadastro-nome">Nome</label>
+              <input type="text" id="cadastro-nome" placeholder="Seu nome" maxlength="40" autocomplete="name" required>
 
-      <select id="post-tipo" required>
+              <label for="cadastro-email">E-mail</label>
+              <input type="email" id="cadastro-email" placeholder="seuemail@gmail.com" autocomplete="email" required>
 
-        <option value="ideia">
-          💡 Ideia sustentável
-        </option>
+              <label for="cadastro-senha">Senha</label>
+              <input type="password" id="cadastro-senha" minlength="6" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" required>
 
-        <option value="discussao">
-          💬 Discussão
-        </option>
+              <button type="submit" class="btn-comunidade">Criar conta</button>
+            </form>
 
-        <option value="lixo">
-          🗑️ Denunciar descarte de lixo
-        </option>
+            <p class="auth-switch">Já possui uma conta? <button type="button" class="auth-link" id="ir-login">Faça login</button></p>
+          </div>
 
-      </select>
+          <div id="painel-login" hidden>
+            <span class="auth-kicker">BEM-VINDO DE VOLTA</span>
+            <h3>Entrar</h3>
+            <p>Entre para continuar participando da comunidade.</p>
 
+            <form id="form-login">
+              <label for="login-email">E-mail</label>
+              <input type="email" id="login-email" placeholder="seuemail@gmail.com" autocomplete="email" required>
 
-      <label>Título</label>
+              <label for="login-senha">Senha</label>
+              <input type="password" id="login-senha" placeholder="Sua senha" autocomplete="current-password" required>
 
-      <input
-        type="text"
-        id="post-titulo"
-        maxlength="100"
-        placeholder="Ex: Coleta seletiva na escola"
-        required
-      >
+              <button type="submit" class="btn-comunidade">Entrar</button>
+            </form>
 
+            <p class="auth-switch">Ainda não possui conta? <button type="button" class="auth-link" id="ir-cadastro">Crie sua conta</button></p>
+          </div>
 
-      <div id="campo-local" hidden>
-
-        <label>Local do problema</label>
-
-        <input
-          type="text"
-          id="post-local"
-          maxlength="100"
-          placeholder="Ex: Centro, Juazeiro - BA"
-        >
-
-        <small class="aviso-local">
-          Não informe endereço residencial ou localização exata.
-        </small>
-
+        </div>
       </div>
 
-
-      <label>Conteúdo</label>
-
-      <textarea
-        id="post-texto"
-        maxlength="1500"
-        placeholder="Conte sua ideia, opinião ou descreva o problema..."
-        required
-      ></textarea>
-
-
-      <div class="publicar-rodape">
-
-        <span id="contador-texto">
-          0 / 1500
-        </span>
-
-        <button
-          type="submit"
-          class="btn-comunidade"
-        >
-          Publicar
-        </button>
-
+      <!-- USUÁRIO LOGADO -->
+      <div id="usuario-logado" class="usuario-logado" hidden>
+        <div>
+          <small>Você está conectado como</small>
+          <strong id="nome-usuario">Usuário</strong>
+        </div>
+        <button id="btn-sair" class="btn-sair" type="button">Sair</button>
       </div>
 
-    </form>
+      <!-- VERIFICAÇÃO DE E-MAIL -->
+      <div id="verificacao-email" class="verificacao-email" hidden>
+        <div class="verificacao-icone" aria-hidden="true">✉</div>
+        <div class="verificacao-conteudo">
+          <span class="comunidade-tag">CONFIRME SEU E-MAIL</span>
+          <h3>Falta só verificar sua conta</h3>
+          <p>Enviamos uma mensagem para <strong id="email-verificacao"></strong>. Abra o e-mail e clique no link de confirmação. Depois volte aqui.</p>
+          <div class="verificacao-acoes">
+            <button id="btn-ja-verifiquei" type="button" class="btn-comunidade">Já verifiquei</button>
+            <button id="btn-reenviar-verificacao" type="button" class="secondary-button">Reenviar e-mail</button>
+          </div>
+        </div>
+      </div>
 
-  </div>
+      <!-- CRIAR PUBLICAÇÃO -->
+      <div id="criar-publicacao" class="criar-publicacao" hidden>
+        <div class="publicacao-cabecalho">
+          <div>
+            <span class="comunidade-tag">PARTICIPE</span>
+            <h3>Nova publicação</h3>
+          </div>
+        </div>
 
+        <form id="form-publicacao">
+          <label for="post-tipo">Tipo de publicação</label>
+          <select id="post-tipo" required>
+            <option value="ideia">💡 Ideia sustentável</option>
+            <option value="discussao">💬 Discussão</option>
+            <option value="lixo">🗑️ Denunciar descarte de lixo</option>
+          </select>
 
-  <!-- FILTROS -->
-  <div class="feed-topo">
+          <label for="post-titulo">Título</label>
+          <input type="text" id="post-titulo" maxlength="100" placeholder="Ex: Coleta seletiva na escola" required>
 
-    <div>
-      <span class="comunidade-tag">PUBLICAÇÕES</span>
-      <h3>Comunidade</h3>
-    </div>
+          <div id="campo-local" hidden>
+            <label for="post-local">Local do problema</label>
+            <input type="text" id="post-local" maxlength="100" placeholder="Ex: Centro, Juazeiro - BA">
+            <small class="aviso-local">Não informe endereço residencial ou localização exata.</small>
+          </div>
 
-    <div class="filtros-comunidade">
+          <label for="post-texto">Conteúdo</label>
+          <textarea id="post-texto" maxlength="1500" placeholder="Conte sua ideia, opinião ou descreva o problema..." required></textarea>
 
-      <button
-        class="filtro-post ativo"
-        data-filter="todos"
-      >
-        Todos
-      </button>
+          <div class="publicar-rodape">
+            <span id="contador-texto">0 / 1500</span>
+            <button type="submit" class="btn-comunidade">Publicar</button>
+          </div>
+        </form>
+      </div>
 
-      <button
-        class="filtro-post"
-        data-filter="ideia"
-      >
-        💡 Ideias
-      </button>
+      <!-- FEED -->
+      <div class="feed-topo">
+        <div>
+          <span class="comunidade-tag">PUBLICAÇÕES</span>
+          <h3>Comunidade</h3>
+          <p class="feed-order-note">Mais populares primeiro • votos + comentários</p>
+        </div>
 
-      <button
-        class="filtro-post"
-        data-filter="discussao"
-      >
-        💬 Discussões
-      </button>
+        <div class="filtros-comunidade" aria-label="Filtros das publicações">
+          <button type="button" class="filtro-post ativo" data-filter="todos">Todos</button>
+          <button type="button" class="filtro-post" data-filter="ideia">💡 Ideias</button>
+          <button type="button" class="filtro-post" data-filter="discussao">💬 Discussões</button>
+          <button type="button" class="filtro-post" data-filter="lixo">🗑️ Problemas</button>
+        </div>
+      </div>
 
-      <button
-        class="filtro-post"
-        data-filter="lixo"
-      >
-        🗑️ Problemas
-      </button>
+      <div id="feed-comunidade">
+        <div class="feed-vazio">Carregando publicações...</div>
+      </div>
+    </section>
 
-    </div>
-
-  </div>
-
-
-  <!-- FEED -->
-  <div id="feed-comunidade">
-
-    <div class="feed-vazio">
-      Carregando publicações...
-    </div>
-
-  </div>
-
-</section>
+    
     <section id="links" class="page">
       <div class="section-heading">
         <span class="section-kicker">Continue aprendendo</span>
@@ -657,6 +524,6 @@
   </footer>
 
   <script src="script.js"></script>
-<script type="module" src="community.js"></script>
+  <script type="module" src="community.js"></script>
 </body>
 </html>
