@@ -1,266 +1,354 @@
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("img").forEach(img => {
     img.addEventListener("error", () => {
-      const nome = img.src.split("/").pop(); 
+      img.classList.add("image-error");
     });
   });
-});
-  function showPage(pageId) {
 
-    document.querySelectorAll('.page').forEach(page => {
-      page.classList.remove('active');
-    });
-
-  
-    document.getElementById(pageId).classList.add('active');
-
-    document.querySelectorAll("nav a").forEach(a => a.classList.remove("active-tab"));
-    document.querySelector(`nav a[data-page='${pageId}']`).classList.add("active-tab");
+  // Abre diretamente a seção indicada na URL, caso exista.
+  const hash = window.location.hash.replace("#", "");
+  if (hash && document.getElementById(hash)?.classList.contains("page")) {
+    showPage(hash, false);
+  } else {
+    showPage("home", false);
   }
-  function shuffleArray(array) {
+});
+
+function showPage(pageId, updateHash = true) {
+  const target = document.getElementById(pageId);
+  if (!target) return;
+
+  document.querySelectorAll(".page").forEach(page => {
+    page.classList.remove("active");
+  });
+  target.classList.add("active");
+
+  document.querySelectorAll("nav a").forEach(a => {
+    const active = a.dataset.page === pageId;
+    a.classList.toggle("active-tab", active);
+    if (active) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
+
+  if (updateHash) {
+    history.replaceState(null, "", `#${pageId}`);
+  }
+
+  closeMobileMenu();
+
+  const navHeight = document.querySelector(".nav-shell")?.offsetHeight || 0;
+  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 24;
+  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
+function toggleMenu(button) {
+  const nav = document.getElementById("site-nav");
+  const open = nav.classList.toggle("open");
+  button.classList.toggle("open", open);
+  button.setAttribute("aria-expanded", String(open));
+  button.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+}
+
+function closeMobileMenu() {
+  const nav = document.getElementById("site-nav");
+  const button = document.querySelector(".menu-toggle");
+  if (!nav || !button) return;
+
+  nav.classList.remove("open");
+  button.classList.remove("open");
+  button.setAttribute("aria-expanded", "false");
+  button.setAttribute("aria-label", "Abrir menu");
+}
+
+function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
 }
+
 const curiosidades = [
-  {title:'Blocos feitos com plástico',img:'imagens/curio1.jpg',text:'Empresas transformam plástico em blocos resistentes e ecológicos.'},
-  {title:'Água solar para cisternas',img:'imagens/curio2.jpg',text:'Tecnologia que usa energia solar para purificar água em regiões rurais.'},
-  {title:'Economia circular',img:'imagens/curio3.jpg',text:'Modelo onde resíduos se tornam insumos de novos ciclos produtivos.'}
+  {
+    title: "Blocos feitos com plástico",
+    img: "imagens/tijolo.webp",
+    text: "Empresas transformam plástico em blocos resistentes e ecológicos."
+  },
+  {
+    title: "Água solar para cisternas",
+    img: "imagens/aguapurifica.png",
+    text: "Tecnologia que usa energia solar para purificar água em regiões rurais."
+  },
+  {
+    title: "Economia circular",
+    img: "imagens/circular.jpeg",
+    text: "Modelo onde resíduos se tornam insumos de novos ciclos produtivos."
+  }
 ];
 
-function openCurio(i){
-  const c=curiosidades[i];
-  document.getElementById('curio-title').innerText=c.title;
-  document.getElementById('curio-img').src=c.img;
-  document.getElementById('curio-text').innerText=c.text;
-  document.getElementById('curio-modal').style.display='flex';
-}
-function closeModal(){ document.getElementById('curio-modal').style.display='none'; }
+function openCurio(i) {
+  const c = curiosidades[i];
+  const modal = document.getElementById("curio-modal");
 
+  document.getElementById("curio-title").innerText = c.title;
+  document.getElementById("curio-img").src = c.img;
+  document.getElementById("curio-img").alt = c.title;
+  document.getElementById("curio-text").innerText = c.text;
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  modal.querySelector(".modal-close")?.focus();
+}
+
+function closeModal(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const modal = document.getElementById("curio-modal");
+  modal.style.display = "none";
+  document.body.style.overflow = "";
+}
+
+function handleCardKey(event, index) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    openCurio(index);
+  }
+}
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeModal();
+});
 
 const quizQuestions = [
   {
-    q: 'O que é economia circular?',
+    q: "O que é economia circular?",
     options: [
-      'Modelo de reduzir, reutilizar e reciclar recursos',
-      'Economia que cresce em círculo',
-      'Só vender produtos circulares'
+      "Modelo de reduzir, reutilizar e reciclar recursos",
+      "Economia que cresce em círculo",
+      "Só vender produtos circulares"
     ],
     answer: 0
   },
   {
-    q: 'Qual vantagem dos blocos de plástico reciclado?',
+    q: "Qual vantagem dos blocos de plástico reciclado?",
     options: [
-      'São mais leves e reduzem custos de transporte',
-      'Nunca quebram',
-      'Não precisam de mão de obra'
+      "São mais leves e reduzem custos de transporte",
+      "Nunca quebram",
+      "Não precisam de mão de obra"
     ],
     answer: 0
   },
   {
-    q: 'O que empreendedores sustentáveis priorizam?',
+    q: "O que empreendedores sustentáveis priorizam?",
     options: [
-      'Lucro acima de tudo',
-      'Impacto social e ambiental além do lucro',
-      'Evitar tecnologia'
+      "Lucro acima de tudo",
+      "Impacto social e ambiental além do lucro",
+      "Evitar tecnologia"
     ],
     answer: 1
   },
   {
-    q: 'Qual benefício da agricultura urbana?',
+    q: "Qual benefício da agricultura urbana?",
     options: [
-      'Mais alimentos locais e frescos',
-      'Aumenta emissão de CO2',
-      'Acaba com áreas verdes'
+      "Mais alimentos locais e frescos",
+      "Aumenta emissão de CO2",
+      "Acaba com áreas verdes"
     ],
     answer: 0
   },
   {
-    q: 'Por que o bambu é considerado sustentável?',
+    q: "Por que o bambu é considerado sustentável?",
     options: [
-      'Cresce rápido e se regenera facilmente',
-      'Não precisa de água',
-      'É mais caro que madeira'
+      "Cresce rápido e se regenera facilmente",
+      "Não precisa de água",
+      "É mais caro que madeira"
     ],
     answer: 0
   },
   {
-    q: 'Qual dessas é uma fonte de energia renovável?',
-    options: [
-      'Carvão mineral',
-      'Energia das ondas',
-      'Petróleo'
-    ],
+    q: "Qual dessas é uma fonte de energia renovável?",
+    options: ["Carvão mineral", "Energia das ondas", "Petróleo"],
     answer: 1
   },
   {
-  q: 'Qual é o principal objetivo da coleta seletiva?',
-  options: [
-    'Separar os resíduos para facilitar a reciclagem',
-    'Deixar o lixo mais bonito',
-    'Acabar com o uso de sacolas plásticas'
-  ],
-  answer: 0
-},
-{
-  q: 'O que significa o princípio dos 3Rs?',
-  options: [
-    'Reduzir, Reutilizar e Reciclar',
-    'Reparar, Recarregar e Recriar',
-    'Revisar, Reduzir e Renovar'
-  ],
-  answer: 0
-},
-{
-  q: 'Qual dessas energias NÃO é renovável?',
-  options: [
-    'Solar',
-    'Petróleo',
-    'Eólica'
-  ],
-  answer: 1
-},
-{
-  q: 'O que é compostagem?',
-  options: [
-    'Transformar restos orgânicos em adubo',
-    'Reutilizar garrafas de plástico',
-    'Produzir energia a partir de carvão'
-  ],
-  answer: 0
-},
-{
-  q: 'Por que plantar árvores ajuda o planeta?',
-  options: [
-    'Elas absorvem gás carbônico (CO₂)',
-    'Elas produzem mais plástico',
-    'Elas gastam muita água'
-  ],
-  answer: 0
-},
-{
-  q: 'Qual país é conhecido por reciclar mais de 90% do seu lixo?',
-  options: [
-    'Brasil',
-    'Japão',
-    'Suécia'
-  ],
-  answer: 2
-}
-
+    q: "Qual é o principal objetivo da coleta seletiva?",
+    options: [
+      "Separar os resíduos para facilitar a reciclagem",
+      "Deixar o lixo mais bonito",
+      "Acabar com o uso de sacolas plásticas"
+    ],
+    answer: 0
+  },
+  {
+    q: "O que significa o princípio dos 3Rs?",
+    options: [
+      "Reduzir, Reutilizar e Reciclar",
+      "Reparar, Recarregar e Recriar",
+      "Revisar, Reduzir e Renovar"
+    ],
+    answer: 0
+  },
+  {
+    q: "Qual dessas energias NÃO é renovável?",
+    options: ["Solar", "Petróleo", "Eólica"],
+    answer: 1
+  },
+  {
+    q: "O que é compostagem?",
+    options: [
+      "Transformar restos orgânicos em adubo",
+      "Reutilizar garrafas de plástico",
+      "Produzir energia a partir de carvão"
+    ],
+    answer: 0
+  },
+  {
+    q: "Por que plantar árvores ajuda o planeta?",
+    options: [
+      "Elas absorvem gás carbônico (CO₂)",
+      "Elas produzem mais plástico",
+      "Elas gastam muita água"
+    ],
+    answer: 0
+  },
+  {
+    q: "Qual país é conhecido por reciclar mais de 90% do seu lixo?",
+    options: ["Brasil", "Japão", "Suécia"],
+    answer: 2
+  }
 ];
 
-let currentQuestion=0; let score=0; let answered=false;
+let currentQuestion = 0;
+let score = 0;
+let answered = false;
 
-function updateTracker(){
-  document.getElementById('score-tracker').innerText=`Questão ${currentQuestion+1} de ${quizQuestions.length} | Pontos: ${score}`;
+function updateTracker() {
+  document.getElementById("score-tracker").innerText =
+    `Questão ${currentQuestion + 1} de ${quizQuestions.length} • Pontos: ${score}`;
 }
 
-function startQuiz(){
-  currentQuestion=0; score=0; answered=false;
-  document.getElementById('quiz-start').style.display='none';
-  document.getElementById('quiz-result').style.display='none';
-  document.getElementById('quiz-question').style.display='block';
+function startQuiz() {
+  currentQuestion = 0;
+  score = 0;
+  answered = false;
+
+  document.getElementById("quiz-start").hidden = true;
+  document.getElementById("quiz-result").hidden = true;
+  document.getElementById("quiz-question").hidden = false;
   showQuestion();
 }
 
-function showQuestion(){
-  answered = false; 
+function showQuestion() {
+  answered = false;
   updateTracker();
 
   const q = quizQuestions[currentQuestion];
-  document.getElementById('q-text').innerText = q.q;
+  document.getElementById("q-text").innerText = q.q;
+
   let optsWithIndex = q.options.map((o, i) => ({ text: o, index: i }));
   optsWithIndex = shuffleArray(optsWithIndex);
-  let correctIndexAfterShuffle = optsWithIndex.findIndex(opt => opt.index === q.answer);
-  const opts = document.getElementById('q-options'); 
-  opts.innerHTML = '';
+  const correctIndexAfterShuffle = optsWithIndex.findIndex(opt => opt.index === q.answer);
+  const opts = document.getElementById("q-options");
+  opts.innerHTML = "";
+
   optsWithIndex.forEach((opt, pos) => {
-    const div = document.createElement('div');
-    div.className = 'option';
+    const div = document.createElement("div");
+    div.className = "option";
     div.innerText = opt.text;
-   
-    div.onclick = () => selectOption(pos, correctIndexAfterShuffle);
+    div.setAttribute("role", "button");
+    div.setAttribute("tabindex", "0");
+
+    const select = () => selectOption(pos, correctIndexAfterShuffle);
+    div.onclick = select;
+    div.onkeydown = event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        select();
+      }
+    };
+
     opts.appendChild(div);
   });
 
-  document.getElementById('next-btn').style.display='none';
-  document.getElementById('finish-btn').style.display='none';
+  document.getElementById("next-btn").hidden = true;
+  document.getElementById("finish-btn").hidden = true;
 }
-function selectOption(i, correctIndex){
-  if(answered) return; 
+
+function selectOption(i, correctIndex) {
+  if (answered) return;
   answered = true;
 
-  const opts = document.querySelectorAll('#q-options .option');
-  
+  const opts = document.querySelectorAll("#q-options .option");
   opts.forEach((el, idx) => {
-    el.style.pointerEvents='none';
-    if(idx === correctIndex) el.classList.add('correct'); // verde só no correto
-    if(idx === i && idx !== correctIndex) el.classList.add('wrong'); // vermelho no errado
+    el.style.pointerEvents = "none";
+    el.setAttribute("tabindex", "-1");
+    if (idx === correctIndex) el.classList.add("correct");
+    if (idx === i && idx !== correctIndex) el.classList.add("wrong");
   });
 
-  if(i === correctIndex) score++;
+  if (i === correctIndex) score++;
   updateTracker();
 
   setTimeout(() => {
-    if(currentQuestion < quizQuestions.length-1){
+    if (currentQuestion < quizQuestions.length - 1) {
       currentQuestion++;
       showQuestion();
     } else {
       finishQuiz();
     }
-  }, 750);
+  }, 700);
 }
 
-
-function nextQuestion(){ currentQuestion++; showQuestion(); }
-
-function finishQuiz(){
-  document.getElementById('quiz-question').style.display='none';
-  document.getElementById('quiz-result').style.display='block';
-  const text=document.getElementById('result-text');
-  text.innerHTML=`Você acertou <strong>${score}</strong> de <strong>${quizQuestions.length}</strong> perguntas.`;
-  if(score===quizQuestions.length) text.innerHTML+=' 🔥 Perfeito!';
-  else if(score>=Math.ceil(quizQuestions.length/2)) text.innerHTML+=' 👍 Muito bem!';
-  else text.innerHTML+=' 🤓 Precisa estudar ';
+function nextQuestion() {
+  currentQuestion++;
+  showQuestion();
 }
 
-function resetQuiz(){
-  document.getElementById('quiz-result').style.display='none';
-  document.getElementById('quiz-start').style.display='block';
+function finishQuiz() {
+  document.getElementById("quiz-question").hidden = true;
+  document.getElementById("quiz-result").hidden = false;
+
+  const text = document.getElementById("result-text");
+  text.innerHTML = `Você acertou <strong>${score}</strong> de <strong>${quizQuestions.length}</strong> perguntas. `;
+
+  if (score === quizQuestions.length) text.innerHTML += "Perfeito!";
+  else if (score >= Math.ceil(quizQuestions.length / 2)) text.innerHTML += "Muito bem!";
+  else text.innerHTML += "Continue estudando e tente novamente.";
 }
 
-  function showDetail(tipo) {
-    const dados = {
-  plastico: {
-    img: "imagens/plastico.png",  
-    texto: "Diminuir o consumo de plástico e papel evita resíduos e a extração excessiva de recursos naturais. Prefira alternativas digitais e materiais reutilizáveis."
-  },
-  embalagens: {
-    img: "imagens/embalagens.jpg",  
-    texto: "Escolher embalagens recicláveis ou biodegradáveis reduz a poluição e o impacto ambiental, passando uma imagem responsável para seus clientes."
-  },
-  fornecedores: {
-    img: "imagens/fornecedores.jpeg",  
-    texto: "Comprar de fornecedores da região reduz a poluição com transporte, fortalece a economia local e estimula práticas éticas e sustentáveis."
-  },
-  energia: {
-    img: "imagens/energia.jpg",  
-    texto: "Trocar lâmpadas por LED, desligar equipamentos e reaproveitar a água da chuva reduz custos e preserva recursos naturais."
-  },
-  educacao: {
-    img: "imagens/educacao.png",  
-    texto: "Ensinar e incentivar práticas sustentáveis aumenta a consciência e multiplica hábitos responsáveis dentro e fora da empresa."
-  },
-  residuos: {
-        img: "imagens/gestao.png",  
-        texto: "Implementar coleta seletiva e compostagem ajuda a reduzir o volume de lixo nos aterros e gera novos recursos como adubo."
-      }
-    };
+function resetQuiz() {
+  document.getElementById("quiz-result").hidden = true;
+  document.getElementById("quiz-question").hidden = true;
+  document.getElementById("quiz-start").hidden = false;
+}
 
-    document.getElementById('imagem-pratica').src = dados[tipo].img;
-    document.getElementById('texto-pratica').innerText = dados[tipo].texto;
-    document.getElementById('detalhe-pratica').style.display = 'block';
+function filtrarCasos(filtro, botao) {
+  const casos = document.querySelectorAll("#lista-casos .caso-sucesso");
+  const botoes = document.querySelectorAll(".filtro-caso");
+  const mensagemVazia = document.getElementById("sem-casos");
+  let quantidadeVisivel = 0;
+
+  casos.forEach(caso => {
+    const tipo = caso.dataset.tipo;
+    const regiao = caso.dataset.regiao;
+
+    const mostrar =
+      filtro === "todos" ||
+      (filtro === "brasil" && tipo === "brasil") ||
+      filtro === tipo ||
+      filtro === regiao;
+
+    caso.hidden = !mostrar;
+    if (mostrar) quantidadeVisivel++;
+  });
+
+  botoes.forEach(btn => {
+    btn.classList.remove("ativo");
+    btn.setAttribute("aria-pressed", "false");
+  });
+
+  if (botao) {
+    botao.classList.add("ativo");
+    botao.setAttribute("aria-pressed", "true");
   }
+
+  mensagemVazia.hidden = quantidadeVisivel !== 0;
+}
