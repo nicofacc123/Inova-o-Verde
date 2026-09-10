@@ -2081,19 +2081,42 @@ footer {
 }
 
 .botao-voto {
-  width: 42px;
+  min-width: 62px;
   height: 40px;
+  padding: 0 11px;
   border: 0;
   background: transparent;
   cursor: pointer;
-  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   font-weight: 900;
   line-height: 1;
   transition: background .18s ease, transform .18s ease, color .18s ease;
 }
 
 .botao-voto:hover {
-  transform: scale(1.08);
+  transform: scale(1.05);
+}
+
+.icone-voto {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.contador-voto {
+  min-width: 16px;
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.separador-votos {
+  width: 1px;
+  height: 22px;
+  background: #dfe9e3;
+  flex: 0 0 1px;
 }
 
 .voto-cima {
@@ -2116,15 +2139,6 @@ footer {
   color: #b32626;
 }
 
-.pontuacao-votos {
-  min-width: 38px;
-  padding: 0 5px;
-  text-align: center;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-}
 
 .btn-comentar {
   min-height: 40px;
@@ -2160,8 +2174,9 @@ footer {
   }
 
   .botao-voto {
-    width: 38px;
+    min-width: 58px;
     height: 38px;
+    padding: 0 9px;
   }
 
   .btn-comentar {

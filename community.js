@@ -568,22 +568,39 @@ function criarControleVotacao() {
   cima.className = "botao-voto voto-cima";
   cima.setAttribute("aria-label", "Votar positivo");
   cima.setAttribute("aria-pressed", "false");
-  cima.textContent = "▲";
 
-  const pontuacao = document.createElement("span");
-  pontuacao.className = "pontuacao-votos";
-  pontuacao.textContent = "0";
-  pontuacao.title = "Curtidas menos descurtidas";
+  const setaCima = document.createElement("span");
+  setaCima.className = "icone-voto";
+  setaCima.textContent = "▲";
+
+  const contadorLikes = document.createElement("span");
+  contadorLikes.className = "contador-voto contador-like";
+  contadorLikes.textContent = "0";
+
+  cima.append(setaCima, contadorLikes);
+
+  const separador = document.createElement("span");
+  separador.className = "separador-votos";
+  separador.setAttribute("aria-hidden", "true");
 
   const baixo = document.createElement("button");
   baixo.type = "button";
   baixo.className = "botao-voto voto-baixo";
   baixo.setAttribute("aria-label", "Votar negativo");
   baixo.setAttribute("aria-pressed", "false");
-  baixo.textContent = "▼";
 
-  container.append(cima, pontuacao, baixo);
-  return { container, cima, baixo, pontuacao };
+  const setaBaixo = document.createElement("span");
+  setaBaixo.className = "icone-voto";
+  setaBaixo.textContent = "▼";
+
+  const contadorDislikes = document.createElement("span");
+  contadorDislikes.className = "contador-voto contador-dislike";
+  contadorDislikes.textContent = "0";
+
+  baixo.append(setaBaixo, contadorDislikes);
+
+  container.append(cima, separador, baixo);
+  return { container, cima, baixo, contadorLikes, contadorDislikes };
 }
 
 function observarReacoes(postId, card, votacao) {
@@ -607,8 +624,10 @@ function observarReacoes(postId, card, votacao) {
     stats.dislikes = dislikes;
     stats.score = score;
 
-    votacao.pontuacao.textContent = String(score);
-    votacao.pontuacao.title = `${likes} positivo(s) • ${dislikes} negativo(s)`;
+    votacao.contadorLikes.textContent = String(likes);
+    votacao.contadorDislikes.textContent = String(dislikes);
+    votacao.cima.title = `${likes} voto(s) positivo(s)`;
+    votacao.baixo.title = `${dislikes} voto(s) negativo(s)`;
     card.dataset.score = String(score);
     card.dataset.minhaReacao = minhaReacao;
 
