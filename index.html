@@ -314,9 +314,18 @@
 
       <div id="comunidade-mensagem" aria-live="polite"></div>
 
-      <!-- AUTENTICAÇÃO: mostra apenas um painel por vez -->
+      <!-- AUTENTICAÇÃO -->
       <div id="area-auth" class="auth-container">
         <div class="auth-card auth-card-single">
+
+          <div class="auth-tabs" role="tablist" aria-label="Acesso à comunidade">
+            <button type="button" id="tab-cadastro" class="auth-tab ativo" role="tab" aria-selected="true">
+              Criar conta
+            </button>
+            <button type="button" id="tab-login" class="auth-tab" role="tab" aria-selected="false">
+              Entrar
+            </button>
+          </div>
 
           <div id="painel-cadastro">
             <span class="auth-kicker">FAÇA PARTE</span>

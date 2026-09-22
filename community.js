@@ -47,6 +47,8 @@ auth.languageCode = "pt-BR";
 const areaAuth = document.getElementById("area-auth");
 const painelCadastro = document.getElementById("painel-cadastro");
 const painelLogin = document.getElementById("painel-login");
+const tabCadastro = document.getElementById("tab-cadastro");
+const tabLogin = document.getElementById("tab-login");
 const usuarioLogado = document.getElementById("usuario-logado");
 const criarPublicacao = document.getElementById("criar-publicacao");
 const nomeUsuario = document.getElementById("nome-usuario");
@@ -80,9 +82,19 @@ function mostrarMensagem(texto, tipo = "sucesso", tempo = 5000) {
 
 function mostrarPainelAuth(modo) {
   const cadastro = modo === "cadastro";
+
   painelCadastro.hidden = !cadastro;
   painelLogin.hidden = cadastro;
+
+  tabCadastro.classList.toggle("ativo", cadastro);
+  tabLogin.classList.toggle("ativo", !cadastro);
+
+  tabCadastro.setAttribute("aria-selected", String(cadastro));
+  tabLogin.setAttribute("aria-selected", String(!cadastro));
 }
+
+tabCadastro.addEventListener("click", () => mostrarPainelAuth("cadastro"));
+tabLogin.addEventListener("click", () => mostrarPainelAuth("login"));
 
 document.getElementById("ir-login").addEventListener("click", () => mostrarPainelAuth("login"));
 document.getElementById("ir-cadastro").addEventListener("click", () => mostrarPainelAuth("cadastro"));
@@ -144,7 +156,7 @@ document.getElementById("form-login").addEventListener("submit", async (event) =
 // -------------------------------
 document.getElementById("btn-sair").addEventListener("click", async () => {
   await signOut(auth);
-  mostrarPainelAuth("login");
+  mostrarPainelAuth("cadastro");
   mostrarMensagem("Você saiu da sua conta.");
 });
 
@@ -157,6 +169,7 @@ function atualizarInterfaceUsuario(usuario) {
     areaAuth.hidden = false;
     usuarioLogado.hidden = true;
     criarPublicacao.hidden = true;
+    mostrarPainelAuth("cadastro");
   } else {
     areaAuth.hidden = true;
     usuarioLogado.hidden = false;
