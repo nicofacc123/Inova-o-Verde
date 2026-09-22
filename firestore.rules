@@ -1,0 +1,64 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() {
+      return request.auth != null;
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+
+      allow create: if logado()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'uid', 'autor', 'tipo', 'titulo', 'texto', 'local', 'criadoEm'
+        ])
+        && request.resource.data.autor is string
+        && request.resource.data.autor.size() <= 40
+        && request.resource.data.tipo in ['ideia', 'discussao', 'lixo']
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() > 0
+        && request.resource.data.titulo.size() <= 100
+        && request.resource.data.texto is string
+        && request.resource.data.texto.size() > 0
+        && request.resource.data.texto.size() <= 1500
+        && request.resource.data.local is string
+        && request.resource.data.local.size() <= 100;
+
+      allow update: if false;
+      allow delete: if logado() && resource.data.uid == request.auth.uid;
+
+      match /comentarios/{comentarioId} {
+        allow read: if true;
+
+        allow create: if logado()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            'uid', 'autor', 'texto', 'criadoEm'
+          ])
+          && request.resource.data.autor is string
+          && request.resource.data.autor.size() <= 40
+          && request.resource.data.texto is string
+          && request.resource.data.texto.size() > 0
+          && request.resource.data.texto.size() <= 500;
+
+        allow update: if false;
+        allow delete: if logado() && resource.data.uid == request.auth.uid;
+      }
+
+      match /reacoes/{reacaoId} {
+        allow read: if true;
+
+        allow create, update: if logado()
+          && reacaoId == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'tipo', 'criadoEm'])
+          && request.resource.data.tipo in ['like', 'dislike'];
+
+        allow delete: if logado() && reacaoId == request.auth.uid;
+      }
+    }
+  }
+}

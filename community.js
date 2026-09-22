@@ -8,9 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile,
-  sendEmailVerification,
-  reload
+  updateProfile
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
 import {
@@ -26,6 +24,7 @@ import {
   setDoc,
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyAiBmXnCxsFyWEvJxE5LZydQSvCahoWRn0",
@@ -50,8 +49,6 @@ const painelCadastro = document.getElementById("painel-cadastro");
 const painelLogin = document.getElementById("painel-login");
 const usuarioLogado = document.getElementById("usuario-logado");
 const criarPublicacao = document.getElementById("criar-publicacao");
-const verificacaoEmail = document.getElementById("verificacao-email");
-const emailVerificacao = document.getElementById("email-verificacao");
 const nomeUsuario = document.getElementById("nome-usuario");
 const mensagem = document.getElementById("comunidade-mensagem");
 const feed = document.getElementById("feed-comunidade");
@@ -60,6 +57,7 @@ const campoLocal = document.getElementById("campo-local");
 const postLocal = document.getElementById("post-local");
 const postTexto = document.getElementById("post-texto");
 const contadorTexto = document.getElementById("contador-texto");
+const btnPublicar = document.getElementById("btn-publicar");
 
 let filtroAtual = "todos";
 let postsSalvos = [];
@@ -89,19 +87,9 @@ function mostrarPainelAuth(modo) {
 document.getElementById("ir-login").addEventListener("click", () => mostrarPainelAuth("login"));
 document.getElementById("ir-cadastro").addEventListener("click", () => mostrarPainelAuth("cadastro"));
 
-function urlRetornoVerificacao() {
-  return `${window.location.origin}${window.location.pathname}#comunidade`;
-}
-
-async function enviarVerificacao(usuario) {
-  await sendEmailVerification(usuario, {
-    url: urlRetornoVerificacao(),
-    handleCodeInApp: false
-  });
-}
 
 // -------------------------------
-// Cadastro + verificação de e-mail
+// Cadastro
 // -------------------------------
 document.getElementById("form-cadastro").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -113,10 +101,9 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
   try {
     const credencial = await createUserWithEmailAndPassword(auth, email, senha);
     await updateProfile(credencial.user, { displayName: nome });
-    await enviarVerificacao(credencial.user);
     atualizarInterfaceUsuario(credencial.user);
     event.target.reset();
-    mostrarMensagem("Conta criada! Enviamos um e-mail de verificação. Abra sua caixa de entrada e confirme o endereço.");
+    mostrarMensagem("Conta criada com sucesso! Agora você já pode publicar, comentar e votar. 🌱");
   } catch (erro) {
     console.error("Erro no cadastro:", erro);
     const mensagens = {
@@ -124,7 +111,6 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
       "auth/invalid-email": "Digite um e-mail válido.",
       "auth/weak-password": "Escolha uma senha mais forte.",
       "auth/operation-not-allowed": "O login por e-mail e senha não está ativado no Firebase.",
-      "auth/unauthorized-continue-uri": "O domínio do site ainda não está autorizado no Firebase Authentication.",
       "auth/too-many-requests": "Muitas tentativas. Aguarde um pouco e tente novamente.",
       "auth/network-request-failed": "Falha de conexão. Verifique sua internet e tente novamente."
     };
@@ -143,71 +129,15 @@ document.getElementById("form-login").addEventListener("submit", async (event) =
 
   try {
     const credencial = await signInWithEmailAndPassword(auth, email, senha);
-    await reload(credencial.user);
     atualizarInterfaceUsuario(credencial.user);
     event.target.reset();
-
-    if (credencial.user.emailVerified) {
-      mostrarMensagem("Login realizado com sucesso!");
-    } else {
-      mostrarMensagem("Login realizado. Verifique seu e-mail para poder publicar, comentar e votar.", "aviso", 8000);
-    }
+    mostrarMensagem("Login realizado com sucesso!");
   } catch (erro) {
     console.error("Erro no login:", erro);
     mostrarMensagem("E-mail ou senha incorretos.", "erro");
   }
 });
 
-// -------------------------------
-// Verificação
-// -------------------------------
-document.getElementById("btn-reenviar-verificacao").addEventListener("click", async () => {
-  const usuario = auth.currentUser;
-  if (!usuario) return;
-
-  try {
-    await enviarVerificacao(usuario);
-    mostrarMensagem("E-mail de verificação reenviado. Confira também a caixa de spam.");
-  } catch (erro) {
-    console.error("Erro ao reenviar verificação:", erro);
-    const texto = erro.code === "auth/too-many-requests"
-      ? "Você solicitou muitos e-mails em pouco tempo. Tente novamente mais tarde."
-      : `Não foi possível reenviar o e-mail (${erro.code || "erro"}).`;
-    mostrarMensagem(texto, "erro", 8000);
-  }
-});
-
-document.getElementById("btn-ja-verifiquei").addEventListener("click", async () => {
-  await conferirVerificacao(true);
-});
-
-async function conferirVerificacao(mostrarRetorno = false) {
-  const usuario = auth.currentUser;
-  if (!usuario) return false;
-
-  try {
-    await reload(usuario);
-
-    if (usuario.emailVerified) {
-      // Atualiza o token para as regras do Firestore também enxergarem email_verified=true.
-      await usuario.getIdToken(true);
-      atualizarInterfaceUsuario(usuario);
-      if (mostrarRetorno) mostrarMensagem("E-mail verificado! Agora você pode participar da comunidade. ✅");
-      return true;
-    }
-
-    if (mostrarRetorno) mostrarMensagem("O e-mail ainda não aparece como verificado. Clique no link que chegou na sua caixa de entrada e tente novamente.", "aviso", 8000);
-    return false;
-  } catch (erro) {
-    console.error("Erro ao conferir verificação:", erro);
-    if (mostrarRetorno) mostrarMensagem("Não foi possível conferir a verificação agora.", "erro");
-    return false;
-  }
-}
-
-window.addEventListener("focus", () => {
-  if (auth.currentUser && !auth.currentUser.emailVerified) conferirVerificacao(false);
-});
 
 // -------------------------------
 // Sessão
@@ -218,10 +148,7 @@ document.getElementById("btn-sair").addEventListener("click", async () => {
   mostrarMensagem("Você saiu da sua conta.");
 });
 
-onAuthStateChanged(auth, async (usuario) => {
-  if (usuario) {
-    try { await reload(usuario); } catch (_) {}
-  }
+onAuthStateChanged(auth, usuario => {
   atualizarInterfaceUsuario(usuario);
 });
 
@@ -229,17 +156,12 @@ function atualizarInterfaceUsuario(usuario) {
   if (!usuario) {
     areaAuth.hidden = false;
     usuarioLogado.hidden = true;
-    verificacaoEmail.hidden = true;
     criarPublicacao.hidden = true;
   } else {
     areaAuth.hidden = true;
     usuarioLogado.hidden = false;
+    criarPublicacao.hidden = false;
     nomeUsuario.textContent = usuario.displayName || usuario.email || "Usuário";
-    emailVerificacao.textContent = usuario.email || "seu e-mail";
-
-    const verificado = usuario.emailVerified === true;
-    verificacaoEmail.hidden = verificado;
-    criarPublicacao.hidden = !verificado;
   }
 
   renderizarPosts();
@@ -254,14 +176,6 @@ function usuarioPodeInteragir() {
     areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
     return false;
   }
-
-  if (!usuario.emailVerified) {
-    verificacaoEmail.hidden = false;
-    mostrarMensagem("Verifique seu e-mail antes de publicar, comentar ou votar.", "aviso", 7000);
-    verificacaoEmail.scrollIntoView({ behavior: "smooth", block: "center" });
-    return false;
-  }
-
   return true;
 }
 
@@ -278,6 +192,7 @@ postTexto.addEventListener("input", () => {
   contadorTexto.textContent = `${postTexto.value.length} / 1500`;
 });
 
+
 document.getElementById("form-publicacao").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!usuarioPodeInteragir()) return;
@@ -292,6 +207,9 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
   if (tipo === "lixo" && !local) return mostrarMensagem("Informe pelo menos o bairro e a cidade.", "erro");
 
   try {
+    btnPublicar.disabled = true;
+    btnPublicar.textContent = "Publicando…";
+
     await addDoc(collection(db, "posts"), {
       uid: usuario.uid,
       autor: usuario.displayName || "Usuário",
@@ -308,7 +226,10 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
     mostrarMensagem("Publicação enviada! 🌱");
   } catch (erro) {
     console.error("Erro ao publicar:", erro);
-    mostrarMensagem(`Não foi possível publicar (${erro.code || "erro"}).`, "erro", 8000);
+    mostrarMensagem(`Não foi possível publicar (${erro.code || "erro"}).`, "erro", 9000);
+  } finally {
+    btnPublicar.disabled = false;
+    btnPublicar.textContent = "Publicar";
   }
 });
 
@@ -459,7 +380,10 @@ function criarCardPost(post) {
   texto.className = "post-texto";
   texto.textContent = post.texto || "";
 
-  card.append(cabecalho, tipo, titulo, texto);
+  card.append(cabecalho, tipo, titulo);
+
+
+  card.appendChild(texto);
 
   if (post.tipo === "lixo" && post.local) {
     const local = document.createElement("div");
@@ -509,7 +433,7 @@ function criarCardPost(post) {
     if (!areaComentarios.hidden) await carregarComentarios(post.id, lista);
   });
 
-  if (auth.currentUser?.emailVerified) {
+  if (auth.currentUser) {
     const formulario = document.createElement("form");
     formulario.className = "form-comentario";
     const input = document.createElement("input");
@@ -548,9 +472,7 @@ function criarCardPost(post) {
   } else {
     const aviso = document.createElement("p");
     aviso.className = "comentario-bloqueado";
-    aviso.textContent = auth.currentUser
-      ? "Verifique seu e-mail para comentar."
-      : "Faça login e verifique seu e-mail para comentar.";
+    aviso.textContent = "Faça login para comentar.";
     areaComentarios.appendChild(aviso);
   }
 

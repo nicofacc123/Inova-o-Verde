@@ -47,10 +47,10 @@
 
     <nav id="site-nav" aria-label="Navegação principal">
       <a href="#home" data-page="home" class="active-tab" onclick="showPage('home')">Início</a>
+      <a href="#comunidade" data-page="comunidade" onclick="showPage('comunidade')">Comunidade</a>
       <a href="#praticas" data-page="praticas" onclick="showPage('praticas')">Boas Práticas</a>
       <a href="#casos" data-page="casos" onclick="showPage('casos')">Casos de Sucesso</a>
       <a href="#curiosidades" data-page="curiosidades" onclick="showPage('curiosidades')">Curiosidades</a>
-      <a href="#comunidade" data-page="comunidade" onclick="showPage('comunidade')">Comunidade</a>
       <a href="#links" data-page="links" onclick="showPage('links')">Links e Dicas</a>
     </nav>
   </div>
@@ -369,20 +369,6 @@
         <button id="btn-sair" class="btn-sair" type="button">Sair</button>
       </div>
 
-      <!-- VERIFICAÇÃO DE E-MAIL -->
-      <div id="verificacao-email" class="verificacao-email" hidden>
-        <div class="verificacao-icone" aria-hidden="true">✉</div>
-        <div class="verificacao-conteudo">
-          <span class="comunidade-tag">CONFIRME SEU E-MAIL</span>
-          <h3>Falta só verificar sua conta</h3>
-          <p>Enviamos uma mensagem para <strong id="email-verificacao"></strong>. Abra o e-mail e clique no link de confirmação. Depois volte aqui.</p>
-          <div class="verificacao-acoes">
-            <button id="btn-ja-verifiquei" type="button" class="btn-comunidade">Já verifiquei</button>
-            <button id="btn-reenviar-verificacao" type="button" class="secondary-button">Reenviar e-mail</button>
-          </div>
-        </div>
-      </div>
-
       <!-- CRIAR PUBLICAÇÃO -->
       <div id="criar-publicacao" class="criar-publicacao" hidden>
         <div class="publicacao-cabecalho">
@@ -414,7 +400,7 @@
 
           <div class="publicar-rodape">
             <span id="contador-texto">0 / 1500</span>
-            <button type="submit" class="btn-comunidade">Publicar</button>
+            <button type="submit" id="btn-publicar" class="btn-comunidade">Publicar</button>
           </div>
         </form>
       </div>
