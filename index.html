@@ -47,6 +47,7 @@
 
     <nav id="site-nav" aria-label="Navegação principal">
       <a href="#home" data-page="home" class="active-tab" onclick="showPage('home')">Início</a>
+      <a href="#noticias" data-page="noticias" onclick="showPage('noticias')">Notícias</a>
       <a href="#comunidade" data-page="comunidade" onclick="showPage('comunidade')">Comunidade</a>
       <a href="#praticas" data-page="praticas" onclick="showPage('praticas')">Boas Práticas</a>
       <a href="#casos" data-page="casos" onclick="showPage('casos')">Casos de Sucesso</a>
@@ -67,18 +68,6 @@
         <div class="intro-highlight-icon" aria-hidden="true">↗</div>
         <p>Este lugar foi feito especialmente para jovens que querem começar seu próprio negócio de modo responsável e pensado. Aqui você vai achar inspiração para transformar suas ideias em projetos reais que causam efeito positivo no meio ambiente e na sociedade. Nosso objetivo é ajudar você em cada passo da viagem, dando conteúdo que mistura inovação, sustentabilidade e visão do futuro. Nós acreditamos que com dedicação é possível transformar problemas em oportunidades e criar negócios que realmente façam a diferença. Prepare-se para crescer, aprender e agir.</p>
       </div>
-
-      <section class="noticias-home" aria-labelledby="noticias-titulo">
-        <div class="noticias-cabecalho">
-          <div>
-            <span class="section-kicker">Atualizações</span>
-            <h2 id="noticias-titulo">Notícias do projeto</h2>
-          </div>
-        </div>
-        <div id="noticias-feed" class="noticias-grid">
-          <div class="noticias-vazio">Carregando notícias...</div>
-        </div>
-      </section>
 
       <article class="feature-block">
         <figure class="feature-media">
@@ -103,6 +92,26 @@
           <p>A colaboração e a comunidade são essenciais no empreendedorismo sustentável. Juntos, empreendedores compartilham ideias, recursos e experiências, gerando soluções inovadoras para desafios ambientais e sociais. A comunidade fortalece o apoio mútuo, facilita parcerias e amplia o impacto das ações, criando um efeito multiplicador. Além disso, promove valores de responsabilidade e ética, estimulando práticas mais conscientes. Ao colaborar, os empreendedores contribuem para uma economia local mais forte e uma produção mais sustentável. Assim, a união fortalece negócios, gera aprendizado contínuo e ajuda a construir um futuro equilibrado e justo para todos.</p>
         </div>
       </article>
+    </section>
+
+    <section id="noticias" class="page">
+      <div class="section-heading">
+        <span class="section-kicker">Atualizações</span>
+        <h2>Notícias</h2>
+        <p>Acompanhe novidades, ações e informações publicadas pela equipe do Inovação Verde.</p>
+      </div>
+
+      <section class="noticias-page" aria-labelledby="noticias-titulo">
+        <div class="noticias-cabecalho">
+          <div>
+            <span class="content-label">Inovação Verde</span>
+            <h3 id="noticias-titulo">Últimas notícias</h3>
+          </div>
+        </div>
+        <div id="noticias-feed" class="noticias-grid">
+          <div class="noticias-vazio">Carregando notícias...</div>
+        </div>
+      </section>
     </section>
 
     <section id="praticas" class="page">
@@ -419,6 +428,14 @@
           <label for="post-texto">Conteúdo</label>
           <textarea id="post-texto" maxlength="1500" placeholder="Conte sua ideia, opinião ou descreva o problema..." required></textarea>
 
+          <label for="post-imagem">Imagem (opcional)</label>
+          <input type="file" id="post-imagem" accept="image/jpeg,image/png,image/webp">
+          <small class="aviso-imagem">A imagem é reduzida automaticamente para economizar dados e usar apenas a cota gratuita do Firestore.</small>
+          <div id="post-imagem-preview" class="imagem-preview" hidden>
+            <img id="post-imagem-preview-img" alt="Prévia da imagem da publicação">
+            <button type="button" id="post-imagem-remover" class="btn-remover-imagem">Remover imagem</button>
+          </div>
+
           <div class="publicar-rodape">
             <span id="contador-texto">0 / 1500</span>
             <button type="submit" id="btn-publicar" class="btn-comunidade">Publicar</button>
@@ -568,7 +585,7 @@
         <div class="admin-grid">
           <section class="admin-bloco">
             <h3>Publicar notícia</h3>
-            <p>A notícia aparecerá automaticamente na página inicial.</p>
+            <p>A notícia aparecerá automaticamente na aba Notícias.</p>
 
             <form id="admin-noticia-form">
               <label for="noticia-titulo">Título</label>
@@ -579,6 +596,14 @@
 
               <label for="noticia-link">Link da fonte (opcional)</label>
               <input id="noticia-link" type="url" maxlength="500" placeholder="https://...">
+
+              <label for="noticia-imagem">Imagem da notícia (opcional)</label>
+              <input id="noticia-imagem" type="file" accept="image/jpeg,image/png,image/webp">
+              <small class="aviso-imagem">A imagem será comprimida e salva no Firestore, sem Firebase Storage.</small>
+              <div id="noticia-imagem-preview" class="imagem-preview" hidden>
+                <img id="noticia-imagem-preview-img" alt="Prévia da imagem da notícia">
+                <button type="button" id="noticia-imagem-remover" class="btn-remover-imagem">Remover imagem</button>
+              </div>
 
               <button type="submit" id="btn-publicar-noticia" class="btn-comunidade">Publicar notícia</button>
             </form>

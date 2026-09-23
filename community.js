@@ -91,6 +91,10 @@ const postLocal = document.getElementById("post-local");
 const postTexto = document.getElementById("post-texto");
 const contadorTexto = document.getElementById("contador-texto");
 const btnPublicar = document.getElementById("btn-publicar");
+const postImagemInput = document.getElementById("post-imagem");
+const postImagemPreview = document.getElementById("post-imagem-preview");
+const postImagemPreviewImg = document.getElementById("post-imagem-preview-img");
+const postImagemRemover = document.getElementById("post-imagem-remover");
 
 let filtroAtual = "todos";
 let postsSalvos = [];
@@ -224,6 +228,113 @@ function usuarioPodeInteragir() {
   return true;
 }
 
+
+// -------------------------------
+// Imagens sem Firebase Storage
+// A foto é reprocessada no navegador e salva como JPEG leve no Firestore.
+// -------------------------------
+const LIMITE_IMAGEM_DATA_URL = 280000;
+const LIMITE_ARQUIVO_ORIGINAL = 12 * 1024 * 1024;
+
+function lerArquivoComoDataURL(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolve(leitor.result);
+    leitor.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
+function carregarImagem(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const imagem = new Image();
+    imagem.onload = () => resolve(imagem);
+    imagem.onerror = () => reject(new Error("Formato de imagem inválido."));
+    imagem.src = dataUrl;
+  });
+}
+
+async function comprimirImagem(arquivo) {
+  if (!arquivo) return "";
+  if (!arquivo.type?.startsWith("image/")) {
+    throw new Error("Escolha um arquivo de imagem.");
+  }
+  if (arquivo.size > LIMITE_ARQUIVO_ORIGINAL) {
+    throw new Error("A imagem original deve ter no máximo 12 MB.");
+  }
+
+  const original = await lerArquivoComoDataURL(arquivo);
+  const imagem = await carregarImagem(original);
+
+  let largura = imagem.naturalWidth || imagem.width;
+  let altura = imagem.naturalHeight || imagem.height;
+  const maxLado = 1280;
+  const escalaInicial = Math.min(1, maxLado / Math.max(largura, altura));
+  largura = Math.max(1, Math.round(largura * escalaInicial));
+  altura = Math.max(1, Math.round(altura * escalaInicial));
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) throw new Error("Seu navegador não conseguiu preparar a imagem.");
+
+  let resultado = "";
+  let qualidade = 0.78;
+
+  for (let tentativa = 0; tentativa < 12; tentativa++) {
+    canvas.width = largura;
+    canvas.height = altura;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, largura, altura);
+    ctx.drawImage(imagem, 0, 0, largura, altura);
+
+    resultado = canvas.toDataURL("image/jpeg", qualidade);
+    if (resultado.length <= LIMITE_IMAGEM_DATA_URL) return resultado;
+
+    if (qualidade > 0.48) {
+      qualidade -= 0.08;
+    } else {
+      largura = Math.max(480, Math.round(largura * 0.82));
+      altura = Math.max(360, Math.round(altura * 0.82));
+      qualidade = 0.62;
+    }
+  }
+
+  if (resultado.length > LIMITE_IMAGEM_DATA_URL) {
+    throw new Error("A imagem ficou grande demais mesmo após a compressão. Escolha outra imagem.");
+  }
+  return resultado;
+}
+
+function configurarPreviewImagem(input, caixa, imagem, remover) {
+  if (!input || !caixa || !imagem || !remover) return;
+
+  input.addEventListener("change", async () => {
+    const arquivo = input.files?.[0];
+    if (!arquivo) {
+      caixa.hidden = true;
+      imagem.removeAttribute("src");
+      return;
+    }
+
+    try {
+      const dataUrl = await lerArquivoComoDataURL(arquivo);
+      imagem.src = dataUrl;
+      caixa.hidden = false;
+    } catch {
+      input.value = "";
+      caixa.hidden = true;
+    }
+  });
+
+  remover.addEventListener("click", () => {
+    input.value = "";
+    imagem.removeAttribute("src");
+    caixa.hidden = true;
+  });
+}
+
+configurarPreviewImagem(postImagemInput, postImagemPreview, postImagemPreviewImg, postImagemRemover);
+
 // -------------------------------
 // Nova publicação
 // -------------------------------
@@ -247,12 +358,16 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
   const titulo = document.getElementById("post-titulo").value.trim();
   const texto = postTexto.value.trim();
   const local = postLocal.value.trim();
+  const arquivoImagem = postImagemInput?.files?.[0] || null;
 
   if (!titulo || !texto) return mostrarMensagem("Preencha título e conteúdo.", "erro");
   if (tipo === "lixo" && !local) return mostrarMensagem("Informe pelo menos o bairro e a cidade.", "erro");
 
   try {
     btnPublicar.disabled = true;
+    btnPublicar.textContent = arquivoImagem ? "Preparando imagem…" : "Publicando…";
+
+    const imagem = arquivoImagem ? await comprimirImagem(arquivoImagem) : "";
     btnPublicar.textContent = "Publicando…";
 
     await addDoc(collection(db, "posts"), {
@@ -262,16 +377,20 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
       titulo,
       texto,
       local: tipo === "lixo" ? local : "",
+      imagem,
       criadoEm: serverTimestamp()
     });
 
     event.target.reset();
     campoLocal.hidden = true;
     contadorTexto.textContent = "0 / 1500";
+    if (postImagemPreview) postImagemPreview.hidden = true;
+    if (postImagemPreviewImg) postImagemPreviewImg.removeAttribute("src");
     mostrarMensagem("Publicação enviada! 🌱");
   } catch (erro) {
     console.error("Erro ao publicar:", erro);
-    mostrarMensagem(`Não foi possível publicar (${erro.code || "erro"}).`, "erro", 9000);
+    const detalhe = erro?.message && !erro?.code ? erro.message : (erro.code || "erro");
+    mostrarMensagem(`Não foi possível publicar (${detalhe}).`, "erro", 9000);
   } finally {
     btnPublicar.disabled = false;
     btnPublicar.textContent = "Publicar";
@@ -429,6 +548,15 @@ function criarCardPost(post) {
 
 
   card.appendChild(texto);
+
+  if (post.imagem) {
+    const imagemPost = document.createElement("img");
+    imagemPost.className = "post-imagem";
+    imagemPost.src = post.imagem;
+    imagemPost.alt = `Imagem da publicação: ${post.titulo || "publicação"}`;
+    imagemPost.loading = "lazy";
+    card.appendChild(imagemPost);
+  }
 
   if (post.tipo === "lixo" && post.local) {
     const local = document.createElement("div");
@@ -681,20 +809,28 @@ async function carregarComentarios(postId, elemento) {
       conteudo.append(nome, corpo);
       caixa.appendChild(conteudo);
 
-      if (usuarioEhAdmin()) {
+      const usuarioAtual = auth.currentUser;
+      const ehDono = Boolean(usuarioAtual && comentario.uid === usuarioAtual.uid);
+      const ehAdmin = usuarioEhAdmin(usuarioAtual);
+
+      if (ehDono || ehAdmin) {
         const remover = document.createElement("button");
         remover.type = "button";
         remover.className = "btn-admin-remover";
-        remover.textContent = "Remover";
-        remover.title = "Remover comentário como administrador";
+        remover.textContent = ehAdmin && !ehDono ? "Remover" : "Excluir";
+        remover.title = ehAdmin && !ehDono
+          ? "Remover comentário como administrador"
+          : "Excluir seu comentário";
 
         remover.addEventListener("click", async () => {
-          if (!window.confirm("Remover este comentário?")) return;
+          if (!window.confirm("Excluir este comentário?")) return;
 
           remover.disabled = true;
           try {
             await deleteDoc(doc(db, "posts", postId, "comentarios", item.id));
-            mostrarMensagem("Comentário removido pelo administrador.");
+            mostrarMensagem(ehAdmin && !ehDono
+              ? "Comentário removido pelo administrador."
+              : "Seu comentário foi excluído.");
             await carregarComentarios(postId, elemento);
           } catch (erro) {
             console.error("Erro ao remover comentário:", erro);
@@ -751,7 +887,13 @@ const adminNome = document.getElementById("admin-nome");
 const adminNoticiaForm = document.getElementById("admin-noticia-form");
 const adminNoticiasList = document.getElementById("admin-noticias-list");
 const btnPublicarNoticia = document.getElementById("btn-publicar-noticia");
+const noticiaImagemInput = document.getElementById("noticia-imagem");
+const noticiaImagemPreview = document.getElementById("noticia-imagem-preview");
+const noticiaImagemPreviewImg = document.getElementById("noticia-imagem-preview-img");
+const noticiaImagemRemover = document.getElementById("noticia-imagem-remover");
 const adminSair = document.getElementById("admin-sair");
+
+configurarPreviewImagem(noticiaImagemInput, noticiaImagemPreview, noticiaImagemPreviewImg, noticiaImagemRemover);
 
 let noticiasSalvas = [];
 let adminContagemCliques = 0;
@@ -908,6 +1050,7 @@ adminNoticiaForm?.addEventListener("submit", async event => {
   const titulo = document.getElementById("noticia-titulo").value.trim();
   const texto = document.getElementById("noticia-texto").value.trim();
   let link = document.getElementById("noticia-link").value.trim();
+  const arquivoImagem = noticiaImagemInput?.files?.[0] || null;
 
   if (!titulo || !texto) return;
 
@@ -919,22 +1062,29 @@ adminNoticiaForm?.addEventListener("submit", async event => {
 
   try {
     btnPublicarNoticia.disabled = true;
+    btnPublicarNoticia.textContent = arquivoImagem ? "Preparando imagem..." : "Publicando...";
+
+    const imagem = arquivoImagem ? await comprimirImagem(arquivoImagem) : "";
     btnPublicarNoticia.textContent = "Publicando...";
 
     await addDoc(collection(db, "noticias"), {
       titulo,
       texto,
       link,
+      imagem,
       autor: admin.nome,
       criadoEm: serverTimestamp()
     });
 
     event.target.reset();
+    if (noticiaImagemPreview) noticiaImagemPreview.hidden = true;
+    if (noticiaImagemPreviewImg) noticiaImagemPreviewImg.removeAttribute("src");
     adminToolsMsg.textContent = "Notícia publicada com sucesso.";
     adminToolsMsg.className = "admin-msg sucesso";
   } catch (erro) {
     console.error("Erro ao publicar notícia:", erro);
-    adminToolsMsg.textContent = `Não foi possível publicar a notícia (${erro.code || "erro"}).`;
+    const detalhe = erro?.message && !erro?.code ? erro.message : (erro.code || "erro");
+    adminToolsMsg.textContent = `Não foi possível publicar a notícia (${detalhe}).`;
     adminToolsMsg.className = "admin-msg erro";
   } finally {
     btnPublicarNoticia.disabled = false;
@@ -990,13 +1140,24 @@ function renderizarNoticias() {
 
     topo.append(autor, data);
 
+    if (noticia.imagem) {
+      const imagem = document.createElement("img");
+      imagem.className = "noticia-imagem";
+      imagem.src = noticia.imagem;
+      imagem.alt = `Imagem da notícia: ${noticia.titulo || "notícia"}`;
+      imagem.loading = "lazy";
+      card.append(topo, imagem);
+    } else {
+      card.appendChild(topo);
+    }
+
     const titulo = document.createElement("h3");
     titulo.textContent = noticia.titulo || "Notícia";
 
     const texto = document.createElement("p");
     texto.textContent = noticia.texto || "";
 
-    card.append(topo, titulo, texto);
+    card.append(titulo, texto);
 
     if (noticia.link) {
       const link = document.createElement("a");
