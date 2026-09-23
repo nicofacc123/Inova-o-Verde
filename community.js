@@ -754,7 +754,8 @@ const btnPublicarNoticia = document.getElementById("btn-publicar-noticia");
 const adminSair = document.getElementById("admin-sair");
 
 let noticiasSalvas = [];
-let adminCliques = [];
+let adminContagemCliques = 0;
+let adminResetCliquesTimer = null;
 let adminModalAberto = false;
 
 function abrirAdminModal() {
@@ -784,24 +785,51 @@ function fecharAdminModal() {
   if (adminToolsMsg) adminToolsMsg.textContent = "";
 }
 
-function registrarCliqueAdmin() {
-  const agora = Date.now();
-  adminCliques = adminCliques.filter(t => agora - t < 4000);
-  adminCliques.push(agora);
+function registrarCliqueAdmin(event) {
+  // Evita seleção de texto, propagação do clique e fechamento acidental
+  // do painel no mesmo gesto que o abriu.
+  event?.preventDefault();
+  event?.stopPropagation();
 
-  if (adminCliques.length >= 5) {
-    adminCliques = [];
+  if (adminModalAberto) return;
+
+  adminContagemCliques += 1;
+
+  if (adminResetCliquesTimer) {
+    window.clearTimeout(adminResetCliquesTimer);
+  }
+
+  // Se demorar mais de 3 segundos entre a sequência, recomeça.
+  adminResetCliquesTimer = window.setTimeout(() => {
+    adminContagemCliques = 0;
+    adminResetCliquesTimer = null;
+  }, 3000);
+
+  if (adminContagemCliques >= 5) {
+    adminContagemCliques = 0;
+    if (adminResetCliquesTimer) {
+      window.clearTimeout(adminResetCliquesTimer);
+      adminResetCliquesTimer = null;
+    }
+
     abrirAdminModal();
   }
 }
 
 adminTrigger?.addEventListener("click", registrarCliqueAdmin);
 adminTrigger?.addEventListener("keydown", event => {
-  if (event.key === "Enter") registrarCliqueAdmin();
+  if (event.key === "Enter" || event.key === " ") {
+    registrarCliqueAdmin(event);
+  }
 });
 
-adminFechar?.addEventListener("click", fecharAdminModal);
-adminModal?.querySelector("[data-admin-close]")?.addEventListener("click", fecharAdminModal);
+adminFechar?.addEventListener("click", event => {
+  event.stopPropagation();
+  fecharAdminModal();
+});
+
+// O painel NÃO fecha ao clicar no fundo. Isso evita que o quinto clique
+// usado para abrir o acesso seja interpretado como um clique de fechamento.
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && adminModalAberto) fecharAdminModal();
