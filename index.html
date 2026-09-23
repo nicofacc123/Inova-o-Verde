@@ -68,6 +68,18 @@
         <p>Este lugar foi feito especialmente para jovens que querem começar seu próprio negócio de modo responsável e pensado. Aqui você vai achar inspiração para transformar suas ideias em projetos reais que causam efeito positivo no meio ambiente e na sociedade. Nosso objetivo é ajudar você em cada passo da viagem, dando conteúdo que mistura inovação, sustentabilidade e visão do futuro. Nós acreditamos que com dedicação é possível transformar problemas em oportunidades e criar negócios que realmente façam a diferença. Prepare-se para crescer, aprender e agir.</p>
       </div>
 
+      <section class="noticias-home" aria-labelledby="noticias-titulo">
+        <div class="noticias-cabecalho">
+          <div>
+            <span class="section-kicker">Atualizações</span>
+            <h2 id="noticias-titulo">Notícias do projeto</h2>
+          </div>
+        </div>
+        <div id="noticias-feed" class="noticias-grid">
+          <div class="noticias-vazio">Carregando notícias...</div>
+        </div>
+      </section>
+
       <article class="feature-block">
         <figure class="feature-media">
           <img src="imagens/empreendedorismo-sustentavel.webp" alt="Empreender de forma sustentável">
@@ -515,8 +527,78 @@
       </div>
     </div>
 
-    <div class="footer-quote">“A melhor maneira de prever o futuro é inventá-lo.” — Alan Kay</div>
+    <div class="footer-quote" id="admin-secret-trigger" tabindex="0">“A melhor maneira de prever o futuro é inventá-lo.” — Alan Kay</div>
   </footer>
+
+
+  <!-- Painel administrativo: acesso visual escondido; segurança real no Firebase Auth + Rules -->
+  <div id="admin-modal" class="admin-modal" hidden aria-hidden="true">
+    <div class="admin-modal-backdrop" data-admin-close></div>
+
+    <section class="admin-card" role="dialog" aria-modal="true" aria-labelledby="admin-titulo">
+      <button type="button" class="admin-fechar" id="admin-fechar" aria-label="Fechar painel">×</button>
+
+      <div id="admin-login-area">
+        <span class="admin-kicker">ACESSO RESTRITO</span>
+        <h2 id="admin-titulo">Painel administrativo</h2>
+        <p>Digite seu ID de administrador e sua senha.</p>
+
+        <form id="admin-login-form">
+          <label for="admin-id">ID do administrador</label>
+          <input id="admin-id" type="text" autocomplete="username" placeholder="Ex.: NV-ABC123" required>
+
+          <label for="admin-senha">Senha</label>
+          <input id="admin-senha" type="password" autocomplete="current-password" placeholder="Sua senha" required>
+
+          <button type="submit" class="btn-comunidade">Entrar como administrador</button>
+        </form>
+
+        <div id="admin-login-msg" class="admin-msg" aria-live="polite"></div>
+      </div>
+
+      <div id="admin-tools" hidden>
+        <div class="admin-topo">
+          <div>
+            <span class="admin-kicker">ADMINISTRADOR</span>
+            <h2 id="admin-nome">Painel administrativo</h2>
+          </div>
+          <button type="button" id="admin-sair" class="btn-sair">Sair do admin</button>
+        </div>
+
+        <div class="admin-grid">
+          <section class="admin-bloco">
+            <h3>Publicar notícia</h3>
+            <p>A notícia aparecerá automaticamente na página inicial.</p>
+
+            <form id="admin-noticia-form">
+              <label for="noticia-titulo">Título</label>
+              <input id="noticia-titulo" type="text" maxlength="120" placeholder="Título da notícia" required>
+
+              <label for="noticia-texto">Texto</label>
+              <textarea id="noticia-texto" maxlength="1200" placeholder="Escreva a notícia..." required></textarea>
+
+              <label for="noticia-link">Link da fonte (opcional)</label>
+              <input id="noticia-link" type="url" maxlength="500" placeholder="https://...">
+
+              <button type="submit" id="btn-publicar-noticia" class="btn-comunidade">Publicar notícia</button>
+            </form>
+          </section>
+
+          <section class="admin-bloco">
+            <h3>Gerenciar notícias</h3>
+            <div id="admin-noticias-list" class="admin-noticias-list">
+              <p>Nenhuma notícia carregada.</p>
+            </div>
+          </section>
+        </div>
+
+        <p class="admin-ajuda">
+          Para remover um comentário, abra a aba Comunidade, entre nos comentários de uma publicação e use o botão <strong>Remover</strong>.
+        </p>
+        <div id="admin-tools-msg" class="admin-msg" aria-live="polite"></div>
+      </div>
+    </section>
+  </div>
 
   <script src="script.js"></script>
   <script type="module" src="community.js"></script>

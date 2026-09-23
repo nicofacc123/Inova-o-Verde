@@ -42,6 +42,37 @@ const db = getFirestore(app);
 auth.languageCode = "pt-BR";
 
 // -------------------------------
+// Administradores
+// O ID apenas escolhe a conta interna. A senha NÃO fica no código.
+// -------------------------------
+const ADMIN_LOGIN_MAP = {
+  "NV-R9Y8J9": { email: "admin.nicolas@inovacaoverde.app", nome: "Nícolas" },
+  "RL-RLXVN9": { email: "admin.rillary@inovacaoverde.app", nome: "Rillary" },
+  "IS-V58L38": { email: "admin.ismael@inovacaoverde.app", nome: "Ismael" }
+};
+
+const ADMIN_EMAILS = new Set(
+  Object.values(ADMIN_LOGIN_MAP).map(admin => admin.email.toLowerCase())
+);
+
+function obterAdminAtual(usuario = auth.currentUser) {
+  if (!usuario?.email) return null;
+  const email = usuario.email.toLowerCase();
+  if (!ADMIN_EMAILS.has(email)) return null;
+
+  const entrada = Object.entries(ADMIN_LOGIN_MAP)
+    .find(([, admin]) => admin.email.toLowerCase() === email);
+
+  if (!entrada) return null;
+  return { id: entrada[0], ...entrada[1], uid: usuario.uid };
+}
+
+function usuarioEhAdmin(usuario = auth.currentUser) {
+  return Boolean(obterAdminAtual(usuario));
+}
+
+
+// -------------------------------
 // Elementos
 // -------------------------------
 const areaAuth = document.getElementById("area-auth");
@@ -162,6 +193,7 @@ document.getElementById("btn-sair").addEventListener("click", async () => {
 
 onAuthStateChanged(auth, usuario => {
   atualizarInterfaceUsuario(usuario);
+  atualizarPainelAdmin(usuario);
 });
 
 function atualizarInterfaceUsuario(usuario) {
@@ -636,11 +668,44 @@ async function carregarComentarios(postId, elemento) {
       const comentario = item.data();
       const caixa = document.createElement("div");
       caixa.className = "comentario";
+
+      const conteudo = document.createElement("div");
+      conteudo.className = "comentario-conteudo";
+
       const nome = document.createElement("strong");
       nome.textContent = comentario.autor || "Usuário";
+
       const corpo = document.createElement("span");
       corpo.textContent = `: ${comentario.texto || ""}`;
-      caixa.append(nome, corpo);
+
+      conteudo.append(nome, corpo);
+      caixa.appendChild(conteudo);
+
+      if (usuarioEhAdmin()) {
+        const remover = document.createElement("button");
+        remover.type = "button";
+        remover.className = "btn-admin-remover";
+        remover.textContent = "Remover";
+        remover.title = "Remover comentário como administrador";
+
+        remover.addEventListener("click", async () => {
+          if (!window.confirm("Remover este comentário?")) return;
+
+          remover.disabled = true;
+          try {
+            await deleteDoc(doc(db, "posts", postId, "comentarios", item.id));
+            mostrarMensagem("Comentário removido pelo administrador.");
+            await carregarComentarios(postId, elemento);
+          } catch (erro) {
+            console.error("Erro ao remover comentário:", erro);
+            mostrarMensagem(`Não foi possível remover o comentário (${erro.code || "erro"}).`, "erro", 8000);
+            remover.disabled = false;
+          }
+        });
+
+        caixa.appendChild(remover);
+      }
+
       elemento.appendChild(caixa);
     });
   } catch (erro) {
@@ -667,3 +732,310 @@ function formatarData(timestamp) {
     minute: "2-digit"
   });
 }
+
+
+// ============================================================
+// NOTÍCIAS + PAINEL ADMINISTRATIVO
+// ============================================================
+
+const noticiasFeed = document.getElementById("noticias-feed");
+const adminModal = document.getElementById("admin-modal");
+const adminTrigger = document.getElementById("admin-secret-trigger");
+const adminFechar = document.getElementById("admin-fechar");
+const adminLoginArea = document.getElementById("admin-login-area");
+const adminTools = document.getElementById("admin-tools");
+const adminLoginForm = document.getElementById("admin-login-form");
+const adminLoginMsg = document.getElementById("admin-login-msg");
+const adminToolsMsg = document.getElementById("admin-tools-msg");
+const adminNome = document.getElementById("admin-nome");
+const adminNoticiaForm = document.getElementById("admin-noticia-form");
+const adminNoticiasList = document.getElementById("admin-noticias-list");
+const btnPublicarNoticia = document.getElementById("btn-publicar-noticia");
+const adminSair = document.getElementById("admin-sair");
+
+let noticiasSalvas = [];
+let adminCliques = [];
+let adminModalAberto = false;
+
+function abrirAdminModal() {
+  if (!adminModal) return;
+  adminModal.hidden = false;
+  adminModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("admin-modal-aberto");
+  adminModalAberto = true;
+  atualizarPainelAdmin(auth.currentUser);
+
+  window.setTimeout(() => {
+    if (usuarioEhAdmin()) {
+      document.getElementById("noticia-titulo")?.focus();
+    } else {
+      document.getElementById("admin-id")?.focus();
+    }
+  }, 30);
+}
+
+function fecharAdminModal() {
+  if (!adminModal) return;
+  adminModal.hidden = true;
+  adminModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("admin-modal-aberto");
+  adminModalAberto = false;
+  if (adminLoginMsg) adminLoginMsg.textContent = "";
+  if (adminToolsMsg) adminToolsMsg.textContent = "";
+}
+
+function registrarCliqueAdmin() {
+  const agora = Date.now();
+  adminCliques = adminCliques.filter(t => agora - t < 4000);
+  adminCliques.push(agora);
+
+  if (adminCliques.length >= 5) {
+    adminCliques = [];
+    abrirAdminModal();
+  }
+}
+
+adminTrigger?.addEventListener("click", registrarCliqueAdmin);
+adminTrigger?.addEventListener("keydown", event => {
+  if (event.key === "Enter") registrarCliqueAdmin();
+});
+
+adminFechar?.addEventListener("click", fecharAdminModal);
+adminModal?.querySelector("[data-admin-close]")?.addEventListener("click", fecharAdminModal);
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && adminModalAberto) fecharAdminModal();
+});
+
+function atualizarPainelAdmin(usuario) {
+  if (!adminLoginArea || !adminTools) return;
+
+  const admin = obterAdminAtual(usuario);
+  const estaLogadoComoAdmin = Boolean(admin);
+
+  adminLoginArea.hidden = estaLogadoComoAdmin;
+  adminTools.hidden = !estaLogadoComoAdmin;
+
+  if (estaLogadoComoAdmin) {
+    adminNome.textContent = `Painel de ${admin.nome}`;
+    renderizarAdminNoticias();
+  } else {
+    adminNome.textContent = "Painel administrativo";
+  }
+}
+
+adminLoginForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const idDigitado = document.getElementById("admin-id").value.trim().toUpperCase();
+  const senha = document.getElementById("admin-senha").value;
+  const admin = ADMIN_LOGIN_MAP[idDigitado];
+
+  if (!admin) {
+    adminLoginMsg.textContent = "ID de administrador inválido.";
+    adminLoginMsg.className = "admin-msg erro";
+    return;
+  }
+
+  adminLoginMsg.textContent = "Entrando...";
+  adminLoginMsg.className = "admin-msg";
+
+  try {
+    const credencial = await signInWithEmailAndPassword(auth, admin.email, senha);
+
+    if (!usuarioEhAdmin(credencial.user)) {
+      await signOut(auth);
+      throw new Error("Conta sem permissão administrativa.");
+    }
+
+    event.target.reset();
+    adminLoginMsg.textContent = "";
+    atualizarPainelAdmin(credencial.user);
+  } catch (erro) {
+    console.error("Erro no login administrativo:", erro);
+    adminLoginMsg.textContent = "ID ou senha de administrador incorretos.";
+    adminLoginMsg.className = "admin-msg erro";
+  }
+});
+
+adminSair?.addEventListener("click", async () => {
+  await signOut(auth);
+  atualizarPainelAdmin(null);
+  if (adminLoginMsg) {
+    adminLoginMsg.textContent = "Sessão administrativa encerrada.";
+    adminLoginMsg.className = "admin-msg";
+  }
+});
+
+adminNoticiaForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const admin = obterAdminAtual();
+  if (!admin) {
+    adminToolsMsg.textContent = "Sua sessão administrativa expirou. Entre novamente.";
+    adminToolsMsg.className = "admin-msg erro";
+    return;
+  }
+
+  const titulo = document.getElementById("noticia-titulo").value.trim();
+  const texto = document.getElementById("noticia-texto").value.trim();
+  let link = document.getElementById("noticia-link").value.trim();
+
+  if (!titulo || !texto) return;
+
+  if (link && !/^https?:\/\//i.test(link)) {
+    adminToolsMsg.textContent = "O link precisa começar com http:// ou https://.";
+    adminToolsMsg.className = "admin-msg erro";
+    return;
+  }
+
+  try {
+    btnPublicarNoticia.disabled = true;
+    btnPublicarNoticia.textContent = "Publicando...";
+
+    await addDoc(collection(db, "noticias"), {
+      titulo,
+      texto,
+      link,
+      autor: admin.nome,
+      criadoEm: serverTimestamp()
+    });
+
+    event.target.reset();
+    adminToolsMsg.textContent = "Notícia publicada com sucesso.";
+    adminToolsMsg.className = "admin-msg sucesso";
+  } catch (erro) {
+    console.error("Erro ao publicar notícia:", erro);
+    adminToolsMsg.textContent = `Não foi possível publicar a notícia (${erro.code || "erro"}).`;
+    adminToolsMsg.className = "admin-msg erro";
+  } finally {
+    btnPublicarNoticia.disabled = false;
+    btnPublicarNoticia.textContent = "Publicar notícia";
+  }
+});
+
+const consultaNoticias = query(collection(db, "noticias"), orderBy("criadoEm", "desc"));
+
+onSnapshot(consultaNoticias, snapshot => {
+  noticiasSalvas = snapshot.docs.map(item => ({
+    id: item.id,
+    ...item.data()
+  }));
+
+  renderizarNoticias();
+  renderizarAdminNoticias();
+}, erro => {
+  console.error("Erro ao carregar notícias:", erro);
+  if (noticiasFeed) {
+    noticiasFeed.replaceChildren();
+    const erroEl = document.createElement("div");
+    erroEl.className = "noticias-vazio";
+    erroEl.textContent = "Não foi possível carregar as notícias.";
+    noticiasFeed.appendChild(erroEl);
+  }
+});
+
+function renderizarNoticias() {
+  if (!noticiasFeed) return;
+  noticiasFeed.replaceChildren();
+
+  if (!noticiasSalvas.length) {
+    const vazio = document.createElement("div");
+    vazio.className = "noticias-vazio";
+    vazio.textContent = "Ainda não há notícias publicadas.";
+    noticiasFeed.appendChild(vazio);
+    return;
+  }
+
+  noticiasSalvas.slice(0, 6).forEach(noticia => {
+    const card = document.createElement("article");
+    card.className = "noticia-card";
+
+    const topo = document.createElement("div");
+    topo.className = "noticia-meta";
+
+    const autor = document.createElement("span");
+    autor.textContent = noticia.autor ? `Por ${noticia.autor}` : "Equipe Inovação Verde";
+
+    const data = document.createElement("span");
+    data.textContent = formatarData(noticia.criadoEm);
+
+    topo.append(autor, data);
+
+    const titulo = document.createElement("h3");
+    titulo.textContent = noticia.titulo || "Notícia";
+
+    const texto = document.createElement("p");
+    texto.textContent = noticia.texto || "";
+
+    card.append(topo, titulo, texto);
+
+    if (noticia.link) {
+      const link = document.createElement("a");
+      link.href = noticia.link;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Ver fonte →";
+      link.className = "noticia-link";
+      card.appendChild(link);
+    }
+
+    noticiasFeed.appendChild(card);
+  });
+}
+
+function renderizarAdminNoticias() {
+  if (!adminNoticiasList) return;
+  adminNoticiasList.replaceChildren();
+
+  if (!usuarioEhAdmin()) {
+    const aviso = document.createElement("p");
+    aviso.textContent = "Entre como administrador para gerenciar notícias.";
+    adminNoticiasList.appendChild(aviso);
+    return;
+  }
+
+  if (!noticiasSalvas.length) {
+    const vazio = document.createElement("p");
+    vazio.textContent = "Nenhuma notícia publicada.";
+    adminNoticiasList.appendChild(vazio);
+    return;
+  }
+
+  noticiasSalvas.forEach(noticia => {
+    const linha = document.createElement("div");
+    linha.className = "admin-noticia-item";
+
+    const info = document.createElement("div");
+    const titulo = document.createElement("strong");
+    titulo.textContent = noticia.titulo || "Notícia";
+    const meta = document.createElement("small");
+    meta.textContent = `${noticia.autor || "Equipe"} • ${formatarData(noticia.criadoEm)}`;
+    info.append(titulo, meta);
+
+    const remover = document.createElement("button");
+    remover.type = "button";
+    remover.className = "btn-admin-remover";
+    remover.textContent = "Excluir";
+
+    remover.addEventListener("click", async () => {
+      if (!window.confirm(`Excluir a notícia "${noticia.titulo || "Notícia"}"?`)) return;
+
+      remover.disabled = true;
+      try {
+        await deleteDoc(doc(db, "noticias", noticia.id));
+        adminToolsMsg.textContent = "Notícia excluída.";
+        adminToolsMsg.className = "admin-msg sucesso";
+      } catch (erro) {
+        console.error("Erro ao excluir notícia:", erro);
+        adminToolsMsg.textContent = `Não foi possível excluir a notícia (${erro.code || "erro"}).`;
+        adminToolsMsg.className = "admin-msg erro";
+        remover.disabled = false;
+      }
+    });
+
+    linha.append(info, remover);
+    adminNoticiasList.appendChild(linha);
+  });
+}
+
