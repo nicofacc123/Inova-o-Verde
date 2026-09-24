@@ -1489,17 +1489,99 @@ function observarReacoes(postId, card, votacao) {
 }
 
 function observarContagemComentarios(postId, card, contador) {
-  const ref = collection(db, "posts", postId, "comentarios");
-  const unsubscribe = onSnapshot(ref, snapshot => {
-    const total = snapshot.size;
+  const comentariosRef = collection(db, "posts", postId, "comentarios");
+
+  let totalComentariosPrincipais = 0;
+  const totalRespostasPorComentario = new Map();
+  const listenersRespostas = new Map();
+
+  function atualizarTotal() {
+    const totalRespostas = [...totalRespostasPorComentario.values()]
+      .reduce((soma, quantidade) => soma + quantidade, 0);
+
+    const total = totalComentariosPrincipais + totalRespostas;
+
     const stats = obterEstatisticas(postId);
     stats.comentarios = total;
-    contador.textContent = String(total);
-    card.dataset.comentarios = String(total);
-    reordenarCards();
-  }, erro => console.error("Erro ao contar comentários:", erro));
 
-  unsubscribeContagemComentarios.push(unsubscribe);
+    contador.textContent = String(total);
+    contador.title = `${total} comentário(s), incluindo respostas`;
+    card.dataset.comentarios = String(total);
+
+    reordenarCards();
+  }
+
+  function removerListenerResposta(comentarioId) {
+    const unsubscribe = listenersRespostas.get(comentarioId);
+    if (unsubscribe) unsubscribe();
+
+    listenersRespostas.delete(comentarioId);
+    totalRespostasPorComentario.delete(comentarioId);
+  }
+
+  const unsubscribeComentarios = onSnapshot(
+    comentariosRef,
+    snapshot => {
+      totalComentariosPrincipais = snapshot.size;
+
+      const idsAtuais = new Set(snapshot.docs.map(item => item.id));
+
+      // Remove listeners de comentários que foram excluídos.
+      [...listenersRespostas.keys()].forEach(comentarioId => {
+        if (!idsAtuais.has(comentarioId)) {
+          removerListenerResposta(comentarioId);
+        }
+      });
+
+      // Cada comentário principal escuta sua coleção de respostas.
+      snapshot.docs.forEach(item => {
+        const comentarioId = item.id;
+
+        if (listenersRespostas.has(comentarioId)) return;
+
+        totalRespostasPorComentario.set(comentarioId, 0);
+
+        const respostasRef = collection(
+          db,
+          "posts",
+          postId,
+          "comentarios",
+          comentarioId,
+          "respostas"
+        );
+
+        const unsubscribeResposta = onSnapshot(
+          respostasRef,
+          respostaSnapshot => {
+            totalRespostasPorComentario.set(
+              comentarioId,
+              respostaSnapshot.size
+            );
+            atualizarTotal();
+          },
+          erro => {
+            console.error("Erro ao contar respostas:", erro);
+            totalRespostasPorComentario.set(comentarioId, 0);
+            atualizarTotal();
+          }
+        );
+
+        listenersRespostas.set(comentarioId, unsubscribeResposta);
+      });
+
+      atualizarTotal();
+    },
+    erro => console.error("Erro ao contar comentários:", erro)
+  );
+
+  const limparTudo = () => {
+    unsubscribeComentarios();
+    listenersRespostas.forEach(unsubscribe => unsubscribe());
+    listenersRespostas.clear();
+    totalRespostasPorComentario.clear();
+  };
+
+  unsubscribeContagemComentarios.push(limparTudo);
 }
 
 async function registrarReacao(postId, tipo, card) {
@@ -1686,7 +1768,12 @@ function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarr
   return wrap;
 }
 
-async function carregarRespostasDoComentario(postId, comentarioId, elemento, abrirFormularioResposta) {
+async function carregarRespostasDoComentario(
+  postId,
+  comentarioId,
+  elemento,
+  abrirFormularioResposta
+) {
   elemento.replaceChildren();
 
   try {
@@ -1756,28 +1843,33 @@ async function carregarRespostasDoComentario(postId, comentarioId, elemento, abr
 
       texto.appendChild(document.createTextNode(resposta.texto || ""));
 
+      // Toda resposta também pode ser respondida.
       const responderResposta = document.createElement("button");
       responderResposta.type = "button";
-      responderResposta.className = "btn-responder-comentario btn-responder-resposta";
+      responderResposta.className =
+        "btn-responder-comentario btn-responder-resposta";
       responderResposta.textContent = "Responder";
 
       responderResposta.addEventListener("click", () => {
         if (!usuarioPodeInteragir()) return;
 
-        const nomeAlvo = obterNomePorUid(
-          resposta.uid,
-          resposta.autor || "Usuário"
-        );
-        const handleAlvo = obterUsernamePorUid(resposta.uid, "");
-
         abrirFormularioResposta?.({
           uid: resposta.uid || "",
-          handle: handleAlvo,
-          nome: nomeAlvo
+          handle: obterUsernamePorUid(resposta.uid, ""),
+          nome: obterNomePorUid(
+            resposta.uid,
+            resposta.autor || "Usuário"
+          )
         });
       });
 
-      conteudo.append(nomeLinha, username, texto, responderResposta);
+      conteudo.append(
+        nomeLinha,
+        username,
+        texto,
+        responderResposta
+      );
+
       caixa.append(avatar, conteudo);
 
       caixa.appendChild(

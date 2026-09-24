@@ -4122,14 +4122,19 @@ body.imagem-ampliada-aberta {
 
 
 /* =========================================================
-   V4.1 — RESPOSTAS ESTILO REDES SOCIAIS
+   V4.2 — THREADS ESTILO INSTAGRAM/TIKTOK
    ========================================================= */
+
+/* Respostas de respostas continuam no mesmo nível da conversa. */
+.lista-respostas-comentario .resposta-comentario {
+  margin-left: 0 !important;
+}
 
 .btn-responder-resposta {
   margin-top: 6px;
 }
 
-/* Todas as respostas permanecem no mesmo nível visual da conversa. */
-.lista-respostas-comentario .resposta-comentario {
-  margin-left: 0 !important;
+/* A menção mostra claramente qual pessoa está recebendo a resposta. */
+.resposta-mencao {
+  margin-right: 2px;
 }
