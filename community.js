@@ -79,6 +79,7 @@ function usuarioEhAdmin(usuario = auth.currentUser) {
 // Elementos
 // -------------------------------
 const areaAuth = document.getElementById("area-auth");
+const comunidadeTopoAuth = document.getElementById("comunidade-topo-auth");
 const painelCadastro = document.getElementById("painel-cadastro");
 const painelLogin = document.getElementById("painel-login");
 const tabCadastro = document.getElementById("tab-cadastro");
@@ -1000,6 +1001,10 @@ onAuthStateChanged(auth, async usuario => {
 });
 
 function atualizarInterfaceUsuario(usuario) {
+  if (comunidadeTopoAuth) {
+    comunidadeTopoAuth.hidden = Boolean(usuario);
+  }
+
   if (!usuario) {
     areaAuth.hidden = false;
     usuarioLogado.hidden = true;
