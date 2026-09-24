@@ -6039,86 +6039,45 @@ body.admin-modal-aberto * {
 
 
 /* =========================================================
-   V7.2.3 — LOGO MOBILE INTEGRADA À MARCA
+   V7.2.4 — LOGO MOBILE MAIOR
+   Base: V7.2.2
+   Apenas aumenta a logo no celular.
    ========================================================= */
 
-.hero-logo-mobile {
-  display: none;
-}
-
 @media (max-width: 720px) {
-  /* No celular, usa a logo ao lado de VERDE e esconde a logo solta. */
   .hero-logo-wrap {
-    display: none !important;
+    flex: 0 0 106px !important;
+    width: 106px !important;
+    height: 112px !important;
+    min-height: 112px !important;
   }
 
-  .hero-content {
-    display: block !important;
-    width: calc(100% - 24px) !important;
-    padding: 24px 0 26px !important;
+  .hero-logo {
+    width: 102px !important;
+    max-width: 102px !important;
+    max-height: 108px !important;
   }
 
   .hero-copy {
-    display: block !important;
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  .hero h1 {
-    display: block !important;
-    width: fit-content;
-    max-width: 100%;
-    margin: 0 !important;
-    font-size: clamp(38px, 11.7vw, 52px) !important;
-    line-height: .93 !important;
-    letter-spacing: -.055em !important;
-  }
-
-  .hero-title-top {
-    display: block;
-  }
-
-  .hero-title-bottom {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 10px;
-    width: auto;
-  }
-
-  .hero-title-bottom > span {
-    display: inline-block;
-  }
-
-  .hero-logo-mobile {
-    display: block !important;
-    flex: 0 0 auto;
-    width: 62px;
-    height: 62px;
-    margin-top: 1px;
-    object-fit: contain;
-  }
-
-  .hero-button {
-    margin-top: 17px !important;
+    max-width: calc(100% - 114px) !important;
   }
 }
 
 @media (max-width: 390px) {
-  .hero-content {
-    width: calc(100% - 18px) !important;
-    padding: 21px 0 23px !important;
+  .hero-logo-wrap {
+    flex-basis: 92px !important;
+    width: 92px !important;
+    height: 98px !important;
+    min-height: 98px !important;
   }
 
-  .hero h1 {
-    font-size: clamp(36px, 12.4vw, 47px) !important;
+  .hero-logo {
+    width: 88px !important;
+    max-width: 88px !important;
+    max-height: 94px !important;
   }
 
-  .hero-title-bottom {
-    gap: 8px;
-  }
-
-  .hero-logo-mobile {
-    width: 56px;
-    height: 56px;
+  .hero-copy {
+    max-width: calc(100% - 98px) !important;
   }
 }
