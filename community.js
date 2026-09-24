@@ -522,6 +522,12 @@ function textoDaNotificacao(notificacao) {
     "Alguém"
   );
 
+  if (notificacao.tipo === "aviso_admin") {
+    const titulo = notificacao.titulo || "Aviso da equipe";
+    const texto = notificacao.texto || "";
+    return texto ? `${titulo}: ${texto}` : titulo;
+  }
+
   const textos = {
     curtida_post: `${nomeAtor} curtiu sua publicação.`,
     comentario_post: `${nomeAtor} comentou na sua publicação.`,
@@ -536,6 +542,10 @@ function textoDaNotificacao(notificacao) {
 function abrirDestinoNotificacao(notificacao) {
   notificacoesPainel.hidden = true;
   notificacoesBotao.setAttribute("aria-expanded", "false");
+
+  if (notificacao.tipo === "aviso_admin" && !notificacao.postId) {
+    return;
+  }
 
   window.showPage?.("comunidade");
 
@@ -2946,6 +2956,30 @@ const noticiaImagemPreview = document.getElementById("noticia-imagem-preview");
 const noticiaImagemPreviewImg = document.getElementById("noticia-imagem-preview-img");
 const noticiaImagemRemover = document.getElementById("noticia-imagem-remover");
 const adminSair = document.getElementById("admin-sair");
+const adminAtualizar = document.getElementById("admin-atualizar");
+const adminMenuItens = [...document.querySelectorAll(".admin-menu-item")];
+const adminViews = [...document.querySelectorAll(".admin-view")];
+const adminDashboardStatus = document.getElementById("admin-dashboard-status");
+const adminMetricaUsuarios = document.getElementById("admin-metrica-usuarios");
+const adminMetricaPublicacoes = document.getElementById("admin-metrica-publicacoes");
+const adminMetricaComentarios = document.getElementById("admin-metrica-comentarios");
+const adminMetricaCurtidas = document.getElementById("admin-metrica-curtidas");
+const adminMetricaDenuncias = document.getElementById("admin-metrica-denuncias");
+const adminUsuariosAtivos = document.getElementById("admin-usuarios-ativos");
+const adminDenunciasResumo = document.getElementById("admin-denuncias-resumo");
+const adminPublicacoesBusca = document.getElementById("admin-publicacoes-busca");
+const adminPublicacoesList = document.getElementById("admin-publicacoes-list");
+const adminDenunciasList = document.getElementById("admin-denuncias-list");
+const adminUsuariosBusca = document.getElementById("admin-usuarios-busca");
+const adminUsuariosList = document.getElementById("admin-usuarios-list");
+const adminTabDenuncias = document.getElementById("admin-tab-denuncias");
+const adminNotificacaoForm = document.getElementById("admin-notificacao-form");
+const adminNotificacaoDestinatario = document.getElementById("admin-notificacao-destinatario");
+const adminNotificacaoTitulo = document.getElementById("admin-notificacao-titulo");
+const adminNotificacaoTexto = document.getElementById("admin-notificacao-texto");
+const adminNotificacaoContador = document.getElementById("admin-notificacao-contador");
+const adminNotificacaoEnviar = document.getElementById("admin-notificacao-enviar");
+const adminNotificacaoMsg = document.getElementById("admin-notificacao-msg");
 
 configurarPreviewImagem(noticiaImagemInput, noticiaImagemPreview, noticiaImagemPreviewImg, noticiaImagemRemover);
 
@@ -2953,6 +2987,985 @@ let noticiasSalvas = [];
 let adminContagemCliques = 0;
 let adminResetCliquesTimer = null;
 let adminModalAberto = false;
+let adminTabAtual = "dashboard";
+let adminCarregandoDados = false;
+let adminDadosCache = {
+  publicacoes: [],
+  denuncias: [],
+  usuarios: [],
+  resumo: {
+    usuarios: 0,
+    publicacoes: 0,
+    comentarios: 0,
+    curtidas: 0,
+    denuncias: 0
+  }
+};
+
+
+function adminTextoSeguro(valor, fallback = "") {
+  const texto = String(valor ?? "").trim();
+  return texto || fallback;
+}
+
+function adminResumoTexto(texto, limite = 180) {
+  const limpo = adminTextoSeguro(texto);
+  if (limpo.length <= limite) return limpo;
+  return `${limpo.slice(0, limite - 1)}…`;
+}
+
+function adminAtivarTab(tab) {
+  adminTabAtual = tab || "dashboard";
+
+  adminMenuItens.forEach(botao => {
+    const ativo = botao.dataset.adminTab === adminTabAtual;
+    botao.classList.toggle("ativo", ativo);
+  });
+
+  adminViews.forEach(view => {
+    view.hidden = view.id !== `admin-view-${adminTabAtual}`;
+  });
+
+  if (adminTabAtual === "noticias") {
+    renderizarAdminNoticias();
+  }
+}
+
+function adminCriarChip(texto, alerta = false) {
+  const chip = document.createElement("span");
+  chip.className = alerta
+    ? "admin-chip admin-chip-alerta"
+    : "admin-chip";
+  chip.textContent = texto;
+  return chip;
+}
+
+function adminBotao(texto, classe = "") {
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.textContent = texto;
+  if (classe) botao.classList.add(classe);
+  return botao;
+}
+
+function adminAbrirPost(postId) {
+  fecharAdminModal();
+  window.showPage?.("comunidade");
+
+  window.setTimeout(() => {
+    const card = document.getElementById(`post-${postId}`);
+    if (!card) {
+      mostrarMensagem("A publicação não está mais disponível.", "aviso");
+      return;
+    }
+
+    card.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+
+    card.classList.add("post-destaque-notificacao");
+    window.setTimeout(
+      () => card.classList.remove("post-destaque-notificacao"),
+      1800
+    );
+  }, 150);
+}
+
+function adminPerfilLabel(uid) {
+  const perfil = obterPerfil(uid);
+  const nome = perfil?.nome || "Usuário";
+  const username = perfil?.username ? `@${perfil.username}` : "";
+  return { nome, username };
+}
+
+function renderizarAdminDashboard() {
+  const resumo = adminDadosCache.resumo;
+
+  if (adminMetricaUsuarios) {
+    adminMetricaUsuarios.textContent = String(resumo.usuarios || 0);
+  }
+  if (adminMetricaPublicacoes) {
+    adminMetricaPublicacoes.textContent = String(resumo.publicacoes || 0);
+  }
+  if (adminMetricaComentarios) {
+    adminMetricaComentarios.textContent = String(resumo.comentarios || 0);
+  }
+  if (adminMetricaCurtidas) {
+    adminMetricaCurtidas.textContent = String(resumo.curtidas || 0);
+  }
+  if (adminMetricaDenuncias) {
+    adminMetricaDenuncias.textContent = String(resumo.denuncias || 0);
+  }
+
+  if (adminTabDenuncias) {
+    adminTabDenuncias.textContent = resumo.denuncias
+      ? `Denúncias (${resumo.denuncias})`
+      : "Denúncias";
+    adminTabDenuncias.classList.toggle(
+      "tem-alerta",
+      Boolean(resumo.denuncias)
+    );
+  }
+
+  if (adminDashboardStatus) {
+    adminDashboardStatus.textContent = "Dados atualizados";
+  }
+
+  if (adminUsuariosAtivos) {
+    adminUsuariosAtivos.replaceChildren();
+
+    const ativos = [...adminDadosCache.usuarios]
+      .sort((a, b) => b.atividade - a.atividade)
+      .slice(0, 5);
+
+    if (!ativos.length) {
+      const vazio = document.createElement("p");
+      vazio.textContent = "Nenhum usuário encontrado.";
+      adminUsuariosAtivos.appendChild(vazio);
+    }
+
+    ativos.forEach(usuario => {
+      const linha = document.createElement("div");
+      linha.className = "admin-ranking-item";
+
+      const identidade = document.createElement("div");
+      identidade.className = "admin-ranking-identidade";
+
+      const nome = document.createElement("strong");
+      nome.textContent = usuario.nome;
+
+      const handle = document.createElement("span");
+      handle.textContent = usuario.username
+        ? `@${usuario.username}`
+        : "Sem nome de usuário";
+
+      identidade.append(nome, handle);
+
+      const numero = document.createElement("span");
+      numero.className = "admin-ranking-numero";
+      numero.textContent = `${usuario.atividade} interações`;
+
+      linha.append(identidade, numero);
+      adminUsuariosAtivos.appendChild(linha);
+    });
+  }
+
+  if (adminDenunciasResumo) {
+    adminDenunciasResumo.replaceChildren();
+
+    const ultimas = [...adminDadosCache.denuncias]
+      .sort((a, b) => b.criadoMs - a.criadoMs)
+      .slice(0, 5);
+
+    if (!ultimas.length) {
+      const vazio = document.createElement("p");
+      vazio.textContent = "Nenhuma denúncia pendente.";
+      adminDenunciasResumo.appendChild(vazio);
+    }
+
+    ultimas.forEach(denuncia => {
+      const linha = document.createElement("button");
+      linha.type = "button";
+      linha.className = "admin-resumo-denuncia";
+
+      const info = document.createElement("div");
+      info.className = "admin-ranking-identidade";
+
+      const titulo = document.createElement("strong");
+      titulo.textContent = denuncia.tipoLabel;
+
+      const meta = document.createElement("small");
+      meta.textContent = `${denuncia.denuncianteNome} • ${formatarData(denuncia.criadoEm)}`;
+
+      info.append(titulo, meta);
+
+      const abrir = document.createElement("span");
+      abrir.className = "admin-ranking-numero";
+      abrir.textContent = "Ver";
+
+      linha.append(info, abrir);
+      linha.addEventListener("click", () => adminAtivarTab("denuncias"));
+      adminDenunciasResumo.appendChild(linha);
+    });
+  }
+}
+
+function renderizarAdminPublicacoes() {
+  if (!adminPublicacoesList) return;
+
+  const termo = (adminPublicacoesBusca?.value || "")
+    .trim()
+    .toLowerCase();
+
+  const itens = adminDadosCache.publicacoes.filter(post => {
+    if (!termo) return true;
+
+    const perfil = adminPerfilLabel(post.uid);
+    const campo = [
+      post.titulo,
+      post.texto,
+      perfil.nome,
+      perfil.username
+    ].join(" ").toLowerCase();
+
+    return campo.includes(termo.replace(/^@/, ""));
+  });
+
+  adminPublicacoesList.replaceChildren();
+
+  if (!itens.length) {
+    const vazio = document.createElement("p");
+    vazio.textContent = "Nenhuma publicação encontrada.";
+    adminPublicacoesList.appendChild(vazio);
+    return;
+  }
+
+  itens.forEach(post => {
+    const item = document.createElement("article");
+    item.className = "admin-item";
+
+    const topo = document.createElement("div");
+    topo.className = "admin-item-topo";
+
+    const identidade = document.createElement("div");
+    identidade.className = "admin-item-identidade";
+
+    const titulo = document.createElement("strong");
+    titulo.textContent = post.titulo || "Publicação";
+
+    const perfil = adminPerfilLabel(post.uid);
+    const meta = document.createElement("small");
+    meta.textContent = `${perfil.nome}${perfil.username ? ` • ${perfil.username}` : ""} • ${formatarData(post.criadoEm)}`;
+
+    identidade.append(titulo, meta);
+
+    const acoes = document.createElement("div");
+    acoes.className = "admin-item-acoes";
+
+    const ver = adminBotao("Ver no feed");
+    ver.addEventListener("click", () => adminAbrirPost(post.id));
+
+    const excluir = adminBotao("Excluir", "admin-acao-perigo");
+    excluir.addEventListener("click", async () => {
+      if (!window.confirm(`Excluir a publicação "${post.titulo || "Publicação"}"?`)) {
+        return;
+      }
+
+      excluir.disabled = true;
+
+      try {
+        await deleteDoc(doc(db, "posts", post.id));
+        adminToolsMsg.textContent = "Publicação excluída.";
+        adminToolsMsg.className = "admin-msg sucesso";
+        await carregarAdminDados();
+      } catch (erro) {
+        console.error("Erro ao excluir publicação no painel:", erro);
+        adminToolsMsg.textContent =
+          `Não foi possível excluir (${erro.code || "erro"}).`;
+        adminToolsMsg.className = "admin-msg erro";
+        excluir.disabled = false;
+      }
+    });
+
+    acoes.append(ver, excluir);
+    topo.append(identidade, acoes);
+
+    const texto = document.createElement("p");
+    texto.className = "admin-item-texto";
+    texto.textContent = adminResumoTexto(post.texto, 220);
+
+    const chips = document.createElement("div");
+    chips.className = "admin-item-meta";
+    chips.append(
+      adminCriarChip(`${post.likes} curtidas`),
+      adminCriarChip(`${post.comentarios} comentários`),
+      adminCriarChip(
+        `${post.denuncias} denúncias`,
+        post.denuncias > 0
+      )
+    );
+
+    item.append(topo, texto, chips);
+    adminPublicacoesList.appendChild(item);
+  });
+}
+
+function renderizarAdminUsuarios() {
+  if (!adminUsuariosList) return;
+
+  const termo = (adminUsuariosBusca?.value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^@/, "");
+
+  const usuarios = adminDadosCache.usuarios
+    .filter(usuario => {
+      if (!termo) return true;
+      return `${usuario.nome} ${usuario.username}`
+        .toLowerCase()
+        .includes(termo);
+    })
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+  adminUsuariosList.replaceChildren();
+
+  if (!usuarios.length) {
+    const vazio = document.createElement("p");
+    vazio.textContent = "Nenhum usuário encontrado.";
+    adminUsuariosList.appendChild(vazio);
+    return;
+  }
+
+  usuarios.forEach(usuario => {
+    const item = document.createElement("article");
+    item.className = "admin-item";
+
+    const topo = document.createElement("div");
+    topo.className = "admin-item-topo";
+
+    const identidade = document.createElement("div");
+    identidade.className = "admin-item-identidade";
+
+    const nome = document.createElement("strong");
+    nome.textContent = usuario.nome;
+
+    const meta = document.createElement("small");
+    meta.textContent = usuario.username
+      ? `@${usuario.username}`
+      : "Sem nome de usuário";
+
+    identidade.append(nome, meta);
+
+    const acoes = document.createElement("div");
+    acoes.className = "admin-item-acoes";
+
+    const verPosts = adminBotao("Ver publicações");
+    verPosts.addEventListener("click", () => {
+      if (adminPublicacoesBusca) {
+        adminPublicacoesBusca.value = usuario.username
+          ? `@${usuario.username}`
+          : usuario.nome;
+      }
+      renderizarAdminPublicacoes();
+      adminAtivarTab("publicacoes");
+    });
+
+    const notificar = adminBotao("Notificar");
+    notificar.addEventListener("click", () => {
+      if (adminNotificacaoDestinatario) {
+        adminNotificacaoDestinatario.value = usuario.uid;
+      }
+      adminAtivarTab("notificacoes");
+      adminNotificacaoTitulo?.focus();
+    });
+
+    acoes.append(verPosts, notificar);
+    topo.append(identidade, acoes);
+
+    const chips = document.createElement("div");
+    chips.className = "admin-item-meta";
+    chips.append(
+      adminCriarChip(`${usuario.posts} publicações`),
+      adminCriarChip(`${usuario.comentarios} comentários/respostas`),
+      adminCriarChip(`${usuario.atividade} interações`)
+    );
+
+    item.append(topo, chips);
+    adminUsuariosList.appendChild(item);
+  });
+}
+
+function renderizarAdminDenuncias() {
+  if (!adminDenunciasList) return;
+
+  const denuncias = [...adminDadosCache.denuncias]
+    .sort((a, b) => b.criadoMs - a.criadoMs);
+
+  adminDenunciasList.replaceChildren();
+
+  if (!denuncias.length) {
+    const vazio = document.createElement("p");
+    vazio.textContent = "Nenhuma denúncia pendente.";
+    adminDenunciasList.appendChild(vazio);
+    return;
+  }
+
+  denuncias.forEach(denuncia => {
+    const item = document.createElement("article");
+    item.className = "admin-item";
+
+    const tipo = document.createElement("span");
+    tipo.className = "admin-denuncia-tipo";
+    tipo.textContent = denuncia.tipoLabel;
+
+    const topo = document.createElement("div");
+    topo.className = "admin-item-topo";
+
+    const identidade = document.createElement("div");
+    identidade.className = "admin-item-identidade";
+
+    const titulo = document.createElement("strong");
+    titulo.textContent = denuncia.autorConteudo;
+
+    const meta = document.createElement("small");
+    meta.textContent =
+      `Denunciado por ${denuncia.denuncianteNome}${denuncia.denuncianteUsername ? ` (@${denuncia.denuncianteUsername})` : ""} • ${formatarData(denuncia.criadoEm)}`;
+
+    identidade.append(titulo, meta);
+    topo.appendChild(identidade);
+
+    const texto = document.createElement("p");
+    texto.className = "admin-item-texto";
+    texto.textContent = adminResumoTexto(denuncia.textoConteudo, 260);
+
+    const acoes = document.createElement("div");
+    acoes.className = "admin-item-acoes";
+
+    const ver = adminBotao("Ver publicação");
+    ver.addEventListener("click", () => adminAbrirPost(denuncia.postId));
+
+    const ignorar = adminBotao("Ignorar denúncia");
+    ignorar.addEventListener("click", async () => {
+      ignorar.disabled = true;
+      try {
+        await deleteDoc(denuncia.reportRef);
+        adminToolsMsg.textContent = "Denúncia marcada como resolvida.";
+        adminToolsMsg.className = "admin-msg sucesso";
+        await carregarAdminDados();
+      } catch (erro) {
+        console.error("Erro ao resolver denúncia:", erro);
+        adminToolsMsg.textContent =
+          `Não foi possível resolver (${erro.code || "erro"}).`;
+        adminToolsMsg.className = "admin-msg erro";
+        ignorar.disabled = false;
+      }
+    });
+
+    const excluir = adminBotao("Excluir conteúdo", "admin-acao-perigo");
+    excluir.addEventListener("click", async () => {
+      if (!window.confirm("Excluir o conteúdo denunciado?")) return;
+
+      excluir.disabled = true;
+
+      try {
+        await deleteDoc(denuncia.reportRef);
+        await deleteDoc(denuncia.contentRef);
+
+        adminToolsMsg.textContent = "Conteúdo denunciado excluído.";
+        adminToolsMsg.className = "admin-msg sucesso";
+        await carregarAdminDados();
+      } catch (erro) {
+        console.error("Erro ao excluir conteúdo denunciado:", erro);
+        adminToolsMsg.textContent =
+          `Não foi possível excluir (${erro.code || "erro"}).`;
+        adminToolsMsg.className = "admin-msg erro";
+        excluir.disabled = false;
+      }
+    });
+
+    acoes.append(ver, ignorar, excluir);
+    item.append(tipo, topo, texto, acoes);
+    adminDenunciasList.appendChild(item);
+  });
+}
+
+function atualizarDestinatariosNotificacaoAdmin() {
+  if (!adminNotificacaoDestinatario) return;
+
+  const valorAnterior = adminNotificacaoDestinatario.value || "todos";
+  adminNotificacaoDestinatario.replaceChildren();
+
+  const todos = document.createElement("option");
+  todos.value = "todos";
+  todos.textContent = "Todos os usuários";
+  adminNotificacaoDestinatario.appendChild(todos);
+
+  [...adminDadosCache.usuarios]
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+    .forEach(usuario => {
+      const option = document.createElement("option");
+      option.value = usuario.uid;
+      option.textContent = usuario.username
+        ? `${usuario.nome} (@${usuario.username})`
+        : usuario.nome;
+      adminNotificacaoDestinatario.appendChild(option);
+    });
+
+  const existe = [...adminNotificacaoDestinatario.options]
+    .some(option => option.value === valorAnterior);
+
+  adminNotificacaoDestinatario.value = existe
+    ? valorAnterior
+    : "todos";
+}
+
+async function carregarAdminDados() {
+  if (!usuarioEhAdmin() || adminCarregandoDados) return;
+
+  adminCarregandoDados = true;
+
+  if (adminAtualizar) {
+    adminAtualizar.disabled = true;
+    adminAtualizar.textContent = "Atualizando...";
+  }
+
+  if (adminDashboardStatus) {
+    adminDashboardStatus.textContent = "Carregando dados...";
+  }
+
+  try {
+    const postsBase = [...postsSalvos];
+    const publicacoes = [];
+    const denuncias = [];
+    const contagemPorUsuario = new Map();
+
+    let totalComentarios = 0;
+    let totalCurtidas = 0;
+
+    const somarUsuario = (uid, campo, valor = 1) => {
+      if (!uid) return;
+
+      if (!contagemPorUsuario.has(uid)) {
+        contagemPorUsuario.set(uid, {
+          posts: 0,
+          comentarios: 0,
+          curtidasRecebidas: 0
+        });
+      }
+
+      const registro = contagemPorUsuario.get(uid);
+      registro[campo] = (registro[campo] || 0) + valor;
+    };
+
+    await Promise.all(
+      postsBase.map(async post => {
+        const [
+          reacoesSnapshot,
+          denunciasPostSnapshot,
+          comentariosSnapshot
+        ] = await Promise.all([
+          getDocs(collection(db, "posts", post.id, "reacoes")),
+          getDocs(collection(db, "posts", post.id, "denuncias")),
+          getDocs(collection(db, "posts", post.id, "comentarios"))
+        ]);
+
+        const likesPost = reacoesSnapshot.docs
+          .filter(item => item.data()?.tipo === "like")
+          .length;
+
+        totalCurtidas += likesPost;
+        somarUsuario(post.uid, "posts", 1);
+        somarUsuario(post.uid, "curtidasRecebidas", likesPost);
+
+        let comentariosDoPost = comentariosSnapshot.size;
+        let denunciasDoPost = denunciasPostSnapshot.size;
+
+        denunciasPostSnapshot.forEach(reportDoc => {
+          const report = reportDoc.data();
+          const denunciante = adminPerfilLabel(report.uid);
+
+          denuncias.push({
+            tipo: "post",
+            tipoLabel: "Publicação denunciada",
+            postId: post.id,
+            comentarioId: "",
+            respostaId: "",
+            reportId: reportDoc.id,
+            reportRef: reportDoc.ref,
+            contentRef: doc(db, "posts", post.id),
+            criadoEm: report.criadoEm,
+            criadoMs: report.criadoEm?.toMillis?.() || 0,
+            denuncianteNome: denunciante.nome,
+            denuncianteUsername: denunciante.username,
+            autorConteudo: adminPerfilLabel(post.uid).nome,
+            textoConteudo:
+              `${post.titulo || "Publicação"} — ${post.texto || ""}`
+          });
+        });
+
+        await Promise.all(
+          comentariosSnapshot.docs.map(async comentarioDoc => {
+            const comentario = comentarioDoc.data();
+            somarUsuario(comentario.uid, "comentarios", 1);
+
+            const [
+              curtidasComentarioSnapshot,
+              denunciasComentarioSnapshot,
+              respostasSnapshot
+            ] = await Promise.all([
+              getDocs(
+                collection(
+                  db,
+                  "posts",
+                  post.id,
+                  "comentarios",
+                  comentarioDoc.id,
+                  "curtidas"
+                )
+              ),
+              getDocs(
+                collection(
+                  db,
+                  "posts",
+                  post.id,
+                  "comentarios",
+                  comentarioDoc.id,
+                  "denuncias"
+                )
+              ),
+              getDocs(
+                collection(
+                  db,
+                  "posts",
+                  post.id,
+                  "comentarios",
+                  comentarioDoc.id,
+                  "respostas"
+                )
+              )
+            ]);
+
+            const likesComentario = curtidasComentarioSnapshot.size;
+            totalCurtidas += likesComentario;
+            somarUsuario(
+              comentario.uid,
+              "curtidasRecebidas",
+              likesComentario
+            );
+
+            denunciasDoPost += denunciasComentarioSnapshot.size;
+
+            denunciasComentarioSnapshot.forEach(reportDoc => {
+              const report = reportDoc.data();
+              const denunciante = adminPerfilLabel(report.uid);
+
+              denuncias.push({
+                tipo: "comentario",
+                tipoLabel: "Comentário denunciado",
+                postId: post.id,
+                comentarioId: comentarioDoc.id,
+                respostaId: "",
+                reportId: reportDoc.id,
+                reportRef: reportDoc.ref,
+                contentRef: doc(
+                  db,
+                  "posts",
+                  post.id,
+                  "comentarios",
+                  comentarioDoc.id
+                ),
+                criadoEm: report.criadoEm,
+                criadoMs: report.criadoEm?.toMillis?.() || 0,
+                denuncianteNome: denunciante.nome,
+                denuncianteUsername: denunciante.username,
+                autorConteudo: adminPerfilLabel(comentario.uid).nome,
+                textoConteudo: comentario.texto || "Comentário"
+              });
+            });
+
+            comentariosDoPost += respostasSnapshot.size;
+
+            await Promise.all(
+              respostasSnapshot.docs.map(async respostaDoc => {
+                const resposta = respostaDoc.data();
+                somarUsuario(resposta.uid, "comentarios", 1);
+
+                const [
+                  curtidasRespostaSnapshot,
+                  denunciasRespostaSnapshot
+                ] = await Promise.all([
+                  getDocs(
+                    collection(
+                      db,
+                      "posts",
+                      post.id,
+                      "comentarios",
+                      comentarioDoc.id,
+                      "respostas",
+                      respostaDoc.id,
+                      "curtidas"
+                    )
+                  ),
+                  getDocs(
+                    collection(
+                      db,
+                      "posts",
+                      post.id,
+                      "comentarios",
+                      comentarioDoc.id,
+                      "respostas",
+                      respostaDoc.id,
+                      "denuncias"
+                    )
+                  )
+                ]);
+
+                const likesResposta = curtidasRespostaSnapshot.size;
+                totalCurtidas += likesResposta;
+                somarUsuario(
+                  resposta.uid,
+                  "curtidasRecebidas",
+                  likesResposta
+                );
+
+                denunciasDoPost += denunciasRespostaSnapshot.size;
+
+                denunciasRespostaSnapshot.forEach(reportDoc => {
+                  const report = reportDoc.data();
+                  const denunciante = adminPerfilLabel(report.uid);
+
+                  denuncias.push({
+                    tipo: "resposta",
+                    tipoLabel: "Resposta denunciada",
+                    postId: post.id,
+                    comentarioId: comentarioDoc.id,
+                    respostaId: respostaDoc.id,
+                    reportId: reportDoc.id,
+                    reportRef: reportDoc.ref,
+                    contentRef: doc(
+                      db,
+                      "posts",
+                      post.id,
+                      "comentarios",
+                      comentarioDoc.id,
+                      "respostas",
+                      respostaDoc.id
+                    ),
+                    criadoEm: report.criadoEm,
+                    criadoMs: report.criadoEm?.toMillis?.() || 0,
+                    denuncianteNome: denunciante.nome,
+                    denuncianteUsername: denunciante.username,
+                    autorConteudo: adminPerfilLabel(resposta.uid).nome,
+                    textoConteudo: resposta.texto || "Resposta"
+                  });
+                });
+              })
+            );
+          })
+        );
+
+        totalComentarios += comentariosDoPost;
+
+        publicacoes.push({
+          ...post,
+          likes: likesPost,
+          comentarios: comentariosDoPost,
+          denuncias: denunciasDoPost
+        });
+      })
+    );
+
+    const usuarios = [...perfisUsuarios.values()].map(perfil => {
+      const contagem = contagemPorUsuario.get(perfil.uid) || {
+        posts: 0,
+        comentarios: 0,
+        curtidasRecebidas: 0
+      };
+
+      return {
+        uid: perfil.uid,
+        nome: perfil.nome || "Usuário",
+        username: perfil.username || "",
+        foto: perfil.foto || "",
+        posts: contagem.posts,
+        comentarios: contagem.comentarios,
+        curtidasRecebidas: contagem.curtidasRecebidas,
+        atividade:
+          contagem.posts +
+          contagem.comentarios +
+          contagem.curtidasRecebidas
+      };
+    });
+
+    adminDadosCache = {
+      publicacoes: publicacoes.sort((a, b) => {
+        const ta = a.criadoEm?.toMillis?.() || 0;
+        const tb = b.criadoEm?.toMillis?.() || 0;
+        return tb - ta;
+      }),
+      denuncias,
+      usuarios,
+      resumo: {
+        usuarios: usuarios.length,
+        publicacoes: publicacoes.length,
+        comentarios: totalComentarios,
+        curtidas: totalCurtidas,
+        denuncias: denuncias.length
+      }
+    };
+
+    renderizarAdminDashboard();
+    renderizarAdminPublicacoes();
+    renderizarAdminUsuarios();
+    renderizarAdminDenuncias();
+    atualizarDestinatariosNotificacaoAdmin();
+  } catch (erro) {
+    console.error("Erro ao carregar dados administrativos:", erro);
+
+    if (adminDashboardStatus) {
+      adminDashboardStatus.textContent = "Falha ao atualizar";
+    }
+
+    if (adminToolsMsg) {
+      adminToolsMsg.textContent =
+        `Não foi possível carregar todos os dados (${erro.code || "erro"}).`;
+      adminToolsMsg.className = "admin-msg erro";
+    }
+  } finally {
+    adminCarregandoDados = false;
+
+    if (adminAtualizar) {
+      adminAtualizar.disabled = false;
+      adminAtualizar.textContent = "Atualizar dados";
+    }
+  }
+}
+
+async function enviarNotificacaoAdmin({
+  destinatarioUid,
+  titulo,
+  texto,
+  eventoId
+}) {
+  const admin = obterAdminAtual();
+
+  if (!admin || !destinatarioUid || destinatarioUid === admin.uid) {
+    return false;
+  }
+
+  await setDoc(
+    doc(
+      db,
+      "notificacoes",
+      destinatarioUid,
+      "itens",
+      eventoId
+    ),
+    {
+      destinatarioUid,
+      atorUid: admin.uid,
+      tipo: "aviso_admin",
+      postId: "",
+      comentarioId: "",
+      respostaId: "",
+      titulo,
+      texto,
+      lida: false,
+      criadoEm: serverTimestamp()
+    }
+  );
+
+  return true;
+}
+
+adminMenuItens.forEach(botao => {
+  botao.addEventListener("click", () => {
+    adminAtivarTab(botao.dataset.adminTab);
+  });
+});
+
+adminAtualizar?.addEventListener("click", () => {
+  carregarAdminDados();
+});
+
+adminPublicacoesBusca?.addEventListener("input", () => {
+  renderizarAdminPublicacoes();
+});
+
+adminUsuariosBusca?.addEventListener("input", () => {
+  renderizarAdminUsuarios();
+});
+
+adminNotificacaoTexto?.addEventListener("input", () => {
+  if (adminNotificacaoContador) {
+    adminNotificacaoContador.textContent =
+      `${adminNotificacaoTexto.value.length} / 240`;
+  }
+});
+
+adminNotificacaoForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const admin = obterAdminAtual();
+
+  if (!admin) {
+    adminNotificacaoMsg.textContent =
+      "Sua sessão administrativa expirou.";
+    adminNotificacaoMsg.className = "admin-msg erro";
+    return;
+  }
+
+  const alvo = adminNotificacaoDestinatario.value;
+  const titulo = adminNotificacaoTitulo.value.trim();
+  const texto = adminNotificacaoTexto.value.trim();
+
+  if (!titulo || !texto) return;
+
+  let destinatarios = [];
+
+  if (alvo === "todos") {
+    destinatarios = adminDadosCache.usuarios
+      .map(usuario => usuario.uid)
+      .filter(uid => uid && uid !== admin.uid);
+  } else {
+    destinatarios = [alvo].filter(
+      uid => uid && uid !== admin.uid
+    );
+  }
+
+  if (!destinatarios.length) {
+    adminNotificacaoMsg.textContent =
+      "Nenhum destinatário disponível.";
+    adminNotificacaoMsg.className = "admin-msg erro";
+    return;
+  }
+
+  const eventoId = idNotificacao(
+    "aviso-admin",
+    Date.now(),
+    admin.uid
+  );
+
+  try {
+    adminNotificacaoEnviar.disabled = true;
+    adminNotificacaoEnviar.textContent = "Enviando...";
+    adminNotificacaoMsg.textContent = "";
+
+    let enviados = 0;
+
+    for (const uid of destinatarios) {
+      const enviado = await enviarNotificacaoAdmin({
+        destinatarioUid: uid,
+        titulo,
+        texto,
+        eventoId
+      });
+
+      if (enviado) enviados += 1;
+    }
+
+    event.target.reset();
+    adminNotificacaoDestinatario.value = "todos";
+    adminNotificacaoContador.textContent = "0 / 240";
+
+    adminNotificacaoMsg.textContent =
+      enviados === 1
+        ? "Notificação enviada para 1 usuário."
+        : `Notificação enviada para ${enviados} usuários.`;
+
+    adminNotificacaoMsg.className = "admin-msg sucesso";
+  } catch (erro) {
+    console.error("Erro ao enviar notificação administrativa:", erro);
+    adminNotificacaoMsg.textContent =
+      `Não foi possível enviar (${erro.code || "erro"}).`;
+    adminNotificacaoMsg.className = "admin-msg erro";
+  } finally {
+    adminNotificacaoEnviar.disabled = false;
+    adminNotificacaoEnviar.textContent = "Enviar notificação";
+  }
+});
+
 
 function abrirAdminModal() {
   if (!adminModal) return;
@@ -2964,7 +3977,7 @@ function abrirAdminModal() {
 
   window.setTimeout(() => {
     if (usuarioEhAdmin()) {
-      document.getElementById("noticia-titulo")?.focus();
+      document.querySelector('[data-admin-tab="dashboard"]')?.focus();
     } else {
       document.getElementById("admin-id")?.focus();
     }
@@ -3046,7 +4059,12 @@ function atualizarPainelAdmin(usuario) {
     textoPainel.textContent = `Painel de ${admin.nome}`;
     adminNome.append(textoPainel, criarSeloVerificado());
     adminNome.classList.add("admin-nome-verificado");
+    adminAtivarTab(adminTabAtual);
     renderizarAdminNoticias();
+
+    if (adminModalAberto) {
+      carregarAdminDados();
+    }
   } else {
     adminNome.textContent = "Painel administrativo";
     adminNome.classList.remove("admin-nome-verificado");

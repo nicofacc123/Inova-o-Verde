@@ -707,45 +707,186 @@
             <span class="admin-kicker">ADMINISTRADOR</span>
             <h2 id="admin-nome">Painel administrativo</h2>
           </div>
-          <button type="button" id="admin-sair" class="btn-sair">Sair do admin</button>
+
+          <div class="admin-topo-acoes">
+            <button type="button" id="admin-atualizar" class="admin-btn-secundario">Atualizar dados</button>
+            <button type="button" id="admin-sair" class="btn-sair">Sair do admin</button>
+          </div>
         </div>
 
-        <div class="admin-grid">
-          <section class="admin-bloco">
-            <h3>Publicar notícia</h3>
+        <div class="admin-layout">
+          <nav class="admin-menu" aria-label="Seções administrativas">
+            <button type="button" class="admin-menu-item ativo" data-admin-tab="dashboard">Visão geral</button>
+            <button type="button" class="admin-menu-item" data-admin-tab="publicacoes">Publicações</button>
+            <button type="button" id="admin-tab-denuncias" class="admin-menu-item" data-admin-tab="denuncias">Denúncias</button>
+            <button type="button" class="admin-menu-item" data-admin-tab="usuarios">Usuários</button>
+            <button type="button" class="admin-menu-item" data-admin-tab="noticias">Notícias</button>
+            <button type="button" class="admin-menu-item" data-admin-tab="notificacoes">Notificações</button>
+          </nav>
 
-            <form id="admin-noticia-form">
-              <label for="noticia-titulo">Título</label>
-              <input id="noticia-titulo" type="text" maxlength="120" placeholder="Título da notícia" required>
-
-              <label for="noticia-texto">Texto</label>
-              <textarea id="noticia-texto" maxlength="1200" placeholder="Escreva a notícia..." required></textarea>
-
-              <label for="noticia-link">Link da fonte (opcional)</label>
-              <input id="noticia-link" type="url" maxlength="500" placeholder="https://...">
-
-              <label for="noticia-imagem">Imagem da notícia (opcional)</label>
-              <input id="noticia-imagem" type="file" accept="image/jpeg,image/png,image/webp">
-              <div id="noticia-imagem-preview" class="imagem-preview" hidden>
-                <img id="noticia-imagem-preview-img" alt="Prévia da imagem da notícia">
-                <button type="button" id="noticia-imagem-remover" class="btn-remover-imagem">Remover imagem</button>
+          <div class="admin-conteudo">
+            <section id="admin-view-dashboard" class="admin-view">
+              <div class="admin-view-topo">
+                <div>
+                  <span class="admin-view-kicker">RESUMO</span>
+                  <h3>Visão geral da comunidade</h3>
+                </div>
+                <span id="admin-dashboard-status" class="admin-status">Atualizando...</span>
               </div>
 
-              <button type="submit" id="btn-publicar-noticia" class="btn-comunidade">Publicar notícia</button>
-            </form>
-          </section>
+              <div class="admin-metricas">
+                <article class="admin-metrica">
+                  <span>Usuários</span>
+                  <strong id="admin-metrica-usuarios">0</strong>
+                </article>
+                <article class="admin-metrica">
+                  <span>Publicações</span>
+                  <strong id="admin-metrica-publicacoes">0</strong>
+                </article>
+                <article class="admin-metrica">
+                  <span>Comentários</span>
+                  <strong id="admin-metrica-comentarios">0</strong>
+                </article>
+                <article class="admin-metrica">
+                  <span>Curtidas</span>
+                  <strong id="admin-metrica-curtidas">0</strong>
+                </article>
+                <article class="admin-metrica admin-metrica-alerta">
+                  <span>Denúncias</span>
+                  <strong id="admin-metrica-denuncias">0</strong>
+                </article>
+              </div>
 
-          <section class="admin-bloco">
-            <h3>Gerenciar notícias</h3>
-            <div id="admin-noticias-list" class="admin-noticias-list">
-              <p>Nenhuma notícia carregada.</p>
-            </div>
-          </section>
+              <div class="admin-dashboard-grid">
+                <section class="admin-bloco">
+                  <h3>Mais ativos</h3>
+                  <div id="admin-usuarios-ativos" class="admin-ranking">
+                    <p>Carregando...</p>
+                  </div>
+                </section>
+
+                <section class="admin-bloco">
+                  <h3>Últimas denúncias</h3>
+                  <div id="admin-denuncias-resumo" class="admin-lista-compacta">
+                    <p>Nenhuma denúncia.</p>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+            <section id="admin-view-publicacoes" class="admin-view" hidden>
+              <div class="admin-view-topo">
+                <div>
+                  <span class="admin-view-kicker">MODERAÇÃO</span>
+                  <h3>Publicações</h3>
+                </div>
+              </div>
+
+              <div class="admin-filtros">
+                <input id="admin-publicacoes-busca" type="search" placeholder="Pesquisar título, nome ou @usuário">
+              </div>
+
+              <div id="admin-publicacoes-list" class="admin-lista">
+                <p>Carregando publicações...</p>
+              </div>
+            </section>
+
+            <section id="admin-view-denuncias" class="admin-view" hidden>
+              <div class="admin-view-topo">
+                <div>
+                  <span class="admin-view-kicker">MODERAÇÃO</span>
+                  <h3>Central de denúncias</h3>
+                </div>
+              </div>
+
+              <div id="admin-denuncias-list" class="admin-lista">
+                <p>Carregando denúncias...</p>
+              </div>
+            </section>
+
+            <section id="admin-view-usuarios" class="admin-view" hidden>
+              <div class="admin-view-topo">
+                <div>
+                  <span class="admin-view-kicker">COMUNIDADE</span>
+                  <h3>Usuários</h3>
+                </div>
+              </div>
+
+              <div class="admin-filtros">
+                <input id="admin-usuarios-busca" type="search" placeholder="Pesquisar nome ou @usuário">
+              </div>
+
+              <div id="admin-usuarios-list" class="admin-lista">
+                <p>Carregando usuários...</p>
+              </div>
+            </section>
+
+            <section id="admin-view-noticias" class="admin-view" hidden>
+              <div class="admin-grid">
+                <section class="admin-bloco">
+                  <h3>Publicar notícia</h3>
+
+                  <form id="admin-noticia-form">
+                    <label for="noticia-titulo">Título</label>
+                    <input id="noticia-titulo" type="text" maxlength="120" placeholder="Título da notícia" required>
+
+                    <label for="noticia-texto">Texto</label>
+                    <textarea id="noticia-texto" maxlength="1200" placeholder="Escreva a notícia..." required></textarea>
+
+                    <label for="noticia-link">Link da fonte (opcional)</label>
+                    <input id="noticia-link" type="url" maxlength="500" placeholder="https://...">
+
+                    <label for="noticia-imagem">Imagem da notícia (opcional)</label>
+                    <input id="noticia-imagem" type="file" accept="image/jpeg,image/png,image/webp">
+                    <div id="noticia-imagem-preview" class="imagem-preview" hidden>
+                      <img id="noticia-imagem-preview-img" alt="Prévia da imagem da notícia">
+                      <button type="button" id="noticia-imagem-remover" class="btn-remover-imagem">Remover imagem</button>
+                    </div>
+
+                    <button type="submit" id="btn-publicar-noticia" class="btn-comunidade">Publicar notícia</button>
+                  </form>
+                </section>
+
+                <section class="admin-bloco">
+                  <h3>Gerenciar notícias</h3>
+                  <div id="admin-noticias-list" class="admin-noticias-list">
+                    <p>Nenhuma notícia carregada.</p>
+                  </div>
+                </section>
+              </div>
+            </section>
+
+            <section id="admin-view-notificacoes" class="admin-view" hidden>
+              <div class="admin-view-topo">
+                <div>
+                  <span class="admin-view-kicker">COMUNICAÇÃO</span>
+                  <h3>Enviar notificação</h3>
+                </div>
+              </div>
+
+              <section class="admin-bloco admin-notificacao-bloco">
+                <form id="admin-notificacao-form">
+                  <label for="admin-notificacao-destinatario">Destinatário</label>
+                  <select id="admin-notificacao-destinatario" required>
+                    <option value="todos">Todos os usuários</option>
+                  </select>
+
+                  <label for="admin-notificacao-titulo">Título</label>
+                  <input id="admin-notificacao-titulo" type="text" maxlength="60" placeholder="Ex.: Aviso da equipe" required>
+
+                  <label for="admin-notificacao-texto">Mensagem</label>
+                  <textarea id="admin-notificacao-texto" maxlength="240" placeholder="Escreva a mensagem que aparecerá no sininho..." required></textarea>
+                  <div id="admin-notificacao-contador" class="admin-contador">0 / 240</div>
+
+                  <button type="submit" id="admin-notificacao-enviar" class="btn-comunidade">Enviar notificação</button>
+                </form>
+
+                <div id="admin-notificacao-msg" class="admin-msg" aria-live="polite"></div>
+              </section>
+            </section>
+          </div>
         </div>
 
-        <p class="admin-ajuda">
-          Para remover um comentário, abra a aba Comunidade, entre nos comentários de uma publicação e use o botão <strong>Remover</strong>.
-        </p>
         <div id="admin-tools-msg" class="admin-msg" aria-live="polite"></div>
       </div>
     </section>
