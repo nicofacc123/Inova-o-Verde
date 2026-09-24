@@ -160,6 +160,11 @@ let unsubscribeReacoes = [];
 let unsubscribeContagemComentarios = [];
 const estatisticasPosts = new Map();
 const comentariosAbertos = new Map();
+const comentariosPrincipaisPorPost = new Map();
+const respostasPorComentario = new Map();
+const versaoContagemComentarios = new Map();
+let renderPostsRaf = 0;
+let reordenarCardsRaf = 0;
 const perfisUsuarios = new Map();
 let perfilAtual = null;
 let fotoPerfilPendente = undefined;
@@ -168,6 +173,44 @@ let unsubscribeNotificacoes = null;
 const unsubscribeCurtidasItens = new Map();
 
 const adminUidsPublicos = new Set();
+
+
+function executarQuandoLivre(callback) {
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(() => callback(), { timeout: 700 });
+    return;
+  }
+
+  window.setTimeout(callback, 40);
+}
+
+function proximoFrame() {
+  return new Promise(resolve => {
+    window.requestAnimationFrame(() => resolve());
+  });
+}
+
+function agendarRenderPosts() {
+  if (renderPostsRaf) return;
+
+  renderPostsRaf = window.requestAnimationFrame(() => {
+    renderPostsRaf = 0;
+    renderizarPosts();
+  });
+}
+
+function agendarReordenacao() {
+  if (reordenarCardsRaf) return;
+
+  reordenarCardsRaf = window.requestAnimationFrame(() => {
+    reordenarCardsRaf = 0;
+    reordenarCards();
+  });
+}
+
+function chaveResposta(postId, comentarioId) {
+  return `${postId}:${comentarioId}`;
+}
 
 function uidEhAdminPublico(uid) {
   return Boolean(uid && adminUidsPublicos.has(String(uid)));
@@ -246,6 +289,7 @@ function aplicarAvatar(container, uid, fallbackNome = "Usuário") {
     img.src = foto;
     img.alt = "";
     img.loading = "lazy";
+    img.decoding = "async";
     container.appendChild(img);
     container.classList.add("tem-foto");
   } else {
@@ -1061,7 +1105,7 @@ function atualizarInterfaceUsuario(usuario) {
   }
 
   atualizarInterfacePerfil(usuario);
-  renderizarPosts();
+  agendarRenderPosts();
 }
 
 // Perfis públicos: nome de usuário e foto atual
@@ -1074,7 +1118,7 @@ onSnapshot(collection(db, "usuarios"), snapshot => {
   }
   atualizarInterfacePerfil(auth.currentUser);
   renderizarNotificacoes();
-  renderizarPosts();
+  agendarRenderPosts();
   comentariosAbertos.forEach((elemento, postId) => {
     if (elemento?.isConnected) carregarComentarios(postId, elemento);
   });
@@ -1085,7 +1129,7 @@ onSnapshot(collection(db, "adminsPublicos"), snapshot => {
   adminUidsPublicos.clear();
   snapshot.forEach(item => adminUidsPublicos.add(item.id));
 
-  renderizarPosts();
+  agendarRenderPosts();
 
   comentariosAbertos.forEach((elemento, postId) => {
     if (elemento?.isConnected) carregarComentarios(postId, elemento);
@@ -1449,7 +1493,7 @@ const consultaPosts = query(collection(db, "posts"), orderBy("criadoEm", "desc")
 
 onSnapshot(consultaPosts, snapshot => {
   postsSalvos = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-  renderizarPosts();
+  agendarRenderPosts();
 }, erro => {
   console.error("Erro ao carregar feed:", erro);
   feed.textContent = `Não foi possível carregar as publicações (${erro.code || "erro"}).`;
@@ -1458,8 +1502,13 @@ onSnapshot(consultaPosts, snapshot => {
 function limparListenersFeed() {
   unsubscribeReacoes.forEach(unsubscribe => unsubscribe());
   unsubscribeReacoes = [];
+
   unsubscribeContagemComentarios.forEach(unsubscribe => unsubscribe());
   unsubscribeContagemComentarios = [];
+
+  comentariosPrincipaisPorPost.clear();
+  respostasPorComentario.clear();
+  versaoContagemComentarios.clear();
   comentariosAbertos.clear();
 }
 
@@ -1755,6 +1804,7 @@ function criarCardPost(post) {
     imagemPost.src = post.imagem;
     imagemPost.alt = `Imagem da publicação: ${post.titulo || "publicação"}`;
     imagemPost.loading = "lazy";
+    imagemPost.decoding = "async";
 
     miniatura.appendChild(imagemPost);
     miniatura.addEventListener("click", () => abrirImagemAmpliada(
@@ -1955,106 +2005,149 @@ function observarReacoes(postId, card, votacao) {
     votacao.cima.setAttribute("aria-pressed", String(minhaReacao === "like"));
     votacao.baixo.setAttribute("aria-pressed", String(minhaReacao === "dislike"));
 
-    reordenarCards();
+    agendarReordenacao();
   }, erro => console.error("Erro ao carregar reações:", erro));
 
   unsubscribeReacoes.push(unsubscribe);
 }
 
-function observarContagemComentarios(postId, card, contador) {
-  const comentariosRef = collection(db, "posts", postId, "comentarios");
+function aplicarContagemComentarios(postId, card, contador) {
+  const principais = comentariosPrincipaisPorPost.get(postId) || 0;
+  let respostas = 0;
+  const prefixo = `${postId}:`;
 
-  let totalComentariosPrincipais = 0;
-  const totalRespostasPorComentario = new Map();
-  const listenersRespostas = new Map();
+  respostasPorComentario.forEach((quantidade, chave) => {
+    if (chave.startsWith(prefixo)) respostas += quantidade;
+  });
 
-  function atualizarTotal() {
-    const totalRespostas = [...totalRespostasPorComentario.values()]
-      .reduce((soma, quantidade) => soma + quantidade, 0);
+  const total = principais + respostas;
+  const stats = obterEstatisticas(postId);
+  stats.comentarios = total;
 
-    const total = totalComentariosPrincipais + totalRespostas;
+  contador.textContent = String(total);
+  contador.title = `${total} comentário(s), incluindo respostas`;
+  card.dataset.comentarios = String(total);
 
-    const stats = obterEstatisticas(postId);
-    stats.comentarios = total;
+  agendarReordenacao();
+}
 
-    contador.textContent = String(total);
-    contador.title = `${total} comentário(s), incluindo respostas`;
-    card.dataset.comentarios = String(total);
+async function recontarRespostasPost(postId, comentariosDocs, versao, card, contador) {
+  for (let indice = 0; indice < comentariosDocs.length; indice++) {
+    if (versaoContagemComentarios.get(postId) !== versao) return;
 
-    reordenarCards();
-  }
+    const comentarioId = comentariosDocs[indice].id;
+    const chave = chaveResposta(postId, comentarioId);
 
-  function removerListenerResposta(comentarioId) {
-    const unsubscribe = listenersRespostas.get(comentarioId);
-    if (unsubscribe) unsubscribe();
-
-    listenersRespostas.delete(comentarioId);
-    totalRespostasPorComentario.delete(comentarioId);
-  }
-
-  const unsubscribeComentarios = onSnapshot(
-    comentariosRef,
-    snapshot => {
-      totalComentariosPrincipais = snapshot.size;
-
-      const idsAtuais = new Set(snapshot.docs.map(item => item.id));
-
-      // Remove listeners de comentários que foram excluídos.
-      [...listenersRespostas.keys()].forEach(comentarioId => {
-        if (!idsAtuais.has(comentarioId)) {
-          removerListenerResposta(comentarioId);
-        }
-      });
-
-      // Cada comentário principal escuta sua coleção de respostas.
-      snapshot.docs.forEach(item => {
-        const comentarioId = item.id;
-
-        if (listenersRespostas.has(comentarioId)) return;
-
-        totalRespostasPorComentario.set(comentarioId, 0);
-
-        const respostasRef = collection(
+    try {
+      const snapshot = await getDocs(
+        collection(
           db,
           "posts",
           postId,
           "comentarios",
           comentarioId,
           "respostas"
-        );
+        )
+      );
 
-        const unsubscribeResposta = onSnapshot(
-          respostasRef,
-          respostaSnapshot => {
-            totalRespostasPorComentario.set(
-              comentarioId,
-              respostaSnapshot.size
-            );
-            atualizarTotal();
-          },
-          erro => {
-            console.error("Erro ao contar respostas:", erro);
-            totalRespostasPorComentario.set(comentarioId, 0);
-            atualizarTotal();
-          }
-        );
+      respostasPorComentario.set(chave, snapshot.size);
+    } catch (erro) {
+      console.error("Erro ao contar respostas:", erro);
+      respostasPorComentario.set(chave, 0);
+    }
 
-        listenersRespostas.set(comentarioId, unsubscribeResposta);
+    // Entrega o controle ao navegador a cada poucas consultas.
+    if (indice % 3 === 2) {
+      await proximoFrame();
+    }
+  }
+
+  if (versaoContagemComentarios.get(postId) === versao) {
+    aplicarContagemComentarios(postId, card, contador);
+  }
+}
+
+function atualizarContagemComentariosPost(postId) {
+  const card = document.getElementById(`post-${postId}`);
+  const contador = card?.querySelector(".comentarios-contador");
+  if (!card || !contador) return;
+
+  const versao = (versaoContagemComentarios.get(postId) || 0) + 1;
+  versaoContagemComentarios.set(postId, versao);
+
+  executarQuandoLivre(async () => {
+    try {
+      const comentariosSnapshot = await getDocs(
+        collection(db, "posts", postId, "comentarios")
+      );
+
+      if (versaoContagemComentarios.get(postId) !== versao) return;
+
+      comentariosPrincipaisPorPost.set(postId, comentariosSnapshot.size);
+
+      const idsAtuais = new Set(
+        comentariosSnapshot.docs.map(item => chaveResposta(postId, item.id))
+      );
+
+      [...respostasPorComentario.keys()].forEach(chave => {
+        if (chave.startsWith(`${postId}:`) && !idsAtuais.has(chave)) {
+          respostasPorComentario.delete(chave);
+        }
       });
 
-      atualizarTotal();
+      aplicarContagemComentarios(postId, card, contador);
+      await recontarRespostasPost(
+        postId,
+        comentariosSnapshot.docs,
+        versao,
+        card,
+        contador
+      );
+    } catch (erro) {
+      console.error("Erro ao atualizar contagem de comentários:", erro);
+    }
+  });
+}
+
+function observarContagemComentarios(postId, card, contador) {
+  const comentariosRef = collection(db, "posts", postId, "comentarios");
+
+  const unsubscribe = onSnapshot(
+    comentariosRef,
+    snapshot => {
+      const versao = (versaoContagemComentarios.get(postId) || 0) + 1;
+      versaoContagemComentarios.set(postId, versao);
+      comentariosPrincipaisPorPost.set(postId, snapshot.size);
+
+      const idsAtuais = new Set(
+        snapshot.docs.map(item => chaveResposta(postId, item.id))
+      );
+
+      [...respostasPorComentario.keys()].forEach(chave => {
+        if (chave.startsWith(`${postId}:`) && !idsAtuais.has(chave)) {
+          respostasPorComentario.delete(chave);
+        }
+      });
+
+      // Mostra imediatamente os comentários principais.
+      aplicarContagemComentarios(postId, card, contador);
+
+      // As respostas são contadas no tempo ocioso, sem criar um listener
+      // permanente para cada comentário da página.
+      executarQuandoLivre(() => {
+        recontarRespostasPost(
+          postId,
+          snapshot.docs,
+          versao,
+          card,
+          contador
+        );
+      });
     },
     erro => console.error("Erro ao contar comentários:", erro)
   );
 
-  const limparTudo = () => {
-    unsubscribeComentarios();
-    listenersRespostas.forEach(unsubscribe => unsubscribe());
-    listenersRespostas.clear();
-    totalRespostasPorComentario.clear();
-  };
-
-  unsubscribeContagemComentarios.push(limparTudo);
+  unsubscribeContagemComentarios.push(unsubscribe);
 }
 
 async function registrarReacao(postId, tipo, card) {
@@ -2195,6 +2288,7 @@ function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarr
           )
         );
         await recarregar();
+        atualizarContagemComentariosPost(postId);
         mostrarMensagem("Resposta excluída.");
       } catch (erro) {
         console.error("Erro ao excluir resposta:", erro);
@@ -2286,6 +2380,11 @@ async function carregarRespostasDoComentario(
         comentarioId,
         "respostas"
       )
+    );
+
+    respostasPorComentario.set(
+      chaveResposta(postId, comentarioId),
+      resultado.size
     );
 
     const respostas = resultado.docs.map(item => ({
@@ -2865,6 +2964,7 @@ async function carregarComentarios(postId, elemento) {
             abrirFormularioResposta
           );
 
+          atualizarContagemComentariosPost(postId);
           mostrarMensagem("Resposta enviada.");
         } catch (erro) {
           console.error("Erro ao responder comentário:", erro);
@@ -3014,6 +3114,7 @@ let adminResetCliquesTimer = null;
 let adminModalAberto = false;
 let adminTabAtual = "dashboard";
 let adminCarregandoDados = false;
+let adminDenunciasCarregadas = false;
 let adminDadosCache = {
   publicacoes: [],
   denuncias: [],
@@ -3023,7 +3124,7 @@ let adminDadosCache = {
     publicacoes: 0,
     comentarios: 0,
     curtidas: 0,
-    denuncias: 0
+    denuncias: null
   }
 };
 
@@ -3051,9 +3152,7 @@ function adminAtivarTab(tab) {
     view.hidden = view.id !== `admin-view-${adminTabAtual}`;
   });
 
-  if (adminTabAtual === "noticias") {
-    renderizarAdminNoticias();
-  }
+  carregarAdminAba(adminTabAtual);
 }
 
 function adminCriarChip(texto, alerta = false) {
@@ -3120,7 +3219,8 @@ function renderizarAdminDashboard() {
     adminMetricaCurtidas.textContent = String(resumo.curtidas || 0);
   }
   if (adminMetricaDenuncias) {
-    adminMetricaDenuncias.textContent = String(resumo.denuncias || 0);
+    adminMetricaDenuncias.textContent =
+      resumo.denuncias === null ? "…" : String(resumo.denuncias);
   }
 
   if (adminTabDenuncias) {
@@ -3134,14 +3234,14 @@ function renderizarAdminDashboard() {
   }
 
   if (adminDashboardStatus) {
-    adminDashboardStatus.textContent = "Dados atualizados";
+    adminDashboardStatus.textContent = "Dados do feed";
   }
 
   if (adminUsuariosAtivos) {
     adminUsuariosAtivos.replaceChildren();
 
     const ativos = [...adminDadosCache.usuarios]
-      .sort((a, b) => b.atividade - a.atividade)
+      .sort((a, b) => b.posts - a.posts)
       .slice(0, 5);
 
     if (!ativos.length) {
@@ -3169,7 +3269,10 @@ function renderizarAdminDashboard() {
 
       const numero = document.createElement("span");
       numero.className = "admin-ranking-numero";
-      numero.textContent = `${usuario.atividade} interações`;
+      numero.textContent =
+        usuario.posts === 1
+          ? "1 publicação"
+          : `${usuario.posts} publicações`;
 
       linha.append(identidade, numero);
       adminUsuariosAtivos.appendChild(linha);
@@ -3178,6 +3281,13 @@ function renderizarAdminDashboard() {
 
   if (adminDenunciasResumo) {
     adminDenunciasResumo.replaceChildren();
+
+    if (!adminDenunciasCarregadas) {
+      const aviso = document.createElement("p");
+      aviso.textContent = "Abra a aba Denúncias para carregar a moderação.";
+      adminDenunciasResumo.appendChild(aviso);
+      return;
+    }
 
     const ultimas = [...adminDadosCache.denuncias]
       .sort((a, b) => b.criadoMs - a.criadoMs)
@@ -3283,7 +3393,10 @@ function renderizarAdminPublicacoes() {
         await deleteDoc(doc(db, "posts", post.id));
         adminToolsMsg.textContent = "Publicação excluída.";
         adminToolsMsg.className = "admin-msg sucesso";
-        await carregarAdminDados();
+        adminDadosCache.publicacoes = adminDadosCache.publicacoes.filter(
+          item => item.id !== post.id
+        );
+        renderizarAdminPublicacoes();
       } catch (erro) {
         console.error("Erro ao excluir publicação no painel:", erro);
         adminToolsMsg.textContent =
@@ -3391,14 +3504,32 @@ function renderizarAdminUsuarios() {
     const chips = document.createElement("div");
     chips.className = "admin-item-meta";
     chips.append(
-      adminCriarChip(`${usuario.posts} publicações`),
-      adminCriarChip(`${usuario.comentarios} comentários/respostas`),
-      adminCriarChip(`${usuario.atividade} interações`)
+      adminCriarChip(
+        usuario.posts === 1
+          ? "1 publicação"
+          : `${usuario.posts} publicações`
+      ),
+      adminCriarChip("Perfil cadastrado")
     );
 
     item.append(topo, chips);
     adminUsuariosList.appendChild(item);
   });
+}
+
+function removerDenunciaAdminDoCache(denuncia) {
+  adminDadosCache.denuncias = adminDadosCache.denuncias.filter(
+    item => item.reportRef?.path !== denuncia.reportRef?.path
+  );
+
+  adminDadosCache.resumo.denuncias = adminDadosCache.denuncias.length;
+  prepararAdminDadosLeves();
+  renderizarAdminDenuncias();
+  renderizarAdminDashboard();
+
+  if (adminTabAtual === "publicacoes") {
+    renderizarAdminPublicacoes();
+  }
 }
 
 function renderizarAdminDenuncias() {
@@ -3457,7 +3588,7 @@ function renderizarAdminDenuncias() {
         await deleteDoc(denuncia.reportRef);
         adminToolsMsg.textContent = "Denúncia marcada como resolvida.";
         adminToolsMsg.className = "admin-msg sucesso";
-        await carregarAdminDados();
+        removerDenunciaAdminDoCache(denuncia);
       } catch (erro) {
         console.error("Erro ao resolver denúncia:", erro);
         adminToolsMsg.textContent =
@@ -3479,7 +3610,7 @@ function renderizarAdminDenuncias() {
 
         adminToolsMsg.textContent = "Conteúdo denunciado excluído.";
         adminToolsMsg.className = "admin-msg sucesso";
-        await carregarAdminDados();
+        removerDenunciaAdminDoCache(denuncia);
       } catch (erro) {
         console.error("Erro ao excluir conteúdo denunciado:", erro);
         adminToolsMsg.textContent =
@@ -3525,6 +3656,280 @@ function atualizarDestinatariosNotificacaoAdmin() {
     : "todos";
 }
 
+function prepararAdminDadosLeves() {
+  const denunciasPorPost = new Map();
+
+  adminDadosCache.denuncias.forEach(denuncia => {
+    if (!denuncia.postId) return;
+    denunciasPorPost.set(
+      denuncia.postId,
+      (denunciasPorPost.get(denuncia.postId) || 0) + 1
+    );
+  });
+
+  adminDadosCache.publicacoes = [...postsSalvos]
+    .map(post => {
+      const stats = obterEstatisticas(post.id);
+
+      return {
+        ...post,
+        likes: Number(stats.likes || 0),
+        comentarios: Number(stats.comentarios || 0),
+        denuncias: Number(denunciasPorPost.get(post.id) || 0)
+      };
+    })
+    .sort((a, b) => {
+      const ta = a.criadoEm?.toMillis?.() || 0;
+      const tb = b.criadoEm?.toMillis?.() || 0;
+      return tb - ta;
+    });
+
+  const postsPorUsuario = new Map();
+
+  postsSalvos.forEach(post => {
+    if (!post.uid) return;
+    postsPorUsuario.set(
+      post.uid,
+      (postsPorUsuario.get(post.uid) || 0) + 1
+    );
+  });
+
+  adminDadosCache.usuarios = [...perfisUsuarios.values()].map(perfil => ({
+    uid: perfil.uid,
+    nome: perfil.nome || "Usuário",
+    username: perfil.username || "",
+    foto: perfil.foto || "",
+    posts: Number(postsPorUsuario.get(perfil.uid) || 0),
+    comentarios: 0,
+    curtidasRecebidas: 0,
+    atividade: Number(postsPorUsuario.get(perfil.uid) || 0)
+  }));
+
+  adminDadosCache.resumo.usuarios = adminDadosCache.usuarios.length;
+  adminDadosCache.resumo.publicacoes = postsSalvos.length;
+  adminDadosCache.resumo.comentarios = [...estatisticasPosts.values()]
+    .reduce((total, stats) => total + Number(stats.comentarios || 0), 0);
+  adminDadosCache.resumo.curtidas = [...estatisticasPosts.values()]
+    .reduce((total, stats) => total + Number(stats.likes || 0), 0);
+
+  if (adminDenunciasCarregadas) {
+    adminDadosCache.resumo.denuncias = adminDadosCache.denuncias.length;
+  }
+}
+
+async function carregarDenunciasAdmin(forcar = false) {
+  if (adminDenunciasCarregadas && !forcar) {
+    renderizarAdminDenuncias();
+    return;
+  }
+
+  if (adminDenunciasList) {
+    adminDenunciasList.replaceChildren();
+    const carregando = document.createElement("p");
+    carregando.textContent = "Carregando denúncias...";
+    adminDenunciasList.appendChild(carregando);
+  }
+
+  const denuncias = [];
+
+  try {
+    for (let indicePost = 0; indicePost < postsSalvos.length; indicePost++) {
+      const post = postsSalvos[indicePost];
+
+      const [denunciasPost, comentarios] = await Promise.all([
+        getDocs(collection(db, "posts", post.id, "denuncias")),
+        getDocs(collection(db, "posts", post.id, "comentarios"))
+      ]);
+
+      denunciasPost.forEach(reportDoc => {
+        const report = reportDoc.data();
+        const denunciante = adminPerfilLabel(report.uid);
+
+        denuncias.push({
+          tipo: "post",
+          tipoLabel: "Publicação denunciada",
+          postId: post.id,
+          comentarioId: "",
+          respostaId: "",
+          reportId: reportDoc.id,
+          reportRef: reportDoc.ref,
+          contentRef: doc(db, "posts", post.id),
+          criadoEm: report.criadoEm,
+          criadoMs: report.criadoEm?.toMillis?.() || 0,
+          denuncianteNome: denunciante.nome,
+          denuncianteUsername: denunciante.username,
+          autorConteudo: adminPerfilLabel(post.uid).nome,
+          textoConteudo:
+            `${post.titulo || "Publicação"} — ${post.texto || ""}`
+        });
+      });
+
+      for (const comentarioDoc of comentarios.docs) {
+        const comentario = comentarioDoc.data();
+
+        const [denunciasComentario, respostas] = await Promise.all([
+          getDocs(
+            collection(
+              db,
+              "posts",
+              post.id,
+              "comentarios",
+              comentarioDoc.id,
+              "denuncias"
+            )
+          ),
+          getDocs(
+            collection(
+              db,
+              "posts",
+              post.id,
+              "comentarios",
+              comentarioDoc.id,
+              "respostas"
+            )
+          )
+        ]);
+
+        denunciasComentario.forEach(reportDoc => {
+          const report = reportDoc.data();
+          const denunciante = adminPerfilLabel(report.uid);
+
+          denuncias.push({
+            tipo: "comentario",
+            tipoLabel: "Comentário denunciado",
+            postId: post.id,
+            comentarioId: comentarioDoc.id,
+            respostaId: "",
+            reportId: reportDoc.id,
+            reportRef: reportDoc.ref,
+            contentRef: doc(
+              db,
+              "posts",
+              post.id,
+              "comentarios",
+              comentarioDoc.id
+            ),
+            criadoEm: report.criadoEm,
+            criadoMs: report.criadoEm?.toMillis?.() || 0,
+            denuncianteNome: denunciante.nome,
+            denuncianteUsername: denunciante.username,
+            autorConteudo: adminPerfilLabel(comentario.uid).nome,
+            textoConteudo: comentario.texto || "Comentário"
+          });
+        });
+
+        for (const respostaDoc of respostas.docs) {
+          const resposta = respostaDoc.data();
+
+          const denunciasResposta = await getDocs(
+            collection(
+              db,
+              "posts",
+              post.id,
+              "comentarios",
+              comentarioDoc.id,
+              "respostas",
+              respostaDoc.id,
+              "denuncias"
+            )
+          );
+
+          denunciasResposta.forEach(reportDoc => {
+            const report = reportDoc.data();
+            const denunciante = adminPerfilLabel(report.uid);
+
+            denuncias.push({
+              tipo: "resposta",
+              tipoLabel: "Resposta denunciada",
+              postId: post.id,
+              comentarioId: comentarioDoc.id,
+              respostaId: respostaDoc.id,
+              reportId: reportDoc.id,
+              reportRef: reportDoc.ref,
+              contentRef: doc(
+                db,
+                "posts",
+                post.id,
+                "comentarios",
+                comentarioDoc.id,
+                "respostas",
+                respostaDoc.id
+              ),
+              criadoEm: report.criadoEm,
+              criadoMs: report.criadoEm?.toMillis?.() || 0,
+              denuncianteNome: denunciante.nome,
+              denuncianteUsername: denunciante.username,
+              autorConteudo: adminPerfilLabel(resposta.uid).nome,
+              textoConteudo: resposta.texto || "Resposta"
+            });
+          });
+        }
+      }
+
+      // Evita concentrar toda a montagem em um único frame.
+      if (indicePost % 2 === 1) {
+        await proximoFrame();
+      }
+    }
+
+    adminDadosCache.denuncias = denuncias;
+    adminDenunciasCarregadas = true;
+    prepararAdminDadosLeves();
+
+    renderizarAdminDenuncias();
+    renderizarAdminDashboard();
+
+    if (adminTabAtual === "publicacoes") {
+      renderizarAdminPublicacoes();
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar denúncias:", erro);
+
+    if (adminDenunciasList) {
+      adminDenunciasList.replaceChildren();
+      const falha = document.createElement("p");
+      falha.textContent =
+        `Não foi possível carregar as denúncias (${erro.code || "erro"}).`;
+      adminDenunciasList.appendChild(falha);
+    }
+  }
+}
+
+async function carregarAdminAba(tab, forcar = false) {
+  if (!usuarioEhAdmin()) return;
+
+  prepararAdminDadosLeves();
+
+  if (tab === "dashboard") {
+    renderizarAdminDashboard();
+    return;
+  }
+
+  if (tab === "publicacoes") {
+    renderizarAdminPublicacoes();
+    return;
+  }
+
+  if (tab === "usuarios") {
+    renderizarAdminUsuarios();
+    return;
+  }
+
+  if (tab === "denuncias") {
+    await carregarDenunciasAdmin(forcar);
+    return;
+  }
+
+  if (tab === "noticias") {
+    renderizarAdminNoticias();
+    return;
+  }
+
+  if (tab === "notificacoes") {
+    atualizarDestinatariosNotificacaoAdmin();
+  }
+}
+
 async function carregarAdminDados() {
   if (!usuarioEhAdmin() || adminCarregandoDados) return;
 
@@ -3535,308 +3940,8 @@ async function carregarAdminDados() {
     adminAtualizar.textContent = "Atualizando...";
   }
 
-  if (adminDashboardStatus) {
-    adminDashboardStatus.textContent = "Carregando dados...";
-  }
-
   try {
-    const postsBase = [...postsSalvos];
-    const publicacoes = [];
-    const denuncias = [];
-    const contagemPorUsuario = new Map();
-
-    let totalComentarios = 0;
-    let totalCurtidas = 0;
-
-    const somarUsuario = (uid, campo, valor = 1) => {
-      if (!uid) return;
-
-      if (!contagemPorUsuario.has(uid)) {
-        contagemPorUsuario.set(uid, {
-          posts: 0,
-          comentarios: 0,
-          curtidasRecebidas: 0
-        });
-      }
-
-      const registro = contagemPorUsuario.get(uid);
-      registro[campo] = (registro[campo] || 0) + valor;
-    };
-
-    await Promise.all(
-      postsBase.map(async post => {
-        const [
-          reacoesSnapshot,
-          denunciasPostSnapshot,
-          comentariosSnapshot
-        ] = await Promise.all([
-          getDocs(collection(db, "posts", post.id, "reacoes")),
-          getDocs(collection(db, "posts", post.id, "denuncias")),
-          getDocs(collection(db, "posts", post.id, "comentarios"))
-        ]);
-
-        const likesPost = reacoesSnapshot.docs
-          .filter(item => item.data()?.tipo === "like")
-          .length;
-
-        totalCurtidas += likesPost;
-        somarUsuario(post.uid, "posts", 1);
-        somarUsuario(post.uid, "curtidasRecebidas", likesPost);
-
-        let comentariosDoPost = comentariosSnapshot.size;
-        let denunciasDoPost = denunciasPostSnapshot.size;
-
-        denunciasPostSnapshot.forEach(reportDoc => {
-          const report = reportDoc.data();
-          const denunciante = adminPerfilLabel(report.uid);
-
-          denuncias.push({
-            tipo: "post",
-            tipoLabel: "Publicação denunciada",
-            postId: post.id,
-            comentarioId: "",
-            respostaId: "",
-            reportId: reportDoc.id,
-            reportRef: reportDoc.ref,
-            contentRef: doc(db, "posts", post.id),
-            criadoEm: report.criadoEm,
-            criadoMs: report.criadoEm?.toMillis?.() || 0,
-            denuncianteNome: denunciante.nome,
-            denuncianteUsername: denunciante.username,
-            autorConteudo: adminPerfilLabel(post.uid).nome,
-            textoConteudo:
-              `${post.titulo || "Publicação"} — ${post.texto || ""}`
-          });
-        });
-
-        await Promise.all(
-          comentariosSnapshot.docs.map(async comentarioDoc => {
-            const comentario = comentarioDoc.data();
-            somarUsuario(comentario.uid, "comentarios", 1);
-
-            const [
-              curtidasComentarioSnapshot,
-              denunciasComentarioSnapshot,
-              respostasSnapshot
-            ] = await Promise.all([
-              getDocs(
-                collection(
-                  db,
-                  "posts",
-                  post.id,
-                  "comentarios",
-                  comentarioDoc.id,
-                  "curtidas"
-                )
-              ),
-              getDocs(
-                collection(
-                  db,
-                  "posts",
-                  post.id,
-                  "comentarios",
-                  comentarioDoc.id,
-                  "denuncias"
-                )
-              ),
-              getDocs(
-                collection(
-                  db,
-                  "posts",
-                  post.id,
-                  "comentarios",
-                  comentarioDoc.id,
-                  "respostas"
-                )
-              )
-            ]);
-
-            const likesComentario = curtidasComentarioSnapshot.size;
-            totalCurtidas += likesComentario;
-            somarUsuario(
-              comentario.uid,
-              "curtidasRecebidas",
-              likesComentario
-            );
-
-            denunciasDoPost += denunciasComentarioSnapshot.size;
-
-            denunciasComentarioSnapshot.forEach(reportDoc => {
-              const report = reportDoc.data();
-              const denunciante = adminPerfilLabel(report.uid);
-
-              denuncias.push({
-                tipo: "comentario",
-                tipoLabel: "Comentário denunciado",
-                postId: post.id,
-                comentarioId: comentarioDoc.id,
-                respostaId: "",
-                reportId: reportDoc.id,
-                reportRef: reportDoc.ref,
-                contentRef: doc(
-                  db,
-                  "posts",
-                  post.id,
-                  "comentarios",
-                  comentarioDoc.id
-                ),
-                criadoEm: report.criadoEm,
-                criadoMs: report.criadoEm?.toMillis?.() || 0,
-                denuncianteNome: denunciante.nome,
-                denuncianteUsername: denunciante.username,
-                autorConteudo: adminPerfilLabel(comentario.uid).nome,
-                textoConteudo: comentario.texto || "Comentário"
-              });
-            });
-
-            comentariosDoPost += respostasSnapshot.size;
-
-            await Promise.all(
-              respostasSnapshot.docs.map(async respostaDoc => {
-                const resposta = respostaDoc.data();
-                somarUsuario(resposta.uid, "comentarios", 1);
-
-                const [
-                  curtidasRespostaSnapshot,
-                  denunciasRespostaSnapshot
-                ] = await Promise.all([
-                  getDocs(
-                    collection(
-                      db,
-                      "posts",
-                      post.id,
-                      "comentarios",
-                      comentarioDoc.id,
-                      "respostas",
-                      respostaDoc.id,
-                      "curtidas"
-                    )
-                  ),
-                  getDocs(
-                    collection(
-                      db,
-                      "posts",
-                      post.id,
-                      "comentarios",
-                      comentarioDoc.id,
-                      "respostas",
-                      respostaDoc.id,
-                      "denuncias"
-                    )
-                  )
-                ]);
-
-                const likesResposta = curtidasRespostaSnapshot.size;
-                totalCurtidas += likesResposta;
-                somarUsuario(
-                  resposta.uid,
-                  "curtidasRecebidas",
-                  likesResposta
-                );
-
-                denunciasDoPost += denunciasRespostaSnapshot.size;
-
-                denunciasRespostaSnapshot.forEach(reportDoc => {
-                  const report = reportDoc.data();
-                  const denunciante = adminPerfilLabel(report.uid);
-
-                  denuncias.push({
-                    tipo: "resposta",
-                    tipoLabel: "Resposta denunciada",
-                    postId: post.id,
-                    comentarioId: comentarioDoc.id,
-                    respostaId: respostaDoc.id,
-                    reportId: reportDoc.id,
-                    reportRef: reportDoc.ref,
-                    contentRef: doc(
-                      db,
-                      "posts",
-                      post.id,
-                      "comentarios",
-                      comentarioDoc.id,
-                      "respostas",
-                      respostaDoc.id
-                    ),
-                    criadoEm: report.criadoEm,
-                    criadoMs: report.criadoEm?.toMillis?.() || 0,
-                    denuncianteNome: denunciante.nome,
-                    denuncianteUsername: denunciante.username,
-                    autorConteudo: adminPerfilLabel(resposta.uid).nome,
-                    textoConteudo: resposta.texto || "Resposta"
-                  });
-                });
-              })
-            );
-          })
-        );
-
-        totalComentarios += comentariosDoPost;
-
-        publicacoes.push({
-          ...post,
-          likes: likesPost,
-          comentarios: comentariosDoPost,
-          denuncias: denunciasDoPost
-        });
-      })
-    );
-
-    const usuarios = [...perfisUsuarios.values()].map(perfil => {
-      const contagem = contagemPorUsuario.get(perfil.uid) || {
-        posts: 0,
-        comentarios: 0,
-        curtidasRecebidas: 0
-      };
-
-      return {
-        uid: perfil.uid,
-        nome: perfil.nome || "Usuário",
-        username: perfil.username || "",
-        foto: perfil.foto || "",
-        posts: contagem.posts,
-        comentarios: contagem.comentarios,
-        curtidasRecebidas: contagem.curtidasRecebidas,
-        atividade:
-          contagem.posts +
-          contagem.comentarios +
-          contagem.curtidasRecebidas
-      };
-    });
-
-    adminDadosCache = {
-      publicacoes: publicacoes.sort((a, b) => {
-        const ta = a.criadoEm?.toMillis?.() || 0;
-        const tb = b.criadoEm?.toMillis?.() || 0;
-        return tb - ta;
-      }),
-      denuncias,
-      usuarios,
-      resumo: {
-        usuarios: usuarios.length,
-        publicacoes: publicacoes.length,
-        comentarios: totalComentarios,
-        curtidas: totalCurtidas,
-        denuncias: denuncias.length
-      }
-    };
-
-    renderizarAdminDashboard();
-    renderizarAdminPublicacoes();
-    renderizarAdminUsuarios();
-    renderizarAdminDenuncias();
-    atualizarDestinatariosNotificacaoAdmin();
-  } catch (erro) {
-    console.error("Erro ao carregar dados administrativos:", erro);
-
-    if (adminDashboardStatus) {
-      adminDashboardStatus.textContent = "Falha ao atualizar";
-    }
-
-    if (adminToolsMsg) {
-      adminToolsMsg.textContent =
-        `Não foi possível carregar todos os dados (${erro.code || "erro"}).`;
-      adminToolsMsg.className = "admin-msg erro";
-    }
+    await carregarAdminAba(adminTabAtual, true);
   } finally {
     adminCarregandoDados = false;
 
@@ -4086,10 +4191,6 @@ function atualizarPainelAdmin(usuario) {
     adminNome.classList.add("admin-nome-verificado");
     adminAtivarTab(adminTabAtual);
     renderizarAdminNoticias();
-
-    if (adminModalAberto) {
-      carregarAdminDados();
-    }
   } else {
     adminNome.textContent = "Painel administrativo";
     adminNome.classList.remove("admin-nome-verificado");
@@ -4252,6 +4353,7 @@ function renderizarNoticias() {
       imagem.src = noticia.imagem;
       imagem.alt = `Imagem da notícia: ${noticia.titulo || "notícia"}`;
       imagem.loading = "lazy";
+      imagem.decoding = "async";
       card.append(topo, imagem);
     } else {
       card.appendChild(topo);

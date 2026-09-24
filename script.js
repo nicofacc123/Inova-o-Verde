@@ -38,7 +38,14 @@ function showPage(pageId, updateHash = true) {
 
   const navHeight = document.querySelector(".nav-shell")?.offsetHeight || 0;
   const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 24;
-  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  const reduzirMovimento =
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    window.matchMedia("(max-width: 720px)").matches;
+
+  window.scrollTo({
+    top: Math.max(0, top),
+    behavior: reduzirMovimento ? "auto" : "smooth"
+  });
 }
 
 function toggleMenu(button) {

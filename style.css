@@ -2889,131 +2889,10 @@ body.admin-modal-aberto {
 }
 
 
-/* =========================================================
-   V2.1 — EXCLUSÃO DE COMENTÁRIOS + IMAGENS ESTILO FEED
-   ========================================================= */
-
-.comentario {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start !important;
-  gap: 12px !important;
-}
-
-.comentario-conteudo {
-  min-width: 0;
-}
-
-.comentario-cabecalho {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-bottom: 3px;
-}
-
 .comentario-texto {
   color: #52685c;
   line-height: 1.55;
   overflow-wrap: anywhere;
-}
-
-.comentario-selo-admin {
-  display: inline-flex;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--green-100);
-  color: var(--green-800);
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-}
-
-.comentario-acoes {
-  display: flex;
-  align-items: center;
-}
-
-.btn-comentario-excluir {
-  min-height: 34px;
-  border: 1px solid #f0c7c7;
-  border-radius: 999px;
-  padding: 7px 11px;
-  background: #fff;
-  color: #b42318;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background .18s ease, border-color .18s ease, transform .18s ease;
-}
-
-.btn-comentario-excluir:hover {
-  background: #fff1f1;
-  border-color: #e9abab;
-  transform: translateY(-1px);
-}
-
-.btn-comentario-excluir:disabled {
-  opacity: .5;
-  cursor: wait;
-}
-
-/* Quadro semelhante a um post do Instagram: proporção 4:5 e largura controlada. */
-.post-imagem {
-  display: block;
-  width: min(100%, 540px) !important;
-  height: auto;
-  aspect-ratio: 4 / 5;
-  max-height: none !important;
-  margin: 16px auto 2px !important;
-  object-fit: cover;
-  object-position: center;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #eef4f0;
-}
-
-/* Notícias usam um quadro mais horizontal e também não extrapolam o conteúdo. */
-.noticia-imagem {
-  display: block;
-  width: 100% !important;
-  max-width: 760px !important;
-  height: auto !important;
-  aspect-ratio: 16 / 9;
-  margin: 14px auto 8px !important;
-  object-fit: cover;
-  object-position: center;
-  border-radius: 14px;
-  background: #eef4f0;
-}
-
-@media (max-width: 720px) {
-  .comentario {
-    grid-template-columns: 1fr;
-  }
-
-  .comentario-acoes {
-    justify-content: flex-end;
-  }
-
-  .btn-comentario-excluir {
-    min-height: 38px;
-  }
-
-  .post-imagem {
-    width: 100% !important;
-    aspect-ratio: 4 / 5;
-    border-radius: 12px;
-  }
-
-  .noticia-imagem {
-    width: 100% !important;
-    aspect-ratio: 16 / 9;
-    border-radius: 12px;
-  }
 }
 
 
@@ -3153,241 +3032,6 @@ body.imagem-ampliada-aberta {
   .imagem-ampliada-overlay {
     padding: 12px;
   }
-}
-
-
-/* =========================================================
-   V2.3 — MENU ⋮ DOS COMENTÁRIOS
-   ========================================================= */
-
-.comentario {
-  position: relative;
-  display: block !important;
-  padding: 11px 46px 11px 13px !important;
-}
-
-.comentario-conteudo {
-  min-width: 0;
-}
-
-.comentario-cabecalho {
-  padding-right: 4px;
-}
-
-.comentario-menu-wrap {
-  position: absolute;
-  top: 6px;
-  right: 7px;
-  z-index: 4;
-}
-
-.comentario-menu-botao {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: #5e7067;
-  font: inherit;
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1;
-  cursor: pointer;
-  transition: background .18s ease, color .18s ease;
-}
-
-.comentario-menu-botao:hover,
-.comentario-menu-botao[aria-expanded="true"] {
-  background: #e9f1ed;
-  color: var(--green-900);
-}
-
-.comentario-menu {
-  position: absolute;
-  top: 36px;
-  right: 0;
-  width: max-content;
-  min-width: 138px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: #fff;
-  box-shadow: 0 12px 30px rgba(20, 59, 42, .16);
-  z-index: 20;
-}
-
-.comentario-menu[hidden] {
-  display: none !important;
-}
-
-.comentario-menu-item {
-  width: 100%;
-  min-height: 42px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 13px;
-  border: 0;
-  background: #fff;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 750;
-  text-align: left;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.comentario-menu-item:hover {
-  background: #f5f8f6;
-}
-
-.comentario-menu-excluir {
-  color: #b42318;
-}
-
-.comentario-menu-denunciar {
-  color: #7a4d13;
-}
-
-.comentario-menu-item:disabled {
-  opacity: .55;
-  cursor: wait;
-}
-
-@media (max-width: 720px) {
-  .comentario {
-    padding: 11px 44px 11px 11px !important;
-  }
-
-  .comentario-menu-wrap {
-    top: 5px;
-    right: 5px;
-  }
-
-  .comentario-menu-botao {
-    width: 36px;
-    height: 36px;
-  }
-
-  .comentario-menu {
-    min-width: 145px;
-  }
-}
-
-
-/* =========================================================
-   V2.4 — TRÊS PONTINHOS VISÍVEIS + MENU AO CLICAR
-   ========================================================= */
-
-.comentario-menu-wrap {
-  position: absolute;
-  top: 7px;
-  right: 8px;
-  z-index: 10;
-}
-
-.comentario-menu-botao {
-  width: 38px !important;
-  height: 32px !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 10px !important;
-  background: transparent !important;
-  color: #66776f !important;
-  font-family: Arial, sans-serif !important;
-  font-size: 18px !important;
-  font-weight: 900 !important;
-  letter-spacing: 1px !important;
-  line-height: 1 !important;
-  cursor: pointer !important;
-}
-
-.comentario-menu-botao:hover,
-.comentario-menu-botao[aria-expanded="true"] {
-  background: #e8f0ec !important;
-  color: #153f2c !important;
-}
-
-.comentario-menu {
-  position: absolute !important;
-  top: 36px !important;
-  right: 0 !important;
-  min-width: 150px !important;
-  padding: 5px !important;
-  border: 1px solid #e1e9e4 !important;
-  border-radius: 12px !important;
-  background: #fff !important;
-  box-shadow: 0 10px 30px rgba(20, 50, 36, .18) !important;
-  z-index: 100 !important;
-}
-
-.comentario-menu[hidden] {
-  display: none !important;
-}
-
-.comentario-menu-item {
-  display: flex !important;
-  align-items: center !important;
-  width: 100% !important;
-  min-height: 40px !important;
-  padding: 9px 11px !important;
-  border: 0 !important;
-  border-radius: 8px !important;
-  background: transparent !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  text-align: left !important;
-  cursor: pointer !important;
-}
-
-.comentario-menu-item:hover {
-  background: #f3f6f4 !important;
-}
-
-.comentario-menu-excluir {
-  color: #b42318 !important;
-}
-
-.comentario-menu-denunciar {
-  color: #7b5316 !important;
-}
-
-@media (max-width: 720px) {
-  .comentario-menu-wrap {
-    top: 6px;
-    right: 6px;
-  }
-
-  .comentario-menu-botao {
-    width: 40px !important;
-    height: 34px !important;
-    font-size: 19px !important;
-  }
-
-  .comentario-menu {
-    min-width: 155px !important;
-  }
-}
-
-
-/* =========================================================
-   V2.5 — MENU DE COMENTÁRIO LIMPO
-   ========================================================= */
-
-.comentario-menu-excluir,
-.comentario-menu-denunciar {
-  color: #b42318 !important;
-}
-
-.comentario-menu-excluir:hover,
-.comentario-menu-denunciar:hover {
-  background: #fff1f1 !important;
-  color: #991b1b !important;
 }
 
 
@@ -4431,7 +4075,7 @@ body.imagem-ampliada-aberta {
 
 
 /* =========================================================
-   V5.1 — SINO + PERFIL SEMPRE JUNTOS
+   NAVEGAÇÃO DO USUÁRIO — SINO + PERFIL
    ========================================================= */
 
 .nav-acoes-usuario {
@@ -4448,9 +4092,7 @@ body.imagem-ampliada-aberta {
 .nav-acoes-usuario .notificacoes-wrap,
 .nav-acoes-usuario .perfil-atalho {
   position: relative !important;
-  top: auto !important;
-  right: auto !important;
-  left: auto !important;
+  inset: auto !important;
   transform: none !important;
   margin: 0 !important;
 }
@@ -4472,51 +4114,6 @@ body.imagem-ampliada-aberta {
 
 @media (max-width: 860px) {
   .nav-shell {
-    display: flex;
-    align-items: center;
-    min-height: 68px;
-    padding: 0 14px;
-  }
-
-  .nav-acoes-usuario {
-    position: static;
-    transform: none;
-    margin-left: auto;
-    flex: 0 0 auto;
-  }
-
-  .nav-acoes-usuario .notificacoes-painel {
-    position: fixed;
-    top: 66px;
-    right: 10px;
-  }
-}
-
-@media (max-width: 520px) {
-  .nav-acoes-usuario {
-    gap: 6px;
-  }
-
-  .nav-acoes-usuario .notificacoes-botao,
-  .nav-acoes-usuario .perfil-atalho {
-    width: 40px;
-    height: 40px;
-  }
-
-  .nav-acoes-usuario .notificacoes-painel {
-    left: 10px;
-    right: 10px;
-    width: auto;
-  }
-}
-
-
-/* =========================================================
-   V5.3 — CORREÇÃO DEFINITIVA DO MOBILE
-   ========================================================= */
-
-@media (max-width: 860px) {
-  .nav-shell {
     position: sticky;
     top: 0;
     z-index: 100;
@@ -4527,7 +4124,6 @@ body.imagem-ampliada-aberta {
     justify-content: space-between !important;
     gap: 10px;
     padding: 8px 12px !important;
-    box-sizing: border-box;
   }
 
   .menu-toggle {
@@ -4539,23 +4135,11 @@ body.imagem-ampliada-aberta {
 
   .nav-acoes-usuario {
     position: static !important;
-    top: auto !important;
-    right: auto !important;
-    left: auto !important;
     transform: none !important;
-    display: flex;
-    align-items: center;
+    margin-left: auto !important;
     gap: 7px;
-    margin: 0 0 0 auto !important;
     flex: 0 0 auto;
     z-index: 103;
-  }
-
-  .nav-acoes-usuario .notificacoes-wrap,
-  .nav-acoes-usuario .perfil-atalho {
-    position: relative !important;
-    flex: 0 0 auto;
-    margin: 0 !important;
   }
 
   .nav-acoes-usuario .notificacoes-botao,
@@ -4576,14 +4160,14 @@ body.imagem-ampliada-aberta {
   }
 
   .nav-acoes-usuario .notificacoes-painel {
-    position: fixed !important;
-    top: 68px !important;
-    left: 10px !important;
-    right: 10px !important;
-    width: auto !important;
-    max-width: none !important;
+    position: fixed;
+    top: 68px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
     max-height: calc(100dvh - 82px);
-    margin: 0 !important;
+    margin: 0;
     z-index: 200;
   }
 
@@ -4632,23 +4216,10 @@ body.imagem-ampliada-aberta {
   }
 
   .nav-acoes-usuario .notificacoes-painel {
-    top: 64px !important;
-    left: 8px !important;
-    right: 8px !important;
+    top: 64px;
+    left: 8px;
+    right: 8px;
     border-radius: 15px;
-  }
-
-  .notificacoes-cabecalho {
-    min-height: 50px;
-    padding: 10px 11px;
-  }
-
-  .notificacoes-cabecalho strong {
-    font-size: 15px;
-  }
-
-  .notificacoes-cabecalho button {
-    font-size: 10px;
   }
 
   main {
@@ -5117,183 +4688,30 @@ body.imagem-ampliada-aberta {
 
 
 /* =========================================================
-   V6.1 — PAINEL ADMIN OTIMIZADO
+   PAINEL ADMIN — TELA CHEIA E MODO LEVE
    ========================================================= */
 
-.admin-view {
-  min-height: 180px;
-}
-
-#admin-denuncias-list > p,
-#admin-publicacoes-list > p,
-#admin-usuarios-list > p {
-  margin: 0;
-  padding: 18px;
-  border: 1px dashed #dbe7e0;
-  border-radius: 12px;
-  background: #f9fbfa;
-  color: #6c7e74;
-  text-align: center;
-}
-
-.admin-status {
-  white-space: nowrap;
-}
-
-@media (max-width: 520px) {
-  .admin-view-topo {
-    align-items: center;
-  }
-
-  .admin-status {
-    font-size: 10px;
-  }
-}
-
-
-/* =========================================================
-   V6.2 — PAINEL ADMIN: MODO DE DESEMPENHO
-   Remove efeitos pesados para evitar queda de FPS.
-   ========================================================= */
-
-/* O blur do fundo era um dos efeitos mais pesados. */
-.admin-modal-backdrop {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: rgba(10, 28, 20, .82) !important;
-}
-
-/* Painel sem sombra pesada e sem efeitos de composição. */
-.admin-card {
-  box-shadow: none !important;
-  filter: none !important;
-  transform: none !important;
-  will-change: auto !important;
-  scroll-behavior: auto !important;
-}
-
-/* Remove animações e transições apenas do painel. */
-.admin-modal,
-.admin-modal *,
-.admin-card,
-.admin-card * {
-  animation: none !important;
-  transition: none !important;
-}
-
-/* Pausa animações do site que ficam atrás do modal.
-   Isso inclui as folhas caindo e outros efeitos decorativos. */
-body.admin-modal-aberto * {
-  animation-play-state: paused !important;
-}
-
-/* Sem sombras nos componentes administrativos. */
-.admin-bloco,
-.admin-menu,
-.admin-metrica,
-.admin-item,
-.admin-ranking-item,
-.admin-resumo-denuncia,
-.admin-noticia-item,
-.admin-btn-secundario,
-.admin-menu-item,
-.admin-item-acoes button,
-#admin-login-form input,
-#admin-noticia-form input,
-#admin-noticia-form textarea,
-#admin-notificacao-form input,
-#admin-notificacao-form textarea,
-#admin-notificacao-form select {
-  box-shadow: none !important;
-  filter: none !important;
-}
-
-/* Hover simples, sem movimentação/efeito. */
-.admin-menu-item:hover,
-.admin-btn-secundario:hover,
-.admin-item-acoes button:hover,
-.btn-admin-remover:hover {
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* Evita efeitos visuais caros dentro do modal. */
-.admin-modal * {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* No celular o painel vira praticamente uma tela normal.
-   Menos transparência e menos área composta = mais fluidez. */
-@media (max-width: 720px) {
-  .admin-modal {
-    padding: 0 !important;
-    place-items: stretch !important;
-    background: #fff !important;
-  }
-
-  .admin-modal-backdrop {
-    display: none !important;
-  }
-
-  .admin-card {
-    width: 100% !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 18px 12px 28px !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain;
-  }
-
-  .admin-menu {
-    background: #f5f8f6 !important;
-  }
-
-  .admin-metrica,
-  .admin-bloco,
-  .admin-item {
-    border-radius: 11px !important;
-  }
-}
-
-/* Também respeita aparelhos/sistemas que pedem menos movimento. */
-@media (prefers-reduced-motion: reduce) {
-  .admin-modal,
-  .admin-modal * {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-
-/* =========================================================
-   V6.3 — PAINEL ADMIN EM TELA CHEIA + MODO ULTRA LEVE
-   ========================================================= */
-
-/* O painel deixa de parecer um modal flutuante. */
 .admin-modal {
   position: fixed !important;
   inset: 0 !important;
+  z-index: 9999 !important;
+  display: block !important;
   width: 100vw !important;
   height: 100dvh !important;
-  display: block !important;
   padding: 0 !important;
   margin: 0 !important;
   overflow: hidden !important;
-  background: #ffffff !important;
-  z-index: 9999 !important;
+  background: #fff !important;
 }
 
-/* Sem backdrop/fundo escurecido. */
+.admin-modal[hidden] {
+  display: none !important;
+}
+
 .admin-modal-backdrop {
   display: none !important;
 }
 
-/* Painel ocupa a tela inteira no PC e no celular. */
 .admin-card {
   position: relative !important;
   width: 100vw !important;
@@ -5305,24 +4723,18 @@ body.admin-modal-aberto * {
   padding: 18px 20px 28px !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
-  filter: none !important;
-  transform: none !important;
+  background: #fff !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  scroll-behavior: auto !important;
   overscroll-behavior: contain;
 }
 
-/* Nada de animações, transições ou filtros dentro do painel. */
 .admin-modal,
 .admin-modal *,
 .admin-card,
 .admin-card * {
   animation: none !important;
   transition: none !important;
-  transform: none !important;
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -5331,31 +4743,26 @@ body.admin-modal-aberto * {
   will-change: auto !important;
 }
 
-/* Enquanto o painel estiver aberto, pausa qualquer animação do site ao fundo. */
 body.admin-modal-aberto * {
   animation-play-state: paused !important;
 }
 
-/* Layout principal mais simples. */
 .admin-layout {
   min-height: calc(100dvh - 100px);
   grid-template-columns: 190px minmax(0, 1fr) !important;
   gap: 16px !important;
 }
 
-/* Menu lateral simples. */
 .admin-menu {
+  padding: 6px !important;
   border: 1px solid #e3e9e5 !important;
   border-radius: 10px !important;
   background: #f7f9f8 !important;
-  padding: 6px !important;
-  box-shadow: none !important;
 }
 
 .admin-menu-item {
   border-radius: 7px !important;
   background: transparent !important;
-  box-shadow: none !important;
 }
 
 .admin-menu-item:hover {
@@ -5365,10 +4772,9 @@ body.admin-modal-aberto * {
 
 .admin-menu-item.ativo {
   background: #236b46 !important;
-  color: #ffffff !important;
+  color: #fff !important;
 }
 
-/* Cards administrativos mais simples e leves. */
 .admin-metrica,
 .admin-bloco,
 .admin-item,
@@ -5377,72 +4783,31 @@ body.admin-modal-aberto * {
 .admin-noticia-item {
   border: 1px solid #e3e9e5 !important;
   border-radius: 9px !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
+  background: #fff !important;
 }
 
-/* Botões sem efeitos. */
-.admin-btn-secundario,
-.admin-item-acoes button,
-.btn-admin-remover,
-#admin-login-form button,
-#admin-noticia-form button,
-#admin-notificacao-form button {
-  box-shadow: none !important;
-  transform: none !important;
+.admin-view {
+  min-height: 180px;
 }
 
-.admin-btn-secundario:hover,
-.admin-item-acoes button:hover,
-.btn-admin-remover:hover,
-#admin-login-form button:hover,
-#admin-noticia-form button:hover,
-#admin-notificacao-form button:hover {
-  box-shadow: none !important;
-  transform: none !important;
+#admin-denuncias-list > p,
+#admin-publicacoes-list > p,
+#admin-usuarios-list > p {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed #dbe7e0;
+  border-radius: 10px;
+  background: #f9fbfa;
+  color: #6c7e74;
+  text-align: center;
 }
 
-/* Inputs sem glow/sombra. */
-#admin-login-form input,
-#admin-noticia-form input,
-#admin-noticia-form textarea,
-#admin-notificacao-form input,
-#admin-notificacao-form textarea,
-#admin-notificacao-form select,
-.admin-filtros input {
-  box-shadow: none !important;
-  outline: none !important;
+.admin-status {
+  white-space: nowrap;
 }
-
-#admin-login-form input:focus,
-#admin-noticia-form input:focus,
-#admin-noticia-form textarea:focus,
-#admin-notificacao-form input:focus,
-#admin-notificacao-form textarea:focus,
-#admin-notificacao-form select:focus,
-.admin-filtros input:focus {
-  box-shadow: none !important;
-  outline: 1px solid #2b7a50 !important;
-  outline-offset: 0 !important;
-}
-
-/* Remove efeitos de destaque do painel. */
-.admin-status,
-.admin-chip,
-.admin-chip-alerta {
-  box-shadow: none !important;
-}
-
-/* =========================================================
-   RESPONSIVO — continua em tela cheia
-   ========================================================= */
 
 @media (max-width: 900px) {
   .admin-card {
-    width: 100vw !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: none !important;
     padding: 14px 12px 24px !important;
   }
 
@@ -5458,7 +4823,6 @@ body.admin-modal-aberto * {
     overflow-y: hidden !important;
     white-space: nowrap !important;
     border-radius: 8px !important;
-    padding: 5px !important;
   }
 
   .admin-menu-item {
@@ -5468,49 +4832,16 @@ body.admin-modal-aberto * {
 }
 
 @media (max-width: 520px) {
-  .admin-modal,
-  .admin-card {
-    width: 100vw !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-  }
-
   .admin-card {
     padding: 12px 10px 22px !important;
-  }
-
-  .admin-topo {
-    gap: 8px !important;
   }
 
   .admin-topo-acoes {
     gap: 6px !important;
   }
 
-  .admin-menu {
-    margin-inline: -2px !important;
-  }
-
   .admin-metricas {
     gap: 7px !important;
-  }
-
-  .admin-metrica,
-  .admin-bloco,
-  .admin-item {
-    border-radius: 7px !important;
-  }
-}
-
-/* Sistemas que preferem menos movimento: absolutamente nenhum movimento. */
-@media (prefers-reduced-motion: reduce) {
-  .admin-modal,
-  .admin-modal *,
-  .admin-card,
-  .admin-card * {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
   }
 }
 
@@ -5701,5 +5032,105 @@ body.admin-modal-aberto * {
 @media (prefers-reduced-motion: reduce) {
   .flashcard-inner {
     transition: none;
+  }
+}
+
+
+/* =========================================================
+   DESEMPENHO GLOBAL
+   ========================================================= */
+
+/* Evita recomposição cara em barras e overlays. */
+.nav-shell,
+.eyebrow,
+.filters-wrap,
+.modal,
+.imagem-ampliada-overlay {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.nav-shell {
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 1px 8px rgba(26, 77, 55, .06);
+}
+
+.hero-logo {
+  filter: none;
+}
+
+.hero-logo-glow {
+  box-shadow: none;
+}
+
+/* As páginas já trocam instantaneamente; animação não é necessária. */
+.page {
+  animation: none !important;
+}
+
+/* Menos partículas animadas no desktop; nenhuma no celular. */
+.folhas span:nth-child(n + 5) {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .folhas {
+    display: none;
+  }
+}
+
+/* O navegador pode ignorar layout/pintura de cards fora da tela. */
+.feature-block,
+.practice-card,
+.caso-sucesso,
+.post-comunidade,
+.noticia-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+
+/* Isola cálculos de layout sem cortar menus flutuantes. */
+.post-comunidade,
+.noticia-card,
+.feature-block {
+  contain: layout style;
+}
+
+@media (hover: none), (max-width: 720px) {
+  .hero-button,
+  .primary-button,
+  .secondary-button,
+  nav a,
+  .practice-card,
+  .caso-sucesso {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+
+@media (max-width: 720px) {
+  body {
+    background: var(--background);
+  }
+
+  .feature-block,
+  .practice-card,
+  .caso-sucesso,
+  .post-comunidade,
+  .noticia-card,
+  .notificacoes-painel,
+  .auth-container,
+  .perfil-card,
+  .perfil-deslogado {
+    box-shadow: none !important;
   }
 }
