@@ -5268,3 +5268,248 @@ body.admin-modal-aberto * {
     scroll-behavior: auto !important;
   }
 }
+
+
+/* =========================================================
+   V6.3 — PAINEL ADMIN EM TELA CHEIA + MODO ULTRA LEVE
+   ========================================================= */
+
+/* O painel deixa de parecer um modal flutuante. */
+.admin-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  display: block !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  z-index: 9999 !important;
+}
+
+/* Sem backdrop/fundo escurecido. */
+.admin-modal-backdrop {
+  display: none !important;
+}
+
+/* Painel ocupa a tela inteira no PC e no celular. */
+.admin-card {
+  position: relative !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 18px 20px 28px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-behavior: auto !important;
+  overscroll-behavior: contain;
+}
+
+/* Nada de animações, transições ou filtros dentro do painel. */
+.admin-modal,
+.admin-modal *,
+.admin-card,
+.admin-card * {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  will-change: auto !important;
+}
+
+/* Enquanto o painel estiver aberto, pausa qualquer animação do site ao fundo. */
+body.admin-modal-aberto * {
+  animation-play-state: paused !important;
+}
+
+/* Layout principal mais simples. */
+.admin-layout {
+  min-height: calc(100dvh - 100px);
+  grid-template-columns: 190px minmax(0, 1fr) !important;
+  gap: 16px !important;
+}
+
+/* Menu lateral simples. */
+.admin-menu {
+  border: 1px solid #e3e9e5 !important;
+  border-radius: 10px !important;
+  background: #f7f9f8 !important;
+  padding: 6px !important;
+  box-shadow: none !important;
+}
+
+.admin-menu-item {
+  border-radius: 7px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.admin-menu-item:hover {
+  background: #eef3f0 !important;
+  color: #35594a !important;
+}
+
+.admin-menu-item.ativo {
+  background: #236b46 !important;
+  color: #ffffff !important;
+}
+
+/* Cards administrativos mais simples e leves. */
+.admin-metrica,
+.admin-bloco,
+.admin-item,
+.admin-ranking-item,
+.admin-resumo-denuncia,
+.admin-noticia-item {
+  border: 1px solid #e3e9e5 !important;
+  border-radius: 9px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Botões sem efeitos. */
+.admin-btn-secundario,
+.admin-item-acoes button,
+.btn-admin-remover,
+#admin-login-form button,
+#admin-noticia-form button,
+#admin-notificacao-form button {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.admin-btn-secundario:hover,
+.admin-item-acoes button:hover,
+.btn-admin-remover:hover,
+#admin-login-form button:hover,
+#admin-noticia-form button:hover,
+#admin-notificacao-form button:hover {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Inputs sem glow/sombra. */
+#admin-login-form input,
+#admin-noticia-form input,
+#admin-noticia-form textarea,
+#admin-notificacao-form input,
+#admin-notificacao-form textarea,
+#admin-notificacao-form select,
+.admin-filtros input {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+#admin-login-form input:focus,
+#admin-noticia-form input:focus,
+#admin-noticia-form textarea:focus,
+#admin-notificacao-form input:focus,
+#admin-notificacao-form textarea:focus,
+#admin-notificacao-form select:focus,
+.admin-filtros input:focus {
+  box-shadow: none !important;
+  outline: 1px solid #2b7a50 !important;
+  outline-offset: 0 !important;
+}
+
+/* Remove efeitos de destaque do painel. */
+.admin-status,
+.admin-chip,
+.admin-chip-alerta {
+  box-shadow: none !important;
+}
+
+/* =========================================================
+   RESPONSIVO — continua em tela cheia
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .admin-card {
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    padding: 14px 12px 24px !important;
+  }
+
+  .admin-layout {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .admin-menu {
+    display: flex !important;
+    gap: 4px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    border-radius: 8px !important;
+    padding: 5px !important;
+  }
+
+  .admin-menu-item {
+    flex: 0 0 auto !important;
+    width: auto !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-modal,
+  .admin-card {
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+  }
+
+  .admin-card {
+    padding: 12px 10px 22px !important;
+  }
+
+  .admin-topo {
+    gap: 8px !important;
+  }
+
+  .admin-topo-acoes {
+    gap: 6px !important;
+  }
+
+  .admin-menu {
+    margin-inline: -2px !important;
+  }
+
+  .admin-metricas {
+    gap: 7px !important;
+  }
+
+  .admin-metrica,
+  .admin-bloco,
+  .admin-item {
+    border-radius: 7px !important;
+  }
+}
+
+/* Sistemas que preferem menos movimento: absolutamente nenhum movimento. */
+@media (prefers-reduced-motion: reduce) {
+  .admin-modal,
+  .admin-modal *,
+  .admin-card,
+  .admin-card * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
