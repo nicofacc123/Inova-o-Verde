@@ -84,7 +84,7 @@ const usuarioLogado = document.getElementById("usuario-logado");
 const publicacaoLauncher = document.getElementById("publicacao-launcher");
 const btnPublicacaoPlus = document.getElementById("btn-publicacao-plus");
 const btnNovaPublicacao = document.getElementById("btn-nova-publicacao");
-const btnFecharPublicacao = document.getElementById("btn-fechar-publicacao");
+const btnCancelarPublicacao = document.getElementById("btn-cancelar-publicacao");
 const criarPublicacao = document.getElementById("criar-publicacao");
 const nomeUsuario = document.getElementById("nome-usuario");
 const mensagem = document.getElementById("comunidade-mensagem");
@@ -214,18 +214,18 @@ function atualizarInterfaceUsuario(usuario) {
   if (!usuario) {
     areaAuth.hidden = false;
     usuarioLogado.hidden = true;
-    publicacaoLauncher.hidden = true;
-    criarPublicacao.hidden = true;
+    publicacaoLauncher.hidden = false;
     btnNovaPublicacao.hidden = true;
-    btnPublicacaoPlus?.setAttribute("aria-expanded", "false");
+    criarPublicacao.hidden = true;
+    btnPublicacaoPlus.setAttribute("aria-expanded", "false");
     mostrarPainelAuth("cadastro");
   } else {
     areaAuth.hidden = true;
     usuarioLogado.hidden = false;
     publicacaoLauncher.hidden = false;
-    criarPublicacao.hidden = true;
     btnNovaPublicacao.hidden = true;
-    btnPublicacaoPlus?.setAttribute("aria-expanded", "false");
+    criarPublicacao.hidden = true;
+    btnPublicacaoPlus.setAttribute("aria-expanded", "false");
     nomeUsuario.textContent = usuario.displayName || usuario.email || "Usuário";
   }
 
@@ -244,32 +244,41 @@ function usuarioPodeInteragir() {
   return true;
 }
 
-
-// -------------------------------
-// Nova publicação: abertura em duas etapas
-// -------------------------------
-btnPublicacaoPlus?.addEventListener("click", () => {
-  if (!usuarioPodeInteragir()) return;
-
-  const vaiAbrir = btnNovaPublicacao.hidden;
-  btnNovaPublicacao.hidden = !vaiAbrir;
-  btnPublicacaoPlus.setAttribute("aria-expanded", String(vaiAbrir));
-});
-
-btnNovaPublicacao?.addEventListener("click", () => {
-  if (!usuarioPodeInteragir()) return;
-
-  criarPublicacao.hidden = false;
-  btnNovaPublicacao.hidden = true;
-  btnPublicacaoPlus.setAttribute("aria-expanded", "true");
-
-  document.getElementById("post-titulo")?.focus();
-});
-
-btnFecharPublicacao?.addEventListener("click", () => {
+function fecharCriacaoPublicacao() {
   criarPublicacao.hidden = true;
   btnNovaPublicacao.hidden = true;
   btnPublicacaoPlus.setAttribute("aria-expanded", "false");
+}
+
+btnPublicacaoPlus.addEventListener("click", () => {
+  if (!usuarioPodeInteragir()) return;
+
+  if (!criarPublicacao.hidden) {
+    criarPublicacao.hidden = true;
+    btnNovaPublicacao.hidden = false;
+    btnPublicacaoPlus.setAttribute("aria-expanded", "true");
+    return;
+  }
+
+  const mostrarOpcao = btnNovaPublicacao.hidden;
+  btnNovaPublicacao.hidden = !mostrarOpcao;
+  btnPublicacaoPlus.setAttribute("aria-expanded", String(mostrarOpcao));
+});
+
+btnNovaPublicacao.addEventListener("click", () => {
+  if (!usuarioPodeInteragir()) return;
+  btnNovaPublicacao.hidden = true;
+  criarPublicacao.hidden = false;
+  btnPublicacaoPlus.setAttribute("aria-expanded", "true");
+  document.getElementById("post-titulo").focus();
+});
+
+btnCancelarPublicacao.addEventListener("click", () => {
+  document.getElementById("form-publicacao").reset();
+  contadorTexto.textContent = "0 / 1500";
+  postImagemPreview.hidden = true;
+  postImagemPreviewImg.removeAttribute("src");
+  fecharCriacaoPublicacao();
 });
 
 
@@ -386,7 +395,6 @@ postTexto.addEventListener("input", () => {
   contadorTexto.textContent = `${postTexto.value.length} / 1500`;
 });
 
-
 document.getElementById("form-publicacao").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!usuarioPodeInteragir()) return;
@@ -396,7 +404,10 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
   const texto = postTexto.value.trim();
   const arquivoImagem = postImagemInput?.files?.[0] || null;
 
-  if (!titulo || !texto) return mostrarMensagem("Preencha título e conteúdo.", "erro");
+  if (!titulo || !texto) {
+    mostrarMensagem("Preencha título e conteúdo.", "erro");
+    return;
+  }
 
   try {
     btnPublicar.disabled = true;
@@ -416,13 +427,9 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
 
     event.target.reset();
     contadorTexto.textContent = "0 / 1500";
-    if (postImagemPreview) postImagemPreview.hidden = true;
-    if (postImagemPreviewImg) postImagemPreviewImg.removeAttribute("src");
-
-    criarPublicacao.hidden = true;
-    btnNovaPublicacao.hidden = true;
-    btnPublicacaoPlus?.setAttribute("aria-expanded", "false");
-
+    postImagemPreview.hidden = true;
+    postImagemPreviewImg.removeAttribute("src");
+    fecharCriacaoPublicacao();
     mostrarMensagem("Publicação enviada! 🌱");
   } catch (erro) {
     console.error("Erro ao publicar:", erro);
@@ -441,7 +448,6 @@ document.querySelectorAll(".filtro-post").forEach(botao => {
   botao.addEventListener("click", () => {
     document.querySelectorAll(".filtro-post").forEach(btn => btn.classList.remove("ativo"));
     botao.classList.add("ativo");
-
     ordenacaoAtual = botao.dataset.order || "recentes";
     atualizarTextoOrdenacao();
     reordenarCards();
@@ -451,10 +457,9 @@ document.querySelectorAll(".filtro-post").forEach(botao => {
 function atualizarTextoOrdenacao() {
   const nota = document.getElementById("feed-order-note");
   if (!nota) return;
-
   nota.textContent = {
     recentes: "Mais recentes primeiro",
-    populares: "Mais populares • votos + comentários",
+    populares: "Mais populares primeiro",
     comentados: "Mais comentados primeiro"
   }[ordenacaoAtual] || "Mais recentes primeiro";
 }
@@ -492,18 +497,10 @@ function obterEstatisticas(postId) {
   return estatisticasPosts.get(postId);
 }
 
-function popularidadeDoCard(card) {
-  const score = Number(card.dataset.score || 0);
-  const comentarios = Number(card.dataset.comentarios || 0);
-  // Relevância simples e transparente: saldo de votos + número de comentários.
-  return score + comentarios;
-}
-
 function reordenarCards() {
   if (!feed) return;
 
   const cards = [...feed.querySelectorAll(".post-comunidade")];
-
   cards.sort((a, b) => {
     const criadoA = Number(a.dataset.criado || 0);
     const criadoB = Number(b.dataset.criado || 0);
@@ -512,19 +509,18 @@ function reordenarCards() {
     const comentariosA = Number(a.dataset.comentarios || 0);
     const comentariosB = Number(b.dataset.comentarios || 0);
 
-    if (ordenacaoAtual === "comentados") {
-      if (comentariosB !== comentariosA) return comentariosB - comentariosA;
-      if (scoreB !== scoreA) return scoreB - scoreA;
-      return criadoB - criadoA;
-    }
-
     if (ordenacaoAtual === "populares") {
       const popularidadeA = scoreA + comentariosA;
       const popularidadeB = scoreB + comentariosB;
-
       if (popularidadeB !== popularidadeA) return popularidadeB - popularidadeA;
       if (scoreB !== scoreA) return scoreB - scoreA;
       if (comentariosB !== comentariosA) return comentariosB - comentariosA;
+      return criadoB - criadoA;
+    }
+
+    if (ordenacaoAtual === "comentados") {
+      if (comentariosB !== comentariosA) return comentariosB - comentariosA;
+      if (scoreB !== scoreA) return scoreB - scoreA;
       return criadoB - criadoA;
     }
 
@@ -546,6 +542,7 @@ function renderizarPosts() {
     vazio.className = "feed-vazio";
     vazio.textContent = "Nenhuma publicação encontrada.";
     feed.appendChild(vazio);
+    atualizarTextoOrdenacao();
     return;
   }
 
@@ -555,18 +552,18 @@ function renderizarPosts() {
     const criadoA = a.criadoEm?.toMillis?.() || 0;
     const criadoB = b.criadoEm?.toMillis?.() || 0;
 
-    if (ordenacaoAtual === "comentados") {
-      if (eb.comentarios !== ea.comentarios) return eb.comentarios - ea.comentarios;
+    if (ordenacaoAtual === "populares") {
+      const popularidadeA = ea.score + ea.comentarios;
+      const popularidadeB = eb.score + eb.comentarios;
+      if (popularidadeB !== popularidadeA) return popularidadeB - popularidadeA;
       if (eb.score !== ea.score) return eb.score - ea.score;
+      if (eb.comentarios !== ea.comentarios) return eb.comentarios - ea.comentarios;
       return criadoB - criadoA;
     }
 
-    if (ordenacaoAtual === "populares") {
-      const pa = ea.score + ea.comentarios;
-      const pb = eb.score + eb.comentarios;
-      if (pb !== pa) return pb - pa;
-      if (eb.score !== ea.score) return eb.score - ea.score;
+    if (ordenacaoAtual === "comentados") {
       if (eb.comentarios !== ea.comentarios) return eb.comentarios - ea.comentarios;
+      if (eb.score !== ea.score) return eb.score - ea.score;
       return criadoB - criadoA;
     }
 
@@ -843,7 +840,8 @@ async function registrarReacao(postId, tipo, card) {
     } else {
       await setDoc(ref, {
         uid: usuario.uid,
-          criadoEm: serverTimestamp()
+        tipo,
+        criadoEm: serverTimestamp()
       });
     }
   } catch (erro) {
@@ -852,19 +850,34 @@ async function registrarReacao(postId, tipo, card) {
   }
 }
 
+let menuComentarioAberto = null;
+
+document.addEventListener("click", () => {
+  if (!menuComentarioAberto) return;
+  menuComentarioAberto.hidden = true;
+  const botao = menuComentarioAberto.parentElement?.querySelector(".comentario-menu-botao");
+  botao?.setAttribute("aria-expanded", "false");
+  menuComentarioAberto = null;
+});
+
 async function carregarComentarios(postId, elemento) {
   elemento.textContent = "Carregando comentários...";
 
   try {
-    const consulta = query(
-      collection(db, "posts", postId, "comentarios"),
-      orderBy("criadoEm", "asc")
-    );
+    // Sem orderBy: assim comentários antigos continuam aparecendo mesmo se algum
+    // documento não tiver o campo criadoEm.
+    const resultado = await getDocs(collection(db, "posts", postId, "comentarios"));
+    const itens = resultado.docs.map(item => ({ ref: item, dados: item.data() }));
 
-    const resultado = await getDocs(consulta);
+    itens.sort((a, b) => {
+      const ta = a.dados.criadoEm?.toMillis?.() || 0;
+      const tb = b.dados.criadoEm?.toMillis?.() || 0;
+      return ta - tb;
+    });
+
     elemento.replaceChildren();
 
-    if (resultado.empty) {
+    if (itens.length === 0) {
       const vazio = document.createElement("span");
       vazio.className = "comentarios-vazio";
       vazio.textContent = "Nenhum comentário ainda.";
@@ -874,35 +887,28 @@ async function carregarComentarios(postId, elemento) {
 
     const usuarioAtual = auth.currentUser;
     const ehAdminAtual = usuarioEhAdmin(usuarioAtual);
+    const uidAtual = String(usuarioAtual?.uid || "");
 
-    resultado.forEach(item => {
-      const comentario = item.data();
-
+    itens.forEach(({ ref: item, dados: comentario }) => {
       const caixa = document.createElement("div");
       caixa.className = "comentario";
 
       const conteudo = document.createElement("div");
       conteudo.className = "comentario-conteudo";
 
-      const cabecalho = document.createElement("div");
-      cabecalho.className = "comentario-cabecalho";
-
       const nome = document.createElement("strong");
       nome.textContent = comentario.autor || "Usuário";
-      cabecalho.appendChild(nome);
 
       const corpo = document.createElement("div");
       corpo.className = "comentario-texto";
       corpo.textContent = comentario.texto || "";
 
-      conteudo.append(cabecalho, corpo);
+      conteudo.append(nome, corpo);
       caixa.appendChild(conteudo);
 
       const uidComentario = String(comentario.uid || "");
-      const uidAtual = String(usuarioAtual?.uid || "");
-      const ehDono = Boolean(uidAtual && uidComentario && uidComentario === uidAtual);
+      const ehDono = Boolean(uidAtual && uidComentario && uidAtual === uidComentario);
 
-      // Menu de três pontos no canto superior direito.
       const menuWrap = document.createElement("div");
       menuWrap.className = "comentario-menu-wrap";
 
@@ -910,92 +916,67 @@ async function carregarComentarios(postId, elemento) {
       menuBotao.type = "button";
       menuBotao.className = "comentario-menu-botao";
       menuBotao.textContent = "•••";
-      menuBotao.setAttribute("aria-label", "Abrir opções do comentário");
+      menuBotao.setAttribute("aria-label", "Opções do comentário");
       menuBotao.setAttribute("aria-expanded", "false");
 
       const menu = document.createElement("div");
       menu.className = "comentario-menu";
       menu.hidden = true;
 
-      const fecharMenu = () => {
-        menu.hidden = true;
-        menuBotao.setAttribute("aria-expanded", "false");
-      };
-
-      const abrirOuFecharMenu = event => {
+      menuBotao.addEventListener("click", event => {
         event.stopPropagation();
 
-        document.querySelectorAll(".comentario-menu").forEach(outroMenu => {
-          if (outroMenu !== menu) outroMenu.hidden = true;
-        });
+        if (menuComentarioAberto && menuComentarioAberto !== menu) {
+          menuComentarioAberto.hidden = true;
+          menuComentarioAberto.parentElement
+            ?.querySelector(".comentario-menu-botao")
+            ?.setAttribute("aria-expanded", "false");
+        }
 
-        const vaiAbrir = menu.hidden;
-        menu.hidden = !vaiAbrir;
-        menuBotao.setAttribute("aria-expanded", String(vaiAbrir));
-      };
+        const abrir = menu.hidden;
+        menu.hidden = !abrir;
+        menuBotao.setAttribute("aria-expanded", String(abrir));
+        menuComentarioAberto = abrir ? menu : null;
+      });
 
-      menuBotao.addEventListener("click", abrirOuFecharMenu);
+      menu.addEventListener("click", event => event.stopPropagation());
 
-      // Administrador pode excluir qualquer comentário.
-      // Usuário comum pode excluir apenas o próprio.
       if (ehAdminAtual || ehDono) {
         const excluir = document.createElement("button");
         excluir.type = "button";
         excluir.className = "comentario-menu-item comentario-menu-excluir";
         excluir.textContent = "Excluir";
 
-        excluir.addEventListener("click", async event => {
-          event.stopPropagation();
-          fecharMenu();
+        excluir.addEventListener("click", async () => {
+          menu.hidden = true;
+          menuComentarioAberto = null;
+          menuBotao.setAttribute("aria-expanded", "false");
 
-          const mensagemConfirmacao = ehAdminAtual && !ehDono
-            ? "Excluir este comentário como administrador?"
-            : "Excluir seu comentário?";
-
-          if (!window.confirm(mensagemConfirmacao)) return;
-
-          excluir.disabled = true;
+          if (!window.confirm(ehAdminAtual && !ehDono
+            ? "Excluir este comentário?"
+            : "Excluir seu comentário?")) return;
 
           try {
             await deleteDoc(doc(db, "posts", postId, "comentarios", item.id));
-
-            mostrarMensagem(
-              ehAdminAtual && !ehDono
-                ? "Comentário excluído pelo administrador."
-                : "Seu comentário foi excluído."
-            );
-
             await carregarComentarios(postId, elemento);
+            mostrarMensagem("Comentário excluído.");
           } catch (erro) {
             console.error("Erro ao excluir comentário:", erro);
-
-            if (erro?.code === "permission-denied") {
-              mostrarMensagem(
-                "O Firestore bloqueou a exclusão. Publique o firestore.rules atualizado no Firebase.",
-                "erro",
-                9000
-              );
-            } else {
-              mostrarMensagem(
-                `Não foi possível excluir o comentário (${erro.code || "erro"}).`,
-                "erro",
-                8000
-              );
-            }
+            mostrarMensagem(`Não foi possível excluir (${erro.code || "erro"}).`, "erro", 8000);
           }
         });
 
         menu.appendChild(excluir);
       } else {
-        // Comentário de outra pessoa: opção de denunciar.
         const denunciar = document.createElement("button");
         denunciar.type = "button";
         denunciar.className = "comentario-menu-item comentario-menu-denunciar";
         denunciar.textContent = "Denunciar";
 
-        denunciar.addEventListener("click", async event => {
-          event.stopPropagation();
-          fecharMenu();
+        denunciar.addEventListener("click", async () => {
+          menu.hidden = true;
+          menuComentarioAberto = null;
+          menuBotao.setAttribute("aria-expanded", "false");
 
           if (!auth.currentUser) {
             mostrarPainelAuth("login");
@@ -1005,48 +986,21 @@ async function carregarComentarios(postId, elemento) {
             return;
           }
 
-          if (!window.confirm("Denunciar este comentário para os administradores?")) return;
-
-          denunciar.disabled = true;
-
           try {
             const usuario = auth.currentUser;
-            const denunciaRef = doc(
-              db,
-              "posts",
-              postId,
-              "comentarios",
-              item.id,
-              "denuncias",
-              usuario.uid
+            await setDoc(
+              doc(db, "posts", postId, "comentarios", item.id, "denuncias", usuario.uid),
+              {
+                uid: usuario.uid,
+                postId,
+                comentarioId: item.id,
+                criadoEm: serverTimestamp()
+              }
             );
-
-            await setDoc(denunciaRef, {
-              uid: usuario.uid,
-              postId,
-              comentarioId: item.id,
-              criadoEm: serverTimestamp()
-            });
-
-            mostrarMensagem("Comentário denunciado. Os administradores poderão revisar.");
+            mostrarMensagem("Comentário denunciado.");
           } catch (erro) {
             console.error("Erro ao denunciar comentário:", erro);
-
-            if (erro?.code === "permission-denied") {
-              mostrarMensagem(
-                "O Firestore bloqueou a denúncia. Publique o firestore.rules atualizado no Firebase.",
-                "erro",
-                9000
-              );
-            } else {
-              mostrarMensagem(
-                `Não foi possível denunciar (${erro.code || "erro"}).`,
-                "erro",
-                8000
-              );
-            }
-          } finally {
-            denunciar.disabled = false;
+            mostrarMensagem(`Não foi possível denunciar (${erro.code || "erro"}).`, "erro", 8000);
           }
         });
 
@@ -1055,12 +1009,6 @@ async function carregarComentarios(postId, elemento) {
 
       menuWrap.append(menuBotao, menu);
       caixa.appendChild(menuWrap);
-
-      // Fecha o menu deste comentário ao clicar fora dele.
-      document.addEventListener("click", event => {
-        if (!menuWrap.contains(event.target)) fecharMenu();
-      });
-
       elemento.appendChild(caixa);
     });
   } catch (erro) {

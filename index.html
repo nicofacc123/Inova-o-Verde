@@ -399,44 +399,23 @@
         <button id="btn-sair" class="btn-sair" type="button">Sair</button>
       </div>
 
-      <!-- CRIAR PUBLICAÇÃO -->
+      <!-- NOVA PUBLICAÇÃO -->
       <div id="publicacao-launcher" class="publicacao-launcher" hidden>
-        <button
-          type="button"
-          id="btn-publicacao-plus"
-          class="btn-publicacao-plus"
-          aria-label="Abrir opções de publicação"
-          aria-expanded="false"
-        >+</button>
-
-        <button
-          type="button"
-          id="btn-nova-publicacao"
-          class="btn-nova-publicacao"
-          hidden
-        >Nova publicação</button>
+        <button type="button" id="btn-publicacao-plus" class="btn-publicacao-plus" aria-label="Criar publicação" aria-expanded="false">+</button>
+        <button type="button" id="btn-nova-publicacao" class="btn-nova-publicacao" hidden>Nova publicação</button>
       </div>
 
       <div id="criar-publicacao" class="criar-publicacao" hidden>
         <div class="publicacao-cabecalho">
-          <div>
-            <h3>Nova publicação</h3>
-          </div>
-
-          <button
-            type="button"
-            id="btn-fechar-publicacao"
-            class="btn-fechar-publicacao"
-            aria-label="Fechar formulário de publicação"
-          >×</button>
+          <h3>Nova publicação</h3>
         </div>
 
         <form id="form-publicacao">
           <label for="post-titulo">Título</label>
-          <input type="text" id="post-titulo" maxlength="100" placeholder="Ex: Coleta seletiva na escola" required>
+          <input type="text" id="post-titulo" maxlength="100" placeholder="Título da publicação" required>
 
           <label for="post-texto">Conteúdo</label>
-          <textarea id="post-texto" maxlength="1500" placeholder="Conte sua ideia, opinião ou descreva o problema..." required></textarea>
+          <textarea id="post-texto" maxlength="1500" placeholder="Escreva sua publicação..." required></textarea>
 
           <label for="post-imagem">Imagem (opcional)</label>
           <input type="file" id="post-imagem" accept="image/jpeg,image/png,image/webp">
@@ -447,7 +426,10 @@
 
           <div class="publicar-rodape">
             <span id="contador-texto">0 / 1500</span>
-            <button type="submit" id="btn-publicar" class="btn-comunidade">Publicar</button>
+            <div class="publicar-acoes">
+              <button type="button" id="btn-cancelar-publicacao" class="btn-cancelar-publicacao">Cancelar</button>
+              <button type="submit" id="btn-publicar" class="btn-comunidade">Publicar</button>
+            </div>
           </div>
         </form>
       </div>
@@ -593,7 +575,6 @@
         <div class="admin-grid">
           <section class="admin-bloco">
             <h3>Publicar notícia</h3>
-            <p>A notícia aparecerá automaticamente na aba Notícias.</p>
 
             <form id="admin-noticia-form">
               <label for="noticia-titulo">Título</label>
