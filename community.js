@@ -1686,7 +1686,7 @@ function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarr
   return wrap;
 }
 
-async function carregarRespostasDoComentario(postId, comentarioId, elemento) {
+async function carregarRespostasDoComentario(postId, comentarioId, elemento, abrirFormularioResposta) {
   elemento.replaceChildren();
 
   try {
@@ -1756,7 +1756,28 @@ async function carregarRespostasDoComentario(postId, comentarioId, elemento) {
 
       texto.appendChild(document.createTextNode(resposta.texto || ""));
 
-      conteudo.append(nomeLinha, username, texto);
+      const responderResposta = document.createElement("button");
+      responderResposta.type = "button";
+      responderResposta.className = "btn-responder-comentario btn-responder-resposta";
+      responderResposta.textContent = "Responder";
+
+      responderResposta.addEventListener("click", () => {
+        if (!usuarioPodeInteragir()) return;
+
+        const nomeAlvo = obterNomePorUid(
+          resposta.uid,
+          resposta.autor || "Usuário"
+        );
+        const handleAlvo = obterUsernamePorUid(resposta.uid, "");
+
+        abrirFormularioResposta?.({
+          uid: resposta.uid || "",
+          handle: handleAlvo,
+          nome: nomeAlvo
+        });
+      });
+
+      conteudo.append(nomeLinha, username, texto, responderResposta);
       caixa.append(avatar, conteudo);
 
       caixa.appendChild(
@@ -1765,7 +1786,12 @@ async function carregarRespostasDoComentario(postId, comentarioId, elemento) {
           comentarioId,
           resposta.id,
           resposta.uid,
-          () => carregarRespostasDoComentario(postId, comentarioId, elemento)
+          () => carregarRespostasDoComentario(
+            postId,
+            comentarioId,
+            elemento,
+            abrirFormularioResposta
+          )
         )
       );
 
@@ -2004,8 +2030,23 @@ async function carregarComentarios(postId, elemento) {
       linhaResposta.append(inputResposta, enviar, cancelar);
       formResposta.append(alvo, linhaResposta);
 
-      responder.addEventListener("click", () => {
+      let alvoRespostaUid = comentario.uid || "";
+      let alvoRespostaHandle = handleComentario || "";
+      let alvoRespostaNome = obterNomePorUid(
+        comentario.uid,
+        comentario.autor || "Usuário"
+      );
+
+      function abrirFormularioResposta({
+        uid = "",
+        handle = "",
+        nome = "Usuário"
+      } = {}) {
         if (!usuarioPodeInteragir()) return;
+
+        alvoRespostaUid = uid;
+        alvoRespostaHandle = handle;
+        alvoRespostaNome = nome || "Usuário";
 
         elemento
           .querySelectorAll(".form-resposta-comentario")
@@ -2013,8 +2054,23 @@ async function carregarComentarios(postId, elemento) {
             if (form !== formResposta) form.hidden = true;
           });
 
+        alvo.textContent = alvoRespostaHandle
+          ? `Respondendo a @${alvoRespostaHandle}`
+          : `Respondendo a ${alvoRespostaNome}`;
+
         formResposta.hidden = false;
         inputResposta.focus();
+      }
+
+      responder.addEventListener("click", () => {
+        abrirFormularioResposta({
+          uid: comentario.uid || "",
+          handle: handleComentario || "",
+          nome: obterNomePorUid(
+            comentario.uid,
+            comentario.autor || "Usuário"
+          )
+        });
       });
 
       cancelar.addEventListener("click", () => {
@@ -2050,8 +2106,8 @@ async function carregarComentarios(postId, elemento) {
               uid: usuario.uid,
               autor: obterNomePerfilAtual(),
               texto: textoResposta,
-              respondendoUid: comentario.uid || "",
-              respondendoA: handleComentario || "",
+              respondendoUid: alvoRespostaUid,
+              respondendoA: alvoRespostaHandle,
               criadoEm: serverTimestamp()
             }
           );
@@ -2062,7 +2118,8 @@ async function carregarComentarios(postId, elemento) {
           await carregarRespostasDoComentario(
             postId,
             item.id,
-            listaRespostas
+            listaRespostas,
+            abrirFormularioResposta
           );
 
           mostrarMensagem("Resposta enviada.");
@@ -2082,7 +2139,8 @@ async function carregarComentarios(postId, elemento) {
       carregarRespostasDoComentario(
         postId,
         item.id,
-        listaRespostas
+        listaRespostas,
+        abrirFormularioResposta
       );
     });
   } catch (erro) {

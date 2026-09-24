@@ -4119,3 +4119,17 @@ body.imagem-ampliada-aberta {
     height:28px !important;
   }
 }
+
+
+/* =========================================================
+   V4.1 — RESPOSTAS ESTILO REDES SOCIAIS
+   ========================================================= */
+
+.btn-responder-resposta {
+  margin-top: 6px;
+}
+
+/* Todas as respostas permanecem no mesmo nível visual da conversa. */
+.lista-respostas-comentario .resposta-comentario {
+  margin-left: 0 !important;
+}
