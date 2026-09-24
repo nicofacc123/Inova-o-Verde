@@ -986,10 +986,43 @@ document.getElementById("form-login").addEventListener("submit", async (event) =
 
 
 
+function posicionarPainelNotificacoesMobile() {
+  if (!notificacoesPainel) return;
+
+  if (window.innerWidth > 720) {
+    notificacoesPainel.style.removeProperty("top");
+    notificacoesPainel.style.removeProperty("max-height");
+    return;
+  }
+
+  const navShell = document.querySelector(".nav-shell");
+  if (!navShell) return;
+
+  const viewportHeight =
+    window.visualViewport?.height ||
+    window.innerHeight ||
+    document.documentElement.clientHeight;
+
+  const navRect = navShell.getBoundingClientRect();
+  const topoPainel = Math.max(0, Math.round(navRect.bottom));
+  const alturaDisponivel = Math.max(
+    180,
+    Math.floor(viewportHeight - topoPainel)
+  );
+
+  notificacoesPainel.style.top = `${topoPainel}px`;
+  notificacoesPainel.style.maxHeight = `${alturaDisponivel}px`;
+}
+
 notificacoesBotao?.addEventListener("click", event => {
   event.stopPropagation();
 
   const abrir = notificacoesPainel.hidden;
+
+  if (abrir) {
+    posicionarPainelNotificacoesMobile();
+  }
+
   notificacoesPainel.hidden = !abrir;
   notificacoesBotao.setAttribute("aria-expanded", String(abrir));
 });
@@ -997,6 +1030,40 @@ notificacoesBotao?.addEventListener("click", event => {
 notificacoesPainel?.addEventListener("click", event => {
   event.stopPropagation();
 });
+
+function atualizarPosicaoNotificacoesAbertas() {
+  if (
+    notificacoesPainel &&
+    !notificacoesPainel.hidden &&
+    window.innerWidth <= 720
+  ) {
+    posicionarPainelNotificacoesMobile();
+  }
+}
+
+window.addEventListener(
+  "scroll",
+  atualizarPosicaoNotificacoesAbertas,
+  { passive: true }
+);
+
+window.addEventListener(
+  "resize",
+  atualizarPosicaoNotificacoesAbertas,
+  { passive: true }
+);
+
+window.visualViewport?.addEventListener(
+  "resize",
+  atualizarPosicaoNotificacoesAbertas,
+  { passive: true }
+);
+
+window.visualViewport?.addEventListener(
+  "scroll",
+  atualizarPosicaoNotificacoesAbertas,
+  { passive: true }
+);
 
 notificacoesMarcarLidas?.addEventListener("click", async event => {
   event.stopPropagation();
