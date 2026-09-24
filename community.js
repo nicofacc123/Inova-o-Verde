@@ -1470,21 +1470,11 @@ filtrosComunidade?.addEventListener("click", event => {
   });
 
   ordenacaoAtual = botao.dataset.order || "recentes";
-  atualizarTextoOrdenacao();
 
   // Reordena os cards que já estão na tela sem esperar nova leitura do Firebase.
   reordenarCards();
 });
 
-function atualizarTextoOrdenacao() {
-  const nota = document.getElementById("feed-order-note");
-  if (!nota) return;
-  nota.textContent = {
-    recentes: "Mais recentes primeiro",
-    populares: "Mais populares primeiro",
-    curtidos: "Mais curtidos primeiro"
-  }[ordenacaoAtual] || "Mais recentes primeiro";
-}
 
 // -------------------------------
 // Feed em tempo real
@@ -1579,8 +1569,7 @@ function renderizarPosts() {
     vazio.className = "feed-vazio";
     vazio.textContent = "Nenhuma publicação encontrada.";
     feed.appendChild(vazio);
-    atualizarTextoOrdenacao();
-    return;
+      return;
   }
 
   posts.sort((a, b) => {
@@ -1614,7 +1603,6 @@ function renderizarPosts() {
   });
 
   posts.forEach(post => feed.appendChild(criarCardPost(post)));
-  atualizarTextoOrdenacao();
 }
 
 function criarCardPost(post) {

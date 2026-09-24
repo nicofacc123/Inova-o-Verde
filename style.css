@@ -6166,3 +6166,231 @@ body.admin-modal-aberto * {
     max-height: 125px !important;
   }
 }
+
+
+/* =========================================================
+   V7.2.7 — COMUNIDADE MOBILE ORGANIZADA
+   Base: V7.2.6
+   ========================================================= */
+
+@media (max-width: 720px) {
+  /* Cabeçalho do feed mais limpo */
+  .feed-topo {
+    margin: 20px 0 10px !important;
+  }
+
+  .feed-topo > div:first-child {
+    display: block !important;
+    margin-bottom: 10px !important;
+  }
+
+  .feed-topo h3 {
+    margin: 0 !important;
+    font-size: 25px !important;
+    line-height: 1.1 !important;
+  }
+
+  .feed-order-note {
+    display: none !important;
+  }
+
+  /* Filtros alinhados e com tamanhos consistentes */
+  .filtros-comunidade {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .filtro-post {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    padding: 8px 5px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px !important;
+    font-size: 10.5px !important;
+    line-height: 1.15 !important;
+    text-align: center;
+    white-space: normal !important;
+  }
+
+  /* Feed com espaço real entre cada publicação */
+  #feed-comunidade {
+    display: grid !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    padding: 0 0 4px !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Cada publicação vira um card bem definido */
+  .post-comunidade {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    border: 1px solid #dfe7e2 !important;
+    border-radius: 15px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  .post-cabecalho {
+    min-height: 42px;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) 38px !important;
+    align-items: center !important;
+    gap: 9px !important;
+    margin-bottom: 11px !important;
+  }
+
+  .post-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 13px !important;
+  }
+
+  .post-autor {
+    min-width: 0;
+  }
+
+  .post-autor strong {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+
+  .post-username,
+  .post-data {
+    font-size: 10.5px !important;
+    line-height: 1.3 !important;
+  }
+
+  .post-menu-wrap,
+  .post-menu-botao {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .post-comunidade h4 {
+    margin: 5px 0 7px !important;
+    font-size: 18px !important;
+    line-height: 1.28 !important;
+  }
+
+  .post-texto {
+    margin: 0 !important;
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+  }
+
+  /* Imagem alinhada com o corpo inteiro do post */
+  .post-imagem-miniatura {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 12px 0 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    background: #f2f7f4 !important;
+  }
+
+  .post-imagem {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 360px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    object-fit: contain !important;
+  }
+
+  /* Ações ficam em uma linha organizada */
+  .post-acoes {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-top: 12px !important;
+    padding-top: 11px !important;
+    border-top: 1px solid #edf1ef !important;
+  }
+
+  .controle-votos {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
+  }
+
+  .botao-voto {
+    min-width: 48px !important;
+    height: 40px !important;
+    padding: 0 8px !important;
+  }
+
+  .btn-comentar {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px !important;
+    padding: 0 10px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Comentários respeitam o card */
+  .area-comentarios {
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #edf1ef !important;
+  }
+
+  .form-comentario {
+    margin-top: 9px !important;
+  }
+
+  /* Parte de conta/criar com respiro consistente */
+  .usuario-logado {
+    margin-bottom: 10px !important;
+  }
+
+  .publicacao-launcher {
+    margin: 10px 0 18px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .post-comunidade {
+    padding: 12px !important;
+    border-radius: 13px !important;
+  }
+
+  .filtro-post {
+    min-height: 38px !important;
+    padding-inline: 4px !important;
+    font-size: 10px !important;
+  }
+
+  .post-comunidade h4 {
+    font-size: 17px !important;
+  }
+
+  .post-texto {
+    font-size: 13.5px !important;
+  }
+
+  .botao-voto {
+    min-width: 44px !important;
+  }
+}
