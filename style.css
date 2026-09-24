@@ -5149,3 +5149,122 @@ body.imagem-ampliada-aberta {
     font-size: 10px;
   }
 }
+
+
+/* =========================================================
+   V6.2 — PAINEL ADMIN: MODO DE DESEMPENHO
+   Remove efeitos pesados para evitar queda de FPS.
+   ========================================================= */
+
+/* O blur do fundo era um dos efeitos mais pesados. */
+.admin-modal-backdrop {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(10, 28, 20, .82) !important;
+}
+
+/* Painel sem sombra pesada e sem efeitos de composição. */
+.admin-card {
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  will-change: auto !important;
+  scroll-behavior: auto !important;
+}
+
+/* Remove animações e transições apenas do painel. */
+.admin-modal,
+.admin-modal *,
+.admin-card,
+.admin-card * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Pausa animações do site que ficam atrás do modal.
+   Isso inclui as folhas caindo e outros efeitos decorativos. */
+body.admin-modal-aberto * {
+  animation-play-state: paused !important;
+}
+
+/* Sem sombras nos componentes administrativos. */
+.admin-bloco,
+.admin-menu,
+.admin-metrica,
+.admin-item,
+.admin-ranking-item,
+.admin-resumo-denuncia,
+.admin-noticia-item,
+.admin-btn-secundario,
+.admin-menu-item,
+.admin-item-acoes button,
+#admin-login-form input,
+#admin-noticia-form input,
+#admin-noticia-form textarea,
+#admin-notificacao-form input,
+#admin-notificacao-form textarea,
+#admin-notificacao-form select {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Hover simples, sem movimentação/efeito. */
+.admin-menu-item:hover,
+.admin-btn-secundario:hover,
+.admin-item-acoes button:hover,
+.btn-admin-remover:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Evita efeitos visuais caros dentro do modal. */
+.admin-modal * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* No celular o painel vira praticamente uma tela normal.
+   Menos transparência e menos área composta = mais fluidez. */
+@media (max-width: 720px) {
+  .admin-modal {
+    padding: 0 !important;
+    place-items: stretch !important;
+    background: #fff !important;
+  }
+
+  .admin-modal-backdrop {
+    display: none !important;
+  }
+
+  .admin-card {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 18px 12px 28px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+
+  .admin-menu {
+    background: #f5f8f6 !important;
+  }
+
+  .admin-metrica,
+  .admin-bloco,
+  .admin-item {
+    border-radius: 11px !important;
+  }
+}
+
+/* Também respeita aparelhos/sistemas que pedem menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+  .admin-modal,
+  .admin-modal * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
