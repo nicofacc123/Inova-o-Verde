@@ -106,6 +106,38 @@ let unsubscribeContagemComentarios = [];
 const estatisticasPosts = new Map();
 const comentariosAbertos = new Map();
 
+const adminUidsPublicos = new Set();
+
+function uidEhAdminPublico(uid) {
+  return Boolean(uid && adminUidsPublicos.has(String(uid)));
+}
+
+function criarSeloVerificado() {
+  const selo = document.createElement("img");
+  selo.className = "selo-admin-verificado";
+  selo.src = "verificado-admin.svg";
+  selo.alt = "Verificado";
+  selo.title = "Administrador verificado";
+  selo.loading = "eager";
+  return selo;
+}
+
+function criarNomeComSelo(nome, verificado = false, tag = "span") {
+  const linha = document.createElement(tag);
+  linha.className = "nome-com-verificado";
+
+  const texto = document.createElement("span");
+  texto.textContent = nome || "Usuário";
+  linha.appendChild(texto);
+
+  if (verificado) {
+    linha.appendChild(criarSeloVerificado());
+  }
+
+  return linha;
+}
+
+
 function mostrarMensagem(texto, tipo = "sucesso", tempo = 5000) {
   mensagem.textContent = texto;
   mensagem.className = `mensagem-comunidade mensagem-${tipo}`;
@@ -211,11 +243,29 @@ document.getElementById("btn-sair").addEventListener("click", async () => {
   mostrarMensagem("Você saiu da sua conta.");
 });
 
-onAuthStateChanged(auth, usuario => {
+onAuthStateChanged(auth, async usuario => {
   atualizarInterfaceUsuario(usuario);
   atualizarPainelAdmin(usuario);
 
-  // Recalcula os botões de excluir/remover nos comentários que já estavam abertos.
+  // Quando um administrador entra, registra seu UID público.
+  // Isso permite mostrar o selo também em posts/comentários antigos dele.
+  const adminAtual = obterAdminAtual(usuario);
+  if (adminAtual && usuario?.uid) {
+    try {
+      await setDoc(
+        doc(db, "adminsPublicos", usuario.uid),
+        {
+          nome: adminAtual.nome,
+          atualizadoEm: serverTimestamp()
+        },
+        { merge: true }
+      );
+    } catch (erro) {
+      console.error("Erro ao registrar administrador verificado:", erro);
+    }
+  }
+
+  // Recalcula os menus dos comentários já abertos.
   window.setTimeout(() => {
     comentariosAbertos.forEach((elemento, postId) => {
       if (elemento?.isConnected) carregarComentarios(postId, elemento);
@@ -240,11 +290,34 @@ function atualizarInterfaceUsuario(usuario) {
     btnNovaPublicacao.hidden = true;
     criarPublicacao.hidden = true;
     btnPublicacaoPlus.setAttribute("aria-expanded", "false");
-    nomeUsuario.textContent = usuario.displayName || usuario.email || "Usuário";
+    nomeUsuario.replaceChildren();
+    const nomeLogado = document.createElement("span");
+    nomeLogado.textContent = usuario.displayName || usuario.email || "Usuário";
+    nomeUsuario.appendChild(nomeLogado);
+    if (usuarioEhAdmin(usuario)) {
+      nomeUsuario.appendChild(criarSeloVerificado());
+      nomeUsuario.classList.add("nome-usuario-verificado");
+    } else {
+      nomeUsuario.classList.remove("nome-usuario-verificado");
+    }
   }
 
   renderizarPosts();
 }
+
+// Administradores verificados visíveis publicamente
+onSnapshot(collection(db, "adminsPublicos"), snapshot => {
+  adminUidsPublicos.clear();
+  snapshot.forEach(item => adminUidsPublicos.add(item.id));
+
+  renderizarPosts();
+
+  comentariosAbertos.forEach((elemento, postId) => {
+    if (elemento?.isConnected) carregarComentarios(postId, elemento);
+  });
+}, erro => {
+  console.error("Erro ao carregar administradores verificados:", erro);
+});
 
 function usuarioPodeInteragir() {
   const usuario = auth.currentUser;
@@ -607,12 +680,21 @@ function criarCardPost(post) {
 
   const autorArea = document.createElement("div");
   autorArea.className = "post-autor";
+  const autorLinha = document.createElement("div");
+  autorLinha.className = "post-autor-linha";
+
   const autor = document.createElement("strong");
   autor.textContent = post.autor || "Usuário";
+  autorLinha.appendChild(autor);
+
+  if (uidEhAdminPublico(post.uid)) {
+    autorLinha.appendChild(criarSeloVerificado());
+  }
+
   const data = document.createElement("span");
   data.className = "post-data";
   data.textContent = formatarData(post.criadoEm);
-  autorArea.append(autor, data);
+  autorArea.append(autorLinha, data);
   cabecalho.append(avatar, autorArea);
 
   // Menu ••• da publicação principal
@@ -1036,14 +1118,22 @@ async function carregarComentarios(postId, elemento) {
       const conteudo = document.createElement("div");
       conteudo.className = "comentario-conteudo";
 
+      const nomeLinha = document.createElement("div");
+      nomeLinha.className = "comentario-nome-linha";
+
       const nome = document.createElement("strong");
       nome.textContent = comentario.autor || "Usuário";
+      nomeLinha.appendChild(nome);
+
+      if (uidEhAdminPublico(comentario.uid)) {
+        nomeLinha.appendChild(criarSeloVerificado());
+      }
 
       const corpo = document.createElement("div");
       corpo.className = "comentario-texto";
       corpo.textContent = comentario.texto || "";
 
-      conteudo.append(nome, corpo);
+      conteudo.append(nomeLinha, corpo);
       caixa.appendChild(conteudo);
 
       const uidComentario = String(comentario.uid || "");
@@ -1341,10 +1431,15 @@ function atualizarPainelAdmin(usuario) {
   adminTools.hidden = !estaLogadoComoAdmin;
 
   if (estaLogadoComoAdmin) {
-    adminNome.textContent = `Painel de ${admin.nome}`;
+    adminNome.replaceChildren();
+    const textoPainel = document.createElement("span");
+    textoPainel.textContent = `Painel de ${admin.nome}`;
+    adminNome.append(textoPainel, criarSeloVerificado());
+    adminNome.classList.add("admin-nome-verificado");
     renderizarAdminNoticias();
   } else {
     adminNome.textContent = "Painel administrativo";
+    adminNome.classList.remove("admin-nome-verificado");
   }
 }
 
@@ -1487,7 +1582,11 @@ function renderizarNoticias() {
     topo.className = "noticia-meta";
 
     const autor = document.createElement("span");
-    autor.textContent = noticia.autor ? `Por ${noticia.autor}` : "Equipe Inovação Verde";
+    autor.className = "noticia-autor-verificado";
+
+    const prefixoAutor = document.createElement("span");
+    prefixoAutor.textContent = noticia.autor ? `Por ${noticia.autor}` : "Equipe Inovação Verde";
+    autor.append(prefixoAutor, criarSeloVerificado());
 
     const data = document.createElement("span");
     data.textContent = formatarData(noticia.criadoEm);

@@ -3792,3 +3792,70 @@ body.imagem-ampliada-aberta {
 .post-comunidade:has(.post-menu:not([hidden])) {
   z-index: 120;
 }
+
+
+/* =========================================================
+   V3.2 — ADMINISTRADOR VERIFICADO
+   ========================================================= */
+
+.selo-admin-verificado {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  flex: 0 0 auto;
+  margin-left: 4px;
+  vertical-align: -2px;
+  object-fit: contain;
+}
+
+.post-autor-linha,
+.comentario-nome-linha,
+.noticia-autor-verificado,
+.nome-usuario-verificado,
+.admin-nome-verificado {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px;
+}
+
+.post-autor-linha {
+  line-height: 1.2;
+}
+
+.comentario-nome-linha {
+  width: fit-content;
+  margin-bottom: 2px;
+}
+
+.comentario-nome-linha .selo-admin-verificado {
+  width: 14px;
+  height: 14px;
+}
+
+.noticia-autor-verificado .selo-admin-verificado {
+  width: 14px;
+  height: 14px;
+}
+
+#nome-usuario .selo-admin-verificado {
+  width: 16px;
+  height: 16px;
+}
+
+#admin-nome .selo-admin-verificado {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 720px) {
+  .selo-admin-verificado {
+    width: 15px;
+    height: 15px;
+  }
+
+  .comentario-nome-linha .selo-admin-verificado,
+  .noticia-autor-verificado .selo-admin-verificado {
+    width: 13px;
+    height: 13px;
+  }
+}
