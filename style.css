@@ -6129,3 +6129,40 @@ body.admin-modal-aberto * {
     max-width: calc(100% - 94px) !important;
   }
 }
+
+
+/* =========================================================
+   V7.2.6 — LOGO MOBILE +20% E 10PX MAIS À ESQUERDA
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .hero-logo-wrap {
+    flex: 0 0 142px !important;
+    width: 142px !important;
+    height: 146px !important;
+    min-height: 146px !important;
+    margin-left: -20px !important;
+  }
+
+  .hero-logo {
+    width: 137px !important;
+    max-width: 137px !important;
+    max-height: 142px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .hero-logo-wrap {
+    flex-basis: 122px !important;
+    width: 122px !important;
+    height: 130px !important;
+    min-height: 130px !important;
+    margin-left: -18px !important;
+  }
+
+  .hero-logo {
+    width: 118px !important;
+    max-width: 118px !important;
+    max-height: 125px !important;
+  }
+}
