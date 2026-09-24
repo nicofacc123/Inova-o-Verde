@@ -5114,3 +5114,38 @@ body.imagem-ampliada-aberta {
     flex-direction: column;
   }
 }
+
+
+/* =========================================================
+   V6.1 — PAINEL ADMIN OTIMIZADO
+   ========================================================= */
+
+.admin-view {
+  min-height: 180px;
+}
+
+#admin-denuncias-list > p,
+#admin-publicacoes-list > p,
+#admin-usuarios-list > p {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed #dbe7e0;
+  border-radius: 12px;
+  background: #f9fbfa;
+  color: #6c7e74;
+  text-align: center;
+}
+
+.admin-status {
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .admin-view-topo {
+    align-items: center;
+  }
+
+  .admin-status {
+    font-size: 10px;
+  }
+}
