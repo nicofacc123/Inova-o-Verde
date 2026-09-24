@@ -363,7 +363,6 @@
               <input
                 type="text"
                 id="cadastro-perfil-nome"
-                placeholder="Ex: Nícolas Ferreira"
                 maxlength="40"
                 autocomplete="name"
                 required
@@ -375,21 +374,20 @@
                 <input
                   type="text"
                   id="cadastro-nome"
-                  placeholder="nicolas12"
                   minlength="3"
                   maxlength="24"
                   autocomplete="username"
-                  pattern="[A-Za-z0-9._-]{3,24}"
+                  pattern="[a-z0-9._-]{3,24}"
                   required
                 >
               </div>
-              <small class="auth-campo-ajuda">O @nome de usuário é único.</small>
+              <small class="auth-campo-ajuda">O @nome de usuário é único e deve ser em letras minúsculas.</small>
 
               <label for="cadastro-email">E-mail</label>
-              <input type="email" id="cadastro-email" placeholder="seuemail@gmail.com" autocomplete="email" required>
+              <input type="email" id="cadastro-email" autocomplete="email" required>
 
               <label for="cadastro-senha">Senha</label>
-              <input type="password" id="cadastro-senha" minlength="6" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" required>
+              <input type="password" id="cadastro-senha" minlength="6" autocomplete="new-password" required>
 
               <button type="submit" class="btn-comunidade">Criar conta</button>
               <p id="cadastro-erro" class="auth-form-erro" role="alert" aria-live="polite"></p>
@@ -405,7 +403,7 @@
 
             <form id="form-login">
               <label for="login-email">E-mail</label>
-              <input type="email" id="login-email" placeholder="seuemail@gmail.com" autocomplete="email" required>
+              <input type="email" id="login-email" autocomplete="email" required>
 
               <label for="login-senha">Senha</label>
               <input type="password" id="login-senha" placeholder="Sua senha" autocomplete="current-password" required>
@@ -531,12 +529,12 @@
               id="perfil-usuario"
               minlength="3"
               maxlength="24"
-              pattern="[A-Za-z0-9._-]{3,24}"
+              pattern="[a-z0-9._-]{3,24}"
               autocomplete="username"
               required
             >
           </div>
-          <small class="auth-campo-ajuda">O @nome de usuário é único.</small>
+          <small class="auth-campo-ajuda">O @nome de usuário é único e deve ser em letras minúsculas.</small>
 
           <label for="perfil-foto-input">Foto de perfil</label>
           <input type="file" id="perfil-foto-input" accept="image/jpeg,image/png,image/webp">

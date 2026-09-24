@@ -123,6 +123,30 @@ const perfilRemoverFoto = document.getElementById("perfil-remover-foto");
 const btnSalvarPerfil = document.getElementById("btn-salvar-perfil");
 const perfilMensagem = document.getElementById("perfil-mensagem");
 
+const cadastroUsuarioInput = document.getElementById("cadastro-nome");
+
+function forcarUsernameMinusculo(input) {
+  if (!input) return;
+
+  input.addEventListener("input", () => {
+    const inicio = input.selectionStart;
+    const fim = input.selectionEnd;
+    const valorMinusculo = input.value.toLowerCase();
+
+    if (input.value !== valorMinusculo) {
+      input.value = valorMinusculo;
+
+      try {
+        input.setSelectionRange(inicio, fim);
+      } catch {}
+    }
+  });
+}
+
+forcarUsernameMinusculo(cadastroUsuarioInput);
+forcarUsernameMinusculo(perfilUsuarioInput);
+
+
 let ordenacaoAtual = "recentes";
 let postsSalvos = [];
 let unsubscribeReacoes = [];
@@ -170,7 +194,7 @@ function normalizarUsername(valor) {
 }
 
 function usernameValido(valor) {
-  return /^[A-Za-z0-9._-]{3,24}$/.test(String(valor || "").trim());
+  return /^[a-z0-9._-]{3,24}$/.test(String(valor || "").trim());
 }
 
 function usernameReservadoParaAdmin(usernameKey) {
@@ -254,7 +278,7 @@ async function salvarPerfilNoFirestore(usuario, nomePerfil, username, foto) {
   }
 
   if (!usernameValido(usernameLimpo)) {
-    const erro = new Error("Use de 3 a 24 caracteres: letras, números, ponto, _ ou -.");
+    const erro = new Error("Use de 3 a 24 caracteres, somente letras minúsculas, números, ponto, _ ou -.");
     erro.codigoPerfil = "username-invalido";
     throw erro;
   }
@@ -461,7 +485,7 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
   }
 
   if (!usernameValido(username)) {
-    cadastroErro.textContent = "Use de 3 a 24 caracteres: letras, números, ponto, _ ou -.";
+    cadastroErro.textContent = "Use de 3 a 24 caracteres, somente letras minúsculas, números, ponto, _ ou -.";
     return;
   }
   if (usernameReservadoParaAdmin(usernameKey)) {
@@ -876,7 +900,7 @@ formPerfil?.addEventListener("submit", async event => {
   }
 
   if (!usernameValido(username)) {
-    return mensagemPerfil("Use de 3 a 24 caracteres: letras, números, ponto, _ ou -.", "erro");
+    return mensagemPerfil("Use de 3 a 24 caracteres, somente letras minúsculas, números, ponto, _ ou -.", "erro");
   }
 
   const fotoFinal = fotoPerfilPendente === undefined
