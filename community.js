@@ -101,6 +101,12 @@ const postImagemInput = document.getElementById("post-imagem");
 const postImagemPreview = document.getElementById("post-imagem-preview");
 const postImagemPreviewImg = document.getElementById("post-imagem-preview-img");
 const postImagemRemover = document.getElementById("post-imagem-remover");
+const notificacoesWrap = document.getElementById("notificacoes-wrap");
+const notificacoesBotao = document.getElementById("notificacoes-botao");
+const notificacoesBadge = document.getElementById("notificacoes-badge");
+const notificacoesPainel = document.getElementById("notificacoes-painel");
+const notificacoesLista = document.getElementById("notificacoes-lista");
+const notificacoesMarcarLidas = document.getElementById("notificacoes-marcar-lidas");
 const perfilAtalho = document.getElementById("perfil-atalho");
 const perfilAtalhoImg = document.getElementById("perfil-atalho-img");
 const perfilAtalhoInicial = document.getElementById("perfil-atalho-inicial");
@@ -156,6 +162,9 @@ const comentariosAbertos = new Map();
 const perfisUsuarios = new Map();
 let perfilAtual = null;
 let fotoPerfilPendente = undefined;
+let notificacoesAtuais = [];
+let unsubscribeNotificacoes = null;
+const unsubscribeCurtidasItens = new Map();
 
 const adminUidsPublicos = new Set();
 
@@ -432,6 +441,363 @@ function atualizarInterfacePerfil(usuario = auth.currentUser) {
   }
 }
 
+
+function idNotificacao(...partes) {
+  return partes
+    .filter(Boolean)
+    .map(parte => String(parte).replaceAll("/", "_"))
+    .join("--");
+}
+
+async function criarNotificacao({
+  destinatarioUid,
+  tipo,
+  postId = "",
+  comentarioId = "",
+  respostaId = "",
+  eventoId = ""
+}) {
+  const usuario = auth.currentUser;
+
+  if (
+    !usuario?.uid ||
+    !destinatarioUid ||
+    destinatarioUid === usuario.uid
+  ) {
+    return;
+  }
+
+  const id = eventoId || idNotificacao(
+    tipo,
+    postId,
+    comentarioId,
+    respostaId,
+    usuario.uid
+  );
+
+  await setDoc(
+    doc(db, "notificacoes", destinatarioUid, "itens", id),
+    {
+      destinatarioUid,
+      atorUid: usuario.uid,
+      tipo,
+      postId: String(postId || ""),
+      comentarioId: String(comentarioId || ""),
+      respostaId: String(respostaId || ""),
+      lida: false,
+      criadoEm: serverTimestamp()
+    }
+  );
+}
+
+async function removerNotificacao(destinatarioUid, notificacaoId) {
+  if (!auth.currentUser?.uid || !destinatarioUid || !notificacaoId) return;
+
+  try {
+    await deleteDoc(
+      doc(
+        db,
+        "notificacoes",
+        destinatarioUid,
+        "itens",
+        notificacaoId
+      )
+    );
+  } catch (erro) {
+    // A reação principal não deve falhar só porque a notificação já não existe.
+    if (erro?.code !== "permission-denied") {
+      console.error("Erro ao remover notificação:", erro);
+    }
+  }
+}
+
+function textoDaNotificacao(notificacao) {
+  const nomeAtor = obterNomePorUid(
+    notificacao.atorUid,
+    "Alguém"
+  );
+
+  const textos = {
+    curtida_post: `${nomeAtor} curtiu sua publicação.`,
+    comentario_post: `${nomeAtor} comentou na sua publicação.`,
+    resposta_comentario: `${nomeAtor} respondeu seu comentário.`,
+    curtida_comentario: `${nomeAtor} curtiu seu comentário.`,
+    curtida_resposta: `${nomeAtor} curtiu sua resposta.`
+  };
+
+  return textos[notificacao.tipo] || `${nomeAtor} interagiu com você.`;
+}
+
+function abrirDestinoNotificacao(notificacao) {
+  notificacoesPainel.hidden = true;
+  notificacoesBotao.setAttribute("aria-expanded", "false");
+
+  window.showPage?.("comunidade");
+
+  window.setTimeout(() => {
+    const card = document.getElementById(`post-${notificacao.postId}`);
+    if (!card) return;
+
+    card.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+
+    card.classList.add("post-destaque-notificacao");
+    window.setTimeout(
+      () => card.classList.remove("post-destaque-notificacao"),
+      1800
+    );
+  }, 120);
+}
+
+function renderizarNotificacoes() {
+  if (!notificacoesLista) return;
+
+  notificacoesLista.replaceChildren();
+
+  const ordenadas = [...notificacoesAtuais]
+    .sort((a, b) => {
+      const ta = a.criadoEm?.toMillis?.() || 0;
+      const tb = b.criadoEm?.toMillis?.() || 0;
+      return tb - ta;
+    })
+    .slice(0, 40);
+
+  const naoLidas = ordenadas.filter(item => !item.lida).length;
+
+  if (notificacoesBadge) {
+    notificacoesBadge.hidden = naoLidas === 0;
+    notificacoesBadge.textContent = naoLidas > 99 ? "99+" : String(naoLidas);
+  }
+
+  if (ordenadas.length === 0) {
+    const vazio = document.createElement("p");
+    vazio.className = "notificacoes-vazio";
+    vazio.textContent = "Nenhuma notificação ainda.";
+    notificacoesLista.appendChild(vazio);
+    return;
+  }
+
+  ordenadas.forEach(notificacao => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "notificacao-item";
+    item.classList.toggle("nao-lida", !notificacao.lida);
+
+    const avatar = document.createElement("div");
+    avatar.className = "notificacao-avatar";
+    aplicarAvatar(
+      avatar,
+      notificacao.atorUid,
+      obterNomePorUid(notificacao.atorUid, "U")
+    );
+
+    const conteudo = document.createElement("div");
+    conteudo.className = "notificacao-conteudo";
+
+    const texto = document.createElement("div");
+    texto.className = "notificacao-texto";
+    texto.textContent = textoDaNotificacao(notificacao);
+
+    const data = document.createElement("span");
+    data.className = "notificacao-data";
+    data.textContent = formatarData(notificacao.criadoEm);
+
+    conteudo.append(texto, data);
+
+    if (!notificacao.lida) {
+      const ponto = document.createElement("span");
+      ponto.className = "notificacao-ponto";
+      ponto.setAttribute("aria-label", "Não lida");
+      item.append(avatar, conteudo, ponto);
+    } else {
+      item.append(avatar, conteudo);
+    }
+
+    item.addEventListener("click", async () => {
+      if (!notificacao.lida && auth.currentUser) {
+        try {
+          await setDoc(
+            doc(
+              db,
+              "notificacoes",
+              auth.currentUser.uid,
+              "itens",
+              notificacao.id
+            ),
+            { lida: true },
+            { merge: true }
+          );
+        } catch (erro) {
+          console.error("Erro ao marcar notificação como lida:", erro);
+        }
+      }
+
+      abrirDestinoNotificacao(notificacao);
+    });
+
+    notificacoesLista.appendChild(item);
+  });
+}
+
+function iniciarNotificacoes(usuario) {
+  if (unsubscribeNotificacoes) {
+    unsubscribeNotificacoes();
+    unsubscribeNotificacoes = null;
+  }
+
+  notificacoesAtuais = [];
+
+  if (!usuario?.uid) {
+    if (notificacoesWrap) notificacoesWrap.hidden = true;
+    if (notificacoesPainel) notificacoesPainel.hidden = true;
+    if (notificacoesBadge) notificacoesBadge.hidden = true;
+    renderizarNotificacoes();
+    return;
+  }
+
+  notificacoesWrap.hidden = false;
+
+  unsubscribeNotificacoes = onSnapshot(
+    collection(db, "notificacoes", usuario.uid, "itens"),
+    snapshot => {
+      notificacoesAtuais = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+      }));
+      renderizarNotificacoes();
+    },
+    erro => console.error("Erro ao carregar notificações:", erro)
+  );
+}
+
+async function marcarTodasNotificacoesComoLidas() {
+  const usuario = auth.currentUser;
+  if (!usuario?.uid) return;
+
+  const pendentes = notificacoesAtuais.filter(item => !item.lida);
+
+  await Promise.all(
+    pendentes.map(item =>
+      setDoc(
+        doc(
+          db,
+          "notificacoes",
+          usuario.uid,
+          "itens",
+          item.id
+        ),
+        { lida: true },
+        { merge: true }
+      )
+    )
+  );
+}
+
+function limparListenersCurtidasDoPost(postId) {
+  const prefixo = `${postId}:`;
+
+  [...unsubscribeCurtidasItens.entries()].forEach(([chave, unsubscribe]) => {
+    if (!chave.startsWith(prefixo)) return;
+    unsubscribe();
+    unsubscribeCurtidasItens.delete(chave);
+  });
+}
+
+function observarCurtidasItem(chave, colecaoCurtidas, botao, contador) {
+  const anterior = unsubscribeCurtidasItens.get(chave);
+  if (anterior) anterior();
+
+  const unsubscribe = onSnapshot(
+    colecaoCurtidas,
+    snapshot => {
+      const uid = auth.currentUser?.uid || "";
+      const curtido = Boolean(uid && snapshot.docs.some(item => item.id === uid));
+
+      botao.dataset.curtido = String(curtido);
+      botao.classList.toggle("ativo", curtido);
+      botao.setAttribute("aria-pressed", String(curtido));
+
+      const icone = botao.querySelector(".curtida-icone");
+      if (icone) icone.textContent = curtido ? "♥" : "♡";
+
+      contador.textContent = String(snapshot.size);
+    },
+    erro => console.error("Erro ao carregar curtidas:", erro)
+  );
+
+  unsubscribeCurtidasItens.set(chave, unsubscribe);
+}
+
+function criarBotaoCurtirItem() {
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "btn-curtir-comentario";
+  botao.dataset.curtido = "false";
+  botao.setAttribute("aria-pressed", "false");
+
+  const icone = document.createElement("span");
+  icone.className = "curtida-icone";
+  icone.textContent = "♡";
+
+  const texto = document.createElement("span");
+  texto.textContent = "Curtir";
+
+  const contador = document.createElement("span");
+  contador.className = "curtida-contador";
+  contador.textContent = "0";
+
+  botao.append(icone, texto, contador);
+
+  return { botao, contador };
+}
+
+async function alternarCurtidaItem({
+  botao,
+  refCurtida,
+  donoUid,
+  tipoNotificacao,
+  postId,
+  comentarioId = "",
+  respostaId = "",
+  notificacaoId
+}) {
+  if (!usuarioPodeInteragir()) return;
+
+  const usuario = auth.currentUser;
+  const curtido = botao.dataset.curtido === "true";
+
+  try {
+    if (curtido) {
+      await deleteDoc(refCurtida);
+      await removerNotificacao(donoUid, notificacaoId);
+      return;
+    }
+
+    await setDoc(refCurtida, {
+      uid: usuario.uid,
+      criadoEm: serverTimestamp()
+    });
+
+    await criarNotificacao({
+      destinatarioUid: donoUid,
+      tipo: tipoNotificacao,
+      postId,
+      comentarioId,
+      respostaId,
+      eventoId: notificacaoId
+    });
+  } catch (erro) {
+    console.error("Erro ao curtir:", erro);
+    mostrarMensagem(
+      `Não foi possível curtir (${erro.code || "erro"}).`,
+      "erro",
+      8000
+    );
+  }
+}
+
 function mostrarMensagem(texto, tipo = "sucesso", tempo = 5000) {
   mensagem.textContent = texto;
   mensagem.className = `mensagem-comunidade mensagem-${tipo}`;
@@ -554,6 +920,43 @@ document.getElementById("form-login").addEventListener("submit", async (event) =
 });
 
 
+
+notificacoesBotao?.addEventListener("click", event => {
+  event.stopPropagation();
+
+  const abrir = notificacoesPainel.hidden;
+  notificacoesPainel.hidden = !abrir;
+  notificacoesBotao.setAttribute("aria-expanded", String(abrir));
+});
+
+notificacoesPainel?.addEventListener("click", event => {
+  event.stopPropagation();
+});
+
+notificacoesMarcarLidas?.addEventListener("click", async event => {
+  event.stopPropagation();
+
+  try {
+    await marcarTodasNotificacoesComoLidas();
+  } catch (erro) {
+    console.error("Erro ao marcar notificações:", erro);
+  }
+});
+
+document.addEventListener("click", event => {
+  if (
+    !notificacoesPainel ||
+    notificacoesPainel.hidden ||
+    notificacoesWrap?.contains(event.target)
+  ) {
+    return;
+  }
+
+  notificacoesPainel.hidden = true;
+  notificacoesBotao?.setAttribute("aria-expanded", "false");
+});
+
+
 // -------------------------------
 // Sessão
 // -------------------------------
@@ -567,6 +970,7 @@ onAuthStateChanged(auth, async usuario => {
   await carregarPerfilAtual(usuario);
   atualizarInterfaceUsuario(usuario);
   atualizarPainelAdmin(usuario);
+  iniciarNotificacoes(usuario);
 
   const adminAtual = obterAdminAtual(usuario);
   if (adminAtual && usuario?.uid) {
@@ -644,6 +1048,7 @@ onSnapshot(collection(db, "usuarios"), snapshot => {
     if (atual) perfilAtual = atual;
   }
   atualizarInterfacePerfil(auth.currentUser);
+  renderizarNotificacoes();
   renderizarPosts();
   comentariosAbertos.forEach((elemento, postId) => {
     if (elemento?.isConnected) carregarComentarios(postId, elemento);
@@ -1118,6 +1523,8 @@ function renderizarPosts() {
 function criarCardPost(post) {
   const card = document.createElement("article");
   card.className = "post-comunidade";
+  card.id = `post-${post.id}`;
+  card.dataset.postUid = post.uid || "";
   card.dataset.minhaReacao = "";
 
   const stats = obterEstatisticas(post.id);
@@ -1378,12 +1785,28 @@ function criarCardPost(post) {
 
       try {
         const usuario = auth.currentUser;
-        await addDoc(collection(db, "posts", post.id, "comentarios"), {
-          uid: usuario.uid,
-          autor: obterNomePerfilAtual(),
-          texto: comentario,
-          criadoEm: serverTimestamp()
+        const comentarioRef = await addDoc(
+          collection(db, "posts", post.id, "comentarios"),
+          {
+            uid: usuario.uid,
+            autor: obterNomePerfilAtual(),
+            texto: comentario,
+            criadoEm: serverTimestamp()
+          }
+        );
+
+        await criarNotificacao({
+          destinatarioUid: post.uid || "",
+          tipo: "comentario_post",
+          postId: post.id,
+          comentarioId: comentarioRef.id,
+          eventoId: idNotificacao(
+            "comentario-post",
+            post.id,
+            comentarioRef.id
+          )
         });
+
         input.value = "";
         await carregarComentarios(post.id, lista);
       } catch (erro) {
@@ -1590,20 +2013,47 @@ async function registrarReacao(postId, tipo, card) {
   const usuario = auth.currentUser;
   const ref = doc(db, "posts", postId, "reacoes", usuario.uid);
   const atual = card.dataset.minhaReacao || "";
+  const donoPostUid = card.dataset.postUid || "";
+  const notifId = idNotificacao(
+    "curtida-post",
+    postId,
+    usuario.uid
+  );
 
   try {
     if (atual === tipo) {
       await deleteDoc(ref);
-    } else {
-      await setDoc(ref, {
-        uid: usuario.uid,
-        tipo,
-        criadoEm: serverTimestamp()
+
+      if (tipo === "like") {
+        await removerNotificacao(donoPostUid, notifId);
+      }
+
+      return;
+    }
+
+    await setDoc(ref, {
+      uid: usuario.uid,
+      tipo,
+      criadoEm: serverTimestamp()
+    });
+
+    if (tipo === "like") {
+      await criarNotificacao({
+        destinatarioUid: donoPostUid,
+        tipo: "curtida_post",
+        postId,
+        eventoId: notifId
       });
+    } else if (atual === "like") {
+      await removerNotificacao(donoPostUid, notifId);
     }
   } catch (erro) {
     console.error("Erro na reação:", erro);
-    mostrarMensagem(`Não foi possível registrar seu voto (${erro.code || "erro"}).`, "erro", 8000);
+    mostrarMensagem(
+      `Não foi possível registrar seu voto (${erro.code || "erro"}).`,
+      "erro",
+      8000
+    );
   }
 }
 
@@ -1843,6 +2293,12 @@ async function carregarRespostasDoComentario(
 
       texto.appendChild(document.createTextNode(resposta.texto || ""));
 
+      const acoesResposta = document.createElement("div");
+      acoesResposta.className =
+        "comentario-acoes-inline resposta-acoes-inline";
+
+      const curtidaResposta = criarBotaoCurtirItem();
+
       // Toda resposta também pode ser respondida.
       const responderResposta = document.createElement("button");
       responderResposta.type = "button";
@@ -1864,14 +2320,75 @@ async function carregarRespostasDoComentario(
         });
       });
 
+      acoesResposta.append(
+        curtidaResposta.botao,
+        responderResposta
+      );
+
       conteudo.append(
         nomeLinha,
         username,
         texto,
-        responderResposta
+        acoesResposta
       );
 
       caixa.append(avatar, conteudo);
+
+      const curtidasRespostaRef = collection(
+        db,
+        "posts",
+        postId,
+        "comentarios",
+        comentarioId,
+        "respostas",
+        resposta.id,
+        "curtidas"
+      );
+
+      const chaveCurtidaResposta =
+        `${postId}:resposta:${comentarioId}:${resposta.id}`;
+
+      observarCurtidasItem(
+        chaveCurtidaResposta,
+        curtidasRespostaRef,
+        curtidaResposta.botao,
+        curtidaResposta.contador
+      );
+
+      curtidaResposta.botao.addEventListener("click", () => {
+        const usuario = auth.currentUser;
+        if (!usuario) {
+          usuarioPodeInteragir();
+          return;
+        }
+
+        alternarCurtidaItem({
+          botao: curtidaResposta.botao,
+          refCurtida: doc(
+            db,
+            "posts",
+            postId,
+            "comentarios",
+            comentarioId,
+            "respostas",
+            resposta.id,
+            "curtidas",
+            usuario.uid
+          ),
+          donoUid: resposta.uid || "",
+          tipoNotificacao: "curtida_resposta",
+          postId,
+          comentarioId,
+          respostaId: resposta.id,
+          notificacaoId: idNotificacao(
+            "curtida-resposta",
+            postId,
+            comentarioId,
+            resposta.id,
+            usuario.uid
+          )
+        });
+      });
 
       caixa.appendChild(
         criarMenuResposta(
@@ -1898,6 +2415,7 @@ async function carregarRespostasDoComentario(
 }
 
 async function carregarComentarios(postId, elemento) {
+  limparListenersCurtidasDoPost(postId);
   elemento.textContent = "Carregando comentários...";
 
   try {
@@ -1967,13 +2485,77 @@ async function carregarComentarios(postId, elemento) {
       corpo.className = "comentario-texto";
       corpo.textContent = comentario.texto || "";
 
+      const acoesComentario = document.createElement("div");
+      acoesComentario.className = "comentario-acoes-inline";
+
+      const curtidaComentario = criarBotaoCurtirItem();
+
       const responder = document.createElement("button");
       responder.type = "button";
       responder.className = "btn-responder-comentario";
       responder.textContent = "Responder";
 
-      conteudo.append(nomeLinha, username, corpo, responder);
+      acoesComentario.append(
+        curtidaComentario.botao,
+        responder
+      );
+
+      conteudo.append(
+        nomeLinha,
+        username,
+        corpo,
+        acoesComentario
+      );
       caixa.append(avatar, conteudo);
+
+      const curtidasComentarioRef = collection(
+        db,
+        "posts",
+        postId,
+        "comentarios",
+        item.id,
+        "curtidas"
+      );
+
+      const chaveCurtidaComentario = `${postId}:comentario:${item.id}`;
+
+      observarCurtidasItem(
+        chaveCurtidaComentario,
+        curtidasComentarioRef,
+        curtidaComentario.botao,
+        curtidaComentario.contador
+      );
+
+      curtidaComentario.botao.addEventListener("click", () => {
+        const usuario = auth.currentUser;
+        if (!usuario) {
+          usuarioPodeInteragir();
+          return;
+        }
+
+        alternarCurtidaItem({
+          botao: curtidaComentario.botao,
+          refCurtida: doc(
+            db,
+            "posts",
+            postId,
+            "comentarios",
+            item.id,
+            "curtidas",
+            usuario.uid
+          ),
+          donoUid: comentario.uid || "",
+          tipoNotificacao: "curtida_comentario",
+          postId,
+          comentarioId: item.id,
+          notificacaoId: idNotificacao(
+            "curtida-comentario",
+            postId,
+            item.id,
+            usuario.uid
+          )
+        });
+      });
 
       const uidComentario = String(comentario.uid || "");
       const ehDono = Boolean(
@@ -2190,7 +2772,7 @@ async function carregarComentarios(postId, elemento) {
         try {
           const usuario = auth.currentUser;
 
-          await addDoc(
+          const respostaRef = await addDoc(
             collection(
               db,
               "posts",
@@ -2208,6 +2790,20 @@ async function carregarComentarios(postId, elemento) {
               criadoEm: serverTimestamp()
             }
           );
+
+          await criarNotificacao({
+            destinatarioUid: alvoRespostaUid,
+            tipo: "resposta_comentario",
+            postId,
+            comentarioId: item.id,
+            respostaId: respostaRef.id,
+            eventoId: idNotificacao(
+              "resposta",
+              postId,
+              item.id,
+              respostaRef.id
+            )
+          });
 
           inputResposta.value = "";
           formResposta.hidden = true;
