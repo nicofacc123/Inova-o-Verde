@@ -6081,3 +6081,51 @@ body.admin-modal-aberto * {
     max-width: calc(100% - 98px) !important;
   }
 }
+
+
+/* =========================================================
+   V7.2.5 — LOGO MOBILE MAIOR E MAIS À ESQUERDA
+   Base: V7.2.4
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .hero-logo-wrap {
+    flex: 0 0 118px !important;
+    width: 118px !important;
+    height: 122px !important;
+    min-height: 122px !important;
+
+    /* Puxa a logo para mais perto do título. */
+    margin-left: -10px !important;
+  }
+
+  .hero-logo {
+    width: 114px !important;
+    max-width: 114px !important;
+    max-height: 118px !important;
+  }
+
+  .hero-copy {
+    max-width: calc(100% - 110px) !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .hero-logo-wrap {
+    flex-basis: 102px !important;
+    width: 102px !important;
+    height: 108px !important;
+    min-height: 108px !important;
+    margin-left: -8px !important;
+  }
+
+  .hero-logo {
+    width: 98px !important;
+    max-width: 98px !important;
+    max-height: 104px !important;
+  }
+
+  .hero-copy {
+    max-width: calc(100% - 94px) !important;
+  }
+}
