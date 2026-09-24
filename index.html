@@ -400,37 +400,46 @@
       </div>
 
       <!-- CRIAR PUBLICAÇÃO -->
+      <div id="publicacao-launcher" class="publicacao-launcher" hidden>
+        <button
+          type="button"
+          id="btn-publicacao-plus"
+          class="btn-publicacao-plus"
+          aria-label="Abrir opções de publicação"
+          aria-expanded="false"
+        >+</button>
+
+        <button
+          type="button"
+          id="btn-nova-publicacao"
+          class="btn-nova-publicacao"
+          hidden
+        >Nova publicação</button>
+      </div>
+
       <div id="criar-publicacao" class="criar-publicacao" hidden>
         <div class="publicacao-cabecalho">
           <div>
-            <span class="comunidade-tag">PARTICIPE</span>
             <h3>Nova publicação</h3>
           </div>
+
+          <button
+            type="button"
+            id="btn-fechar-publicacao"
+            class="btn-fechar-publicacao"
+            aria-label="Fechar formulário de publicação"
+          >×</button>
         </div>
 
         <form id="form-publicacao">
-          <label for="post-tipo">Tipo de publicação</label>
-          <select id="post-tipo" required>
-            <option value="ideia">💡 Ideia sustentável</option>
-            <option value="discussao">💬 Discussão</option>
-            <option value="lixo">🗑️ Denunciar descarte de lixo</option>
-          </select>
-
           <label for="post-titulo">Título</label>
           <input type="text" id="post-titulo" maxlength="100" placeholder="Ex: Coleta seletiva na escola" required>
-
-          <div id="campo-local" hidden>
-            <label for="post-local">Local do problema</label>
-            <input type="text" id="post-local" maxlength="100" placeholder="Ex: Centro, Juazeiro - BA">
-            <small class="aviso-local">Não informe endereço residencial ou localização exata.</small>
-          </div>
 
           <label for="post-texto">Conteúdo</label>
           <textarea id="post-texto" maxlength="1500" placeholder="Conte sua ideia, opinião ou descreva o problema..." required></textarea>
 
           <label for="post-imagem">Imagem (opcional)</label>
           <input type="file" id="post-imagem" accept="image/jpeg,image/png,image/webp">
-          <small class="aviso-imagem">A imagem é reduzida automaticamente para economizar dados e usar apenas a cota gratuita do Firestore.</small>
           <div id="post-imagem-preview" class="imagem-preview" hidden>
             <img id="post-imagem-preview-img" alt="Prévia da imagem da publicação">
             <button type="button" id="post-imagem-remover" class="btn-remover-imagem">Remover imagem</button>
@@ -448,14 +457,13 @@
         <div>
           <span class="comunidade-tag">PUBLICAÇÕES</span>
           <h3>Comunidade</h3>
-          <p class="feed-order-note">Mais populares primeiro • votos + comentários</p>
+          <p class="feed-order-note" id="feed-order-note">Mais recentes primeiro</p>
         </div>
 
-        <div class="filtros-comunidade" aria-label="Filtros das publicações">
-          <button type="button" class="filtro-post ativo" data-filter="todos">Todos</button>
-          <button type="button" class="filtro-post" data-filter="ideia">💡 Ideias</button>
-          <button type="button" class="filtro-post" data-filter="discussao">💬 Discussões</button>
-          <button type="button" class="filtro-post" data-filter="lixo">🗑️ Problemas</button>
+        <div class="filtros-comunidade" aria-label="Ordenar publicações">
+          <button type="button" class="filtro-post ativo" data-order="recentes">Mais recentes</button>
+          <button type="button" class="filtro-post" data-order="populares">Mais populares</button>
+          <button type="button" class="filtro-post" data-order="comentados">Mais comentados</button>
         </div>
       </div>
 
@@ -599,7 +607,6 @@
 
               <label for="noticia-imagem">Imagem da notícia (opcional)</label>
               <input id="noticia-imagem" type="file" accept="image/jpeg,image/png,image/webp">
-              <small class="aviso-imagem">A imagem será comprimida e salva no Firestore, sem Firebase Storage.</small>
               <div id="noticia-imagem-preview" class="imagem-preview" hidden>
                 <img id="noticia-imagem-preview-img" alt="Prévia da imagem da notícia">
                 <button type="button" id="noticia-imagem-remover" class="btn-remover-imagem">Remover imagem</button>

@@ -81,13 +81,14 @@ const painelLogin = document.getElementById("painel-login");
 const tabCadastro = document.getElementById("tab-cadastro");
 const tabLogin = document.getElementById("tab-login");
 const usuarioLogado = document.getElementById("usuario-logado");
+const publicacaoLauncher = document.getElementById("publicacao-launcher");
+const btnPublicacaoPlus = document.getElementById("btn-publicacao-plus");
+const btnNovaPublicacao = document.getElementById("btn-nova-publicacao");
+const btnFecharPublicacao = document.getElementById("btn-fechar-publicacao");
 const criarPublicacao = document.getElementById("criar-publicacao");
 const nomeUsuario = document.getElementById("nome-usuario");
 const mensagem = document.getElementById("comunidade-mensagem");
 const feed = document.getElementById("feed-comunidade");
-const postTipo = document.getElementById("post-tipo");
-const campoLocal = document.getElementById("campo-local");
-const postLocal = document.getElementById("post-local");
 const postTexto = document.getElementById("post-texto");
 const contadorTexto = document.getElementById("contador-texto");
 const btnPublicar = document.getElementById("btn-publicar");
@@ -96,7 +97,7 @@ const postImagemPreview = document.getElementById("post-imagem-preview");
 const postImagemPreviewImg = document.getElementById("post-imagem-preview-img");
 const postImagemRemover = document.getElementById("post-imagem-remover");
 
-let filtroAtual = "todos";
+let ordenacaoAtual = "recentes";
 let postsSalvos = [];
 let unsubscribeReacoes = [];
 let unsubscribeContagemComentarios = [];
@@ -213,12 +214,18 @@ function atualizarInterfaceUsuario(usuario) {
   if (!usuario) {
     areaAuth.hidden = false;
     usuarioLogado.hidden = true;
+    publicacaoLauncher.hidden = true;
     criarPublicacao.hidden = true;
+    btnNovaPublicacao.hidden = true;
+    btnPublicacaoPlus?.setAttribute("aria-expanded", "false");
     mostrarPainelAuth("cadastro");
   } else {
     areaAuth.hidden = true;
     usuarioLogado.hidden = false;
-    criarPublicacao.hidden = false;
+    publicacaoLauncher.hidden = false;
+    criarPublicacao.hidden = true;
+    btnNovaPublicacao.hidden = true;
+    btnPublicacaoPlus?.setAttribute("aria-expanded", "false");
     nomeUsuario.textContent = usuario.displayName || usuario.email || "Usuário";
   }
 
@@ -236,6 +243,34 @@ function usuarioPodeInteragir() {
   }
   return true;
 }
+
+
+// -------------------------------
+// Nova publicação: abertura em duas etapas
+// -------------------------------
+btnPublicacaoPlus?.addEventListener("click", () => {
+  if (!usuarioPodeInteragir()) return;
+
+  const vaiAbrir = btnNovaPublicacao.hidden;
+  btnNovaPublicacao.hidden = !vaiAbrir;
+  btnPublicacaoPlus.setAttribute("aria-expanded", String(vaiAbrir));
+});
+
+btnNovaPublicacao?.addEventListener("click", () => {
+  if (!usuarioPodeInteragir()) return;
+
+  criarPublicacao.hidden = false;
+  btnNovaPublicacao.hidden = true;
+  btnPublicacaoPlus.setAttribute("aria-expanded", "true");
+
+  document.getElementById("post-titulo")?.focus();
+});
+
+btnFecharPublicacao?.addEventListener("click", () => {
+  criarPublicacao.hidden = true;
+  btnNovaPublicacao.hidden = true;
+  btnPublicacaoPlus.setAttribute("aria-expanded", "false");
+});
 
 
 // -------------------------------
@@ -347,12 +382,6 @@ configurarPreviewImagem(postImagemInput, postImagemPreview, postImagemPreviewImg
 // -------------------------------
 // Nova publicação
 // -------------------------------
-postTipo.addEventListener("change", () => {
-  const lixo = postTipo.value === "lixo";
-  campoLocal.hidden = !lixo;
-  postLocal.required = lixo;
-});
-
 postTexto.addEventListener("input", () => {
   contadorTexto.textContent = `${postTexto.value.length} / 1500`;
 });
@@ -363,14 +392,11 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
   if (!usuarioPodeInteragir()) return;
 
   const usuario = auth.currentUser;
-  const tipo = postTipo.value;
   const titulo = document.getElementById("post-titulo").value.trim();
   const texto = postTexto.value.trim();
-  const local = postLocal.value.trim();
   const arquivoImagem = postImagemInput?.files?.[0] || null;
 
   if (!titulo || !texto) return mostrarMensagem("Preencha título e conteúdo.", "erro");
-  if (tipo === "lixo" && !local) return mostrarMensagem("Informe pelo menos o bairro e a cidade.", "erro");
 
   try {
     btnPublicar.disabled = true;
@@ -382,19 +408,21 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
     await addDoc(collection(db, "posts"), {
       uid: usuario.uid,
       autor: usuario.displayName || "Usuário",
-      tipo,
       titulo,
       texto,
-      local: tipo === "lixo" ? local : "",
       imagem,
       criadoEm: serverTimestamp()
     });
 
     event.target.reset();
-    campoLocal.hidden = true;
     contadorTexto.textContent = "0 / 1500";
     if (postImagemPreview) postImagemPreview.hidden = true;
     if (postImagemPreviewImg) postImagemPreviewImg.removeAttribute("src");
+
+    criarPublicacao.hidden = true;
+    btnNovaPublicacao.hidden = true;
+    btnPublicacaoPlus?.setAttribute("aria-expanded", "false");
+
     mostrarMensagem("Publicação enviada! 🌱");
   } catch (erro) {
     console.error("Erro ao publicar:", erro);
@@ -407,16 +435,29 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
 });
 
 // -------------------------------
-// Filtros
+// Ordenação do feed
 // -------------------------------
 document.querySelectorAll(".filtro-post").forEach(botao => {
   botao.addEventListener("click", () => {
     document.querySelectorAll(".filtro-post").forEach(btn => btn.classList.remove("ativo"));
     botao.classList.add("ativo");
-    filtroAtual = botao.dataset.filter;
-    renderizarPosts();
+
+    ordenacaoAtual = botao.dataset.order || "recentes";
+    atualizarTextoOrdenacao();
+    reordenarCards();
   });
 });
+
+function atualizarTextoOrdenacao() {
+  const nota = document.getElementById("feed-order-note");
+  if (!nota) return;
+
+  nota.textContent = {
+    recentes: "Mais recentes primeiro",
+    populares: "Mais populares • votos + comentários",
+    comentados: "Mais comentados primeiro"
+  }[ordenacaoAtual] || "Mais recentes primeiro";
+}
 
 // -------------------------------
 // Feed em tempo real
@@ -458,25 +499,36 @@ function popularidadeDoCard(card) {
   return score + comentarios;
 }
 
-function reordenarCardsPorPopularidade() {
+function reordenarCards() {
   if (!feed) return;
 
-  const cards = [...feed.querySelectorAll('.post-comunidade')];
+  const cards = [...feed.querySelectorAll(".post-comunidade")];
+
   cards.sort((a, b) => {
-    const popularidadeA = popularidadeDoCard(a);
-    const popularidadeB = popularidadeDoCard(b);
-
-    if (popularidadeB !== popularidadeA) return popularidadeB - popularidadeA;
-
+    const criadoA = Number(a.dataset.criado || 0);
+    const criadoB = Number(b.dataset.criado || 0);
     const scoreA = Number(a.dataset.score || 0);
     const scoreB = Number(b.dataset.score || 0);
-    if (scoreB !== scoreA) return scoreB - scoreA;
-
     const comentariosA = Number(a.dataset.comentarios || 0);
     const comentariosB = Number(b.dataset.comentarios || 0);
-    if (comentariosB !== comentariosA) return comentariosB - comentariosA;
 
-    return Number(b.dataset.criado || 0) - Number(a.dataset.criado || 0);
+    if (ordenacaoAtual === "comentados") {
+      if (comentariosB !== comentariosA) return comentariosB - comentariosA;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return criadoB - criadoA;
+    }
+
+    if (ordenacaoAtual === "populares") {
+      const popularidadeA = scoreA + comentariosA;
+      const popularidadeB = scoreB + comentariosB;
+
+      if (popularidadeB !== popularidadeA) return popularidadeB - popularidadeA;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      if (comentariosB !== comentariosA) return comentariosB - comentariosA;
+      return criadoB - criadoA;
+    }
+
+    return criadoB - criadoA;
   });
 
   cards.forEach(card => feed.appendChild(card));
@@ -487,9 +539,7 @@ function renderizarPosts() {
   limparListenersFeed();
   feed.replaceChildren();
 
-  const posts = filtroAtual === "todos"
-    ? [...postsSalvos]
-    : postsSalvos.filter(post => post.tipo === filtroAtual);
+  const posts = [...postsSalvos];
 
   if (posts.length === 0) {
     const vazio = document.createElement("div");
@@ -499,21 +549,32 @@ function renderizarPosts() {
     return;
   }
 
-  // Usa as estatísticas que já conhecemos para evitar que o feed pule sem necessidade.
   posts.sort((a, b) => {
     const ea = obterEstatisticas(a.id);
     const eb = obterEstatisticas(b.id);
-    const pa = ea.score + ea.comentarios;
-    const pb = eb.score + eb.comentarios;
-    if (pb !== pa) return pb - pa;
-    if (eb.score !== ea.score) return eb.score - ea.score;
-    if (eb.comentarios !== ea.comentarios) return eb.comentarios - ea.comentarios;
-    const da = a.criadoEm?.toMillis?.() || 0;
-    const db = b.criadoEm?.toMillis?.() || 0;
-    return db - da;
+    const criadoA = a.criadoEm?.toMillis?.() || 0;
+    const criadoB = b.criadoEm?.toMillis?.() || 0;
+
+    if (ordenacaoAtual === "comentados") {
+      if (eb.comentarios !== ea.comentarios) return eb.comentarios - ea.comentarios;
+      if (eb.score !== ea.score) return eb.score - ea.score;
+      return criadoB - criadoA;
+    }
+
+    if (ordenacaoAtual === "populares") {
+      const pa = ea.score + ea.comentarios;
+      const pb = eb.score + eb.comentarios;
+      if (pb !== pa) return pb - pa;
+      if (eb.score !== ea.score) return eb.score - ea.score;
+      if (eb.comentarios !== ea.comentarios) return eb.comentarios - ea.comentarios;
+      return criadoB - criadoA;
+    }
+
+    return criadoB - criadoA;
   });
 
   posts.forEach(post => feed.appendChild(criarCardPost(post)));
+  atualizarTextoOrdenacao();
 }
 
 function criarCardPost(post) {
@@ -543,10 +604,6 @@ function criarCardPost(post) {
   autorArea.append(autor, data);
   cabecalho.append(avatar, autorArea);
 
-  const tipo = document.createElement("span");
-  tipo.className = "post-tipo";
-  tipo.textContent = nomeTipo(post.tipo);
-
   const titulo = document.createElement("h4");
   titulo.textContent = post.titulo || "Sem título";
 
@@ -554,26 +611,32 @@ function criarCardPost(post) {
   texto.className = "post-texto";
   texto.textContent = post.texto || "";
 
-  card.append(cabecalho, tipo, titulo);
+  card.append(cabecalho, titulo);
 
 
   card.appendChild(texto);
 
   if (post.imagem) {
+    const miniatura = document.createElement("button");
+    miniatura.type = "button";
+    miniatura.className = "post-imagem-miniatura";
+    miniatura.setAttribute("aria-label", "Ampliar imagem da publicação");
+
     const imagemPost = document.createElement("img");
     imagemPost.className = "post-imagem";
     imagemPost.src = post.imagem;
     imagemPost.alt = `Imagem da publicação: ${post.titulo || "publicação"}`;
     imagemPost.loading = "lazy";
-    card.appendChild(imagemPost);
+
+    miniatura.appendChild(imagemPost);
+    miniatura.addEventListener("click", () => abrirImagemAmpliada(
+      post.imagem,
+      post.titulo || "Imagem da publicação"
+    ));
+
+    card.appendChild(miniatura);
   }
 
-  if (post.tipo === "lixo" && post.local) {
-    const local = document.createElement("div");
-    local.className = "post-local";
-    local.textContent = `📍 ${post.local}`;
-    card.appendChild(local);
-  }
 
   // VOTAÇÃO ESTILO REDDIT + COMENTÁRIOS
   const acoes = document.createElement("div");
@@ -747,7 +810,7 @@ function observarReacoes(postId, card, votacao) {
     votacao.cima.setAttribute("aria-pressed", String(minhaReacao === "like"));
     votacao.baixo.setAttribute("aria-pressed", String(minhaReacao === "dislike"));
 
-    reordenarCardsPorPopularidade();
+    reordenarCards();
   }, erro => console.error("Erro ao carregar reações:", erro));
 
   unsubscribeReacoes.push(unsubscribe);
@@ -761,7 +824,7 @@ function observarContagemComentarios(postId, card, contador) {
     stats.comentarios = total;
     contador.textContent = String(total);
     card.dataset.comentarios = String(total);
-    reordenarCardsPorPopularidade();
+    reordenarCards();
   }, erro => console.error("Erro ao contar comentários:", erro));
 
   unsubscribeContagemComentarios.push(unsubscribe);
@@ -780,8 +843,7 @@ async function registrarReacao(postId, tipo, card) {
     } else {
       await setDoc(ref, {
         uid: usuario.uid,
-        tipo,
-        criadoEm: serverTimestamp()
+          criadoEm: serverTimestamp()
       });
     }
   } catch (erro) {
@@ -815,6 +877,7 @@ async function carregarComentarios(postId, elemento) {
 
     resultado.forEach(item => {
       const comentario = item.data();
+
       const caixa = document.createElement("div");
       caixa.className = "comentario";
 
@@ -826,22 +889,7 @@ async function carregarComentarios(postId, elemento) {
 
       const nome = document.createElement("strong");
       nome.textContent = comentario.autor || "Usuário";
-
-      if (ehAdminAtual) {
-        const seloAdmin = comentario.uid === usuarioAtual?.uid
-          ? document.createElement("span")
-          : null;
-
-        if (seloAdmin) {
-          seloAdmin.className = "comentario-selo-admin";
-          seloAdmin.textContent = "Admin";
-          cabecalho.append(nome, seloAdmin);
-        } else {
-          cabecalho.appendChild(nome);
-        }
-      } else {
-        cabecalho.appendChild(nome);
-      }
+      cabecalho.appendChild(nome);
 
       const corpo = document.createElement("div");
       corpo.className = "comentario-texto";
@@ -854,43 +902,72 @@ async function carregarComentarios(postId, elemento) {
       const uidAtual = String(usuarioAtual?.uid || "");
       const ehDono = Boolean(uidAtual && uidComentario && uidComentario === uidAtual);
 
-      if (ehDono || ehAdminAtual) {
-        const acoes = document.createElement("div");
-        acoes.className = "comentario-acoes";
+      // Menu de três pontos no canto superior direito.
+      const menuWrap = document.createElement("div");
+      menuWrap.className = "comentario-menu-wrap";
 
-        const remover = document.createElement("button");
-        remover.type = "button";
-        remover.className = "btn-comentario-excluir";
+      const menuBotao = document.createElement("button");
+      menuBotao.type = "button";
+      menuBotao.className = "comentario-menu-botao";
+      menuBotao.textContent = "•••";
+      menuBotao.setAttribute("aria-label", "Abrir opções do comentário");
+      menuBotao.setAttribute("aria-expanded", "false");
 
-        if (ehAdminAtual && !ehDono) {
-          remover.textContent = "🛡 Remover";
-          remover.title = "Remover comentário como administrador";
-        } else {
-          remover.textContent = "🗑 Excluir";
-          remover.title = "Excluir seu comentário";
-        }
+      const menu = document.createElement("div");
+      menu.className = "comentario-menu";
+      menu.hidden = true;
 
-        remover.addEventListener("click", async () => {
+      const fecharMenu = () => {
+        menu.hidden = true;
+        menuBotao.setAttribute("aria-expanded", "false");
+      };
+
+      const abrirOuFecharMenu = event => {
+        event.stopPropagation();
+
+        document.querySelectorAll(".comentario-menu").forEach(outroMenu => {
+          if (outroMenu !== menu) outroMenu.hidden = true;
+        });
+
+        const vaiAbrir = menu.hidden;
+        menu.hidden = !vaiAbrir;
+        menuBotao.setAttribute("aria-expanded", String(vaiAbrir));
+      };
+
+      menuBotao.addEventListener("click", abrirOuFecharMenu);
+
+      // Administrador pode excluir qualquer comentário.
+      // Usuário comum pode excluir apenas o próprio.
+      if (ehAdminAtual || ehDono) {
+        const excluir = document.createElement("button");
+        excluir.type = "button";
+        excluir.className = "comentario-menu-item comentario-menu-excluir";
+        excluir.textContent = "Excluir";
+
+        excluir.addEventListener("click", async event => {
+          event.stopPropagation();
+          fecharMenu();
+
           const mensagemConfirmacao = ehAdminAtual && !ehDono
-            ? "Remover este comentário como administrador?"
+            ? "Excluir este comentário como administrador?"
             : "Excluir seu comentário?";
 
           if (!window.confirm(mensagemConfirmacao)) return;
 
-          remover.disabled = true;
+          excluir.disabled = true;
 
           try {
             await deleteDoc(doc(db, "posts", postId, "comentarios", item.id));
 
             mostrarMensagem(
               ehAdminAtual && !ehDono
-                ? "Comentário removido pelo administrador."
+                ? "Comentário excluído pelo administrador."
                 : "Seu comentário foi excluído."
             );
 
             await carregarComentarios(postId, elemento);
           } catch (erro) {
-            console.error("Erro ao remover comentário:", erro);
+            console.error("Erro ao excluir comentário:", erro);
 
             if (erro?.code === "permission-denied") {
               mostrarMensagem(
@@ -900,19 +977,89 @@ async function carregarComentarios(postId, elemento) {
               );
             } else {
               mostrarMensagem(
-                `Não foi possível remover o comentário (${erro.code || "erro"}).`,
+                `Não foi possível excluir o comentário (${erro.code || "erro"}).`,
                 "erro",
                 8000
               );
             }
-
-            remover.disabled = false;
           }
         });
 
-        acoes.appendChild(remover);
-        caixa.appendChild(acoes);
+        menu.appendChild(excluir);
+      } else {
+        // Comentário de outra pessoa: opção de denunciar.
+        const denunciar = document.createElement("button");
+        denunciar.type = "button";
+        denunciar.className = "comentario-menu-item comentario-menu-denunciar";
+        denunciar.textContent = "Denunciar";
+
+        denunciar.addEventListener("click", async event => {
+          event.stopPropagation();
+          fecharMenu();
+
+          if (!auth.currentUser) {
+            mostrarPainelAuth("login");
+            areaAuth.hidden = false;
+            mostrarMensagem("Faça login para denunciar um comentário.", "aviso", 7000);
+            areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
+
+          if (!window.confirm("Denunciar este comentário para os administradores?")) return;
+
+          denunciar.disabled = true;
+
+          try {
+            const usuario = auth.currentUser;
+            const denunciaRef = doc(
+              db,
+              "posts",
+              postId,
+              "comentarios",
+              item.id,
+              "denuncias",
+              usuario.uid
+            );
+
+            await setDoc(denunciaRef, {
+              uid: usuario.uid,
+              postId,
+              comentarioId: item.id,
+              criadoEm: serverTimestamp()
+            });
+
+            mostrarMensagem("Comentário denunciado. Os administradores poderão revisar.");
+          } catch (erro) {
+            console.error("Erro ao denunciar comentário:", erro);
+
+            if (erro?.code === "permission-denied") {
+              mostrarMensagem(
+                "O Firestore bloqueou a denúncia. Publique o firestore.rules atualizado no Firebase.",
+                "erro",
+                9000
+              );
+            } else {
+              mostrarMensagem(
+                `Não foi possível denunciar (${erro.code || "erro"}).`,
+                "erro",
+                8000
+              );
+            }
+          } finally {
+            denunciar.disabled = false;
+          }
+        });
+
+        menu.appendChild(denunciar);
       }
+
+      menuWrap.append(menuBotao, menu);
+      caixa.appendChild(menuWrap);
+
+      // Fecha o menu deste comentário ao clicar fora dele.
+      document.addEventListener("click", event => {
+        if (!menuWrap.contains(event.target)) fecharMenu();
+      });
 
       elemento.appendChild(caixa);
     });
@@ -922,12 +1069,59 @@ async function carregarComentarios(postId, elemento) {
   }
 }
 
-function nomeTipo(tipo) {
-  return {
-    ideia: "💡 Ideia sustentável",
-    discussao: "💬 Discussão",
-    lixo: "🗑️ Problema ambiental"
-  }[tipo] || "🌱 Publicação";
+
+function abrirImagemAmpliada(src, titulo = "Imagem") {
+  let overlay = document.getElementById("imagem-ampliada-overlay");
+
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "imagem-ampliada-overlay";
+    overlay.className = "imagem-ampliada-overlay";
+    overlay.hidden = true;
+
+    const conteudo = document.createElement("div");
+    conteudo.className = "imagem-ampliada-conteudo";
+
+    const fechar = document.createElement("button");
+    fechar.type = "button";
+    fechar.className = "imagem-ampliada-fechar";
+    fechar.textContent = "×";
+    fechar.setAttribute("aria-label", "Fechar imagem");
+
+    const img = document.createElement("img");
+    img.id = "imagem-ampliada-img";
+    img.alt = "";
+
+    conteudo.append(fechar, img);
+    overlay.appendChild(conteudo);
+    document.body.appendChild(overlay);
+
+    fechar.addEventListener("click", () => {
+      overlay.hidden = true;
+      document.body.classList.remove("imagem-ampliada-aberta");
+    });
+
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) {
+        overlay.hidden = true;
+        document.body.classList.remove("imagem-ampliada-aberta");
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !overlay.hidden) {
+        overlay.hidden = true;
+        document.body.classList.remove("imagem-ampliada-aberta");
+      }
+    });
+  }
+
+  const img = overlay.querySelector("#imagem-ampliada-img");
+  img.src = src;
+  img.alt = titulo;
+
+  overlay.hidden = false;
+  document.body.classList.add("imagem-ampliada-aberta");
 }
 
 function formatarData(timestamp) {
