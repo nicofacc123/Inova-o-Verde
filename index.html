@@ -55,36 +55,45 @@
       <a href="#links" data-page="links" onclick="showPage('links')">Links e Dicas</a>
     </nav>
 
-    <div id="notificacoes-wrap" class="notificacoes-wrap" hidden>
+    <div id="nav-acoes-usuario" class="nav-acoes-usuario">
+      <div id="notificacoes-wrap" class="notificacoes-wrap" hidden>
+        <button
+          type="button"
+          id="notificacoes-botao"
+          class="notificacoes-botao"
+          aria-label="Abrir notificações"
+          aria-expanded="false"
+          title="Notificações"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+            <path d="M10 21h4"></path>
+          </svg>
+          <span id="notificacoes-badge" class="notificacoes-badge" hidden>0</span>
+        </button>
+
+        <div id="notificacoes-painel" class="notificacoes-painel" hidden>
+          <div class="notificacoes-cabecalho">
+            <strong>Notificações</strong>
+            <button type="button" id="notificacoes-marcar-lidas">Marcar como lidas</button>
+          </div>
+          <div id="notificacoes-lista" class="notificacoes-lista"></div>
+        </div>
+      </div>
+
       <button
         type="button"
-        id="notificacoes-botao"
-        class="notificacoes-botao"
-        aria-label="Abrir notificações"
-        aria-expanded="false"
-        title="Notificações"
+        id="perfil-atalho"
+        class="perfil-atalho"
+        aria-label="Abrir perfil"
+        title="Perfil"
+        hidden
+        onclick="showPage('perfil')"
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
-          <path d="M10 21h4"></path>
-        </svg>
-        <span id="notificacoes-badge" class="notificacoes-badge" hidden>0</span>
+        <img id="perfil-atalho-img" alt="" hidden>
+        <span id="perfil-atalho-inicial">U</span>
       </button>
-
-      <div id="notificacoes-painel" class="notificacoes-painel" hidden>
-        <div class="notificacoes-cabecalho">
-          <strong>Notificações</strong>
-          <button type="button" id="notificacoes-marcar-lidas">Marcar como lidas</button>
-        </div>
-        <div id="notificacoes-lista" class="notificacoes-lista"></div>
-      </div>
     </div>
-
-    <button type="button" id="perfil-atalho" class="perfil-atalho" aria-label="Abrir perfil" title="Perfil" hidden onclick="showPage('perfil')">
-      <img id="perfil-atalho-img" alt="" hidden>
-      <span id="perfil-atalho-inicial">U</span>
-    </button>
-  </div>
 
   <main>
     <section id="home" class="page active">

@@ -4428,3 +4428,84 @@ body.imagem-ampliada-aberta {
     height: 38px;
   }
 }
+
+
+/* =========================================================
+   V5.1 — SINO + PERFIL SEMPRE JUNTOS
+   ========================================================= */
+
+.nav-acoes-usuario {
+  position: absolute;
+  top: 50%;
+  right: max(18px, calc((100vw - var(--container)) / 2));
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 90;
+}
+
+.nav-acoes-usuario .notificacoes-wrap,
+.nav-acoes-usuario .perfil-atalho {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+.nav-acoes-usuario .notificacoes-wrap {
+  display: block;
+}
+
+.nav-acoes-usuario .notificacoes-wrap[hidden],
+.nav-acoes-usuario .perfil-atalho[hidden] {
+  display: none !important;
+}
+
+.nav-acoes-usuario .notificacoes-painel {
+  position: absolute;
+  top: 52px;
+  right: 0;
+}
+
+@media (max-width: 860px) {
+  .nav-shell {
+    display: flex;
+    align-items: center;
+    min-height: 68px;
+    padding: 0 14px;
+  }
+
+  .nav-acoes-usuario {
+    position: static;
+    transform: none;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+
+  .nav-acoes-usuario .notificacoes-painel {
+    position: fixed;
+    top: 66px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .nav-acoes-usuario {
+    gap: 6px;
+  }
+
+  .nav-acoes-usuario .notificacoes-botao,
+  .nav-acoes-usuario .perfil-atalho {
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-acoes-usuario .notificacoes-painel {
+    left: 10px;
+    right: 10px;
+    width: auto;
+  }
+}

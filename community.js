@@ -405,6 +405,10 @@ function atualizarInterfacePerfil(usuario = auth.currentUser) {
   const logado = Boolean(usuario);
 
   if (perfilAtalho) perfilAtalho.hidden = !logado;
+  if (notificacoesWrap) {
+    notificacoesWrap.hidden = !logado;
+    notificacoesWrap.style.display = logado ? "block" : "none";
+  }
   if (perfilDeslogado) perfilDeslogado.hidden = logado;
   if (perfilConteudo) perfilConteudo.hidden = !logado;
 
@@ -650,14 +654,20 @@ function iniciarNotificacoes(usuario) {
   notificacoesAtuais = [];
 
   if (!usuario?.uid) {
-    if (notificacoesWrap) notificacoesWrap.hidden = true;
+    if (notificacoesWrap) {
+      notificacoesWrap.hidden = true;
+      notificacoesWrap.style.display = "none";
+    }
     if (notificacoesPainel) notificacoesPainel.hidden = true;
     if (notificacoesBadge) notificacoesBadge.hidden = true;
     renderizarNotificacoes();
     return;
   }
 
-  notificacoesWrap.hidden = false;
+  if (notificacoesWrap) {
+    notificacoesWrap.hidden = false;
+    notificacoesWrap.style.display = "block";
+  }
 
   unsubscribeNotificacoes = onSnapshot(
     collection(db, "notificacoes", usuario.uid, "itens"),
