@@ -101,6 +101,7 @@ let postsSalvos = [];
 let unsubscribeReacoes = [];
 let unsubscribeContagemComentarios = [];
 const estatisticasPosts = new Map();
+const comentariosAbertos = new Map();
 
 function mostrarMensagem(texto, tipo = "sucesso", tempo = 5000) {
   mensagem.textContent = texto;
@@ -198,6 +199,14 @@ document.getElementById("btn-sair").addEventListener("click", async () => {
 onAuthStateChanged(auth, usuario => {
   atualizarInterfaceUsuario(usuario);
   atualizarPainelAdmin(usuario);
+
+  // Recalcula os botões de excluir/remover nos comentários que já estavam abertos.
+  window.setTimeout(() => {
+    comentariosAbertos.forEach((elemento, postId) => {
+      if (elemento?.isConnected) carregarComentarios(postId, elemento);
+      else comentariosAbertos.delete(postId);
+    });
+  }, 0);
 });
 
 function atualizarInterfaceUsuario(usuario) {
@@ -427,6 +436,7 @@ function limparListenersFeed() {
   unsubscribeReacoes = [];
   unsubscribeContagemComentarios.forEach(unsubscribe => unsubscribe());
   unsubscribeContagemComentarios = [];
+  comentariosAbertos.clear();
 }
 
 function obterEstatisticas(postId) {
@@ -603,7 +613,13 @@ function criarCardPost(post) {
   btnComentar.addEventListener("click", async () => {
     areaComentarios.hidden = !areaComentarios.hidden;
     btnComentar.setAttribute("aria-expanded", String(!areaComentarios.hidden));
-    if (!areaComentarios.hidden) await carregarComentarios(post.id, lista);
+
+    if (!areaComentarios.hidden) {
+      comentariosAbertos.set(post.id, lista);
+      await carregarComentarios(post.id, lista);
+    } else {
+      comentariosAbertos.delete(post.id);
+    }
   });
 
   if (auth.currentUser) {
@@ -782,15 +798,20 @@ async function carregarComentarios(postId, elemento) {
       collection(db, "posts", postId, "comentarios"),
       orderBy("criadoEm", "asc")
     );
+
     const resultado = await getDocs(consulta);
     elemento.replaceChildren();
 
     if (resultado.empty) {
       const vazio = document.createElement("span");
+      vazio.className = "comentarios-vazio";
       vazio.textContent = "Nenhum comentário ainda.";
       elemento.appendChild(vazio);
       return;
     }
+
+    const usuarioAtual = auth.currentUser;
+    const ehAdminAtual = usuarioEhAdmin(usuarioAtual);
 
     resultado.forEach(item => {
       const comentario = item.data();
@@ -800,46 +821,97 @@ async function carregarComentarios(postId, elemento) {
       const conteudo = document.createElement("div");
       conteudo.className = "comentario-conteudo";
 
+      const cabecalho = document.createElement("div");
+      cabecalho.className = "comentario-cabecalho";
+
       const nome = document.createElement("strong");
       nome.textContent = comentario.autor || "Usuário";
 
-      const corpo = document.createElement("span");
-      corpo.textContent = `: ${comentario.texto || ""}`;
+      if (ehAdminAtual) {
+        const seloAdmin = comentario.uid === usuarioAtual?.uid
+          ? document.createElement("span")
+          : null;
 
-      conteudo.append(nome, corpo);
+        if (seloAdmin) {
+          seloAdmin.className = "comentario-selo-admin";
+          seloAdmin.textContent = "Admin";
+          cabecalho.append(nome, seloAdmin);
+        } else {
+          cabecalho.appendChild(nome);
+        }
+      } else {
+        cabecalho.appendChild(nome);
+      }
+
+      const corpo = document.createElement("div");
+      corpo.className = "comentario-texto";
+      corpo.textContent = comentario.texto || "";
+
+      conteudo.append(cabecalho, corpo);
       caixa.appendChild(conteudo);
 
-      const usuarioAtual = auth.currentUser;
-      const ehDono = Boolean(usuarioAtual && comentario.uid === usuarioAtual.uid);
-      const ehAdmin = usuarioEhAdmin(usuarioAtual);
+      const uidComentario = String(comentario.uid || "");
+      const uidAtual = String(usuarioAtual?.uid || "");
+      const ehDono = Boolean(uidAtual && uidComentario && uidComentario === uidAtual);
 
-      if (ehDono || ehAdmin) {
+      if (ehDono || ehAdminAtual) {
+        const acoes = document.createElement("div");
+        acoes.className = "comentario-acoes";
+
         const remover = document.createElement("button");
         remover.type = "button";
-        remover.className = "btn-admin-remover";
-        remover.textContent = ehAdmin && !ehDono ? "Remover" : "Excluir";
-        remover.title = ehAdmin && !ehDono
-          ? "Remover comentário como administrador"
-          : "Excluir seu comentário";
+        remover.className = "btn-comentario-excluir";
+
+        if (ehAdminAtual && !ehDono) {
+          remover.textContent = "🛡 Remover";
+          remover.title = "Remover comentário como administrador";
+        } else {
+          remover.textContent = "🗑 Excluir";
+          remover.title = "Excluir seu comentário";
+        }
 
         remover.addEventListener("click", async () => {
-          if (!window.confirm("Excluir este comentário?")) return;
+          const mensagemConfirmacao = ehAdminAtual && !ehDono
+            ? "Remover este comentário como administrador?"
+            : "Excluir seu comentário?";
+
+          if (!window.confirm(mensagemConfirmacao)) return;
 
           remover.disabled = true;
+
           try {
             await deleteDoc(doc(db, "posts", postId, "comentarios", item.id));
-            mostrarMensagem(ehAdmin && !ehDono
-              ? "Comentário removido pelo administrador."
-              : "Seu comentário foi excluído.");
+
+            mostrarMensagem(
+              ehAdminAtual && !ehDono
+                ? "Comentário removido pelo administrador."
+                : "Seu comentário foi excluído."
+            );
+
             await carregarComentarios(postId, elemento);
           } catch (erro) {
             console.error("Erro ao remover comentário:", erro);
-            mostrarMensagem(`Não foi possível remover o comentário (${erro.code || "erro"}).`, "erro", 8000);
+
+            if (erro?.code === "permission-denied") {
+              mostrarMensagem(
+                "O Firestore bloqueou a exclusão. Publique o firestore.rules atualizado no Firebase.",
+                "erro",
+                9000
+              );
+            } else {
+              mostrarMensagem(
+                `Não foi possível remover o comentário (${erro.code || "erro"}).`,
+                "erro",
+                8000
+              );
+            }
+
             remover.disabled = false;
           }
         });
 
-        caixa.appendChild(remover);
+        acoes.appendChild(remover);
+        caixa.appendChild(acoes);
       }
 
       elemento.appendChild(caixa);

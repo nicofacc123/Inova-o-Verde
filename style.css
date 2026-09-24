@@ -2887,3 +2887,131 @@ body.admin-modal-aberto {
     max-height: 420px;
   }
 }
+
+
+/* =========================================================
+   V2.1 — EXCLUSÃO DE COMENTÁRIOS + IMAGENS ESTILO FEED
+   ========================================================= */
+
+.comentario {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start !important;
+  gap: 12px !important;
+}
+
+.comentario-conteudo {
+  min-width: 0;
+}
+
+.comentario-cabecalho {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 3px;
+}
+
+.comentario-texto {
+  color: #52685c;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.comentario-selo-admin {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--green-100);
+  color: var(--green-800);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.comentario-acoes {
+  display: flex;
+  align-items: center;
+}
+
+.btn-comentario-excluir {
+  min-height: 34px;
+  border: 1px solid #f0c7c7;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: #fff;
+  color: #b42318;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.btn-comentario-excluir:hover {
+  background: #fff1f1;
+  border-color: #e9abab;
+  transform: translateY(-1px);
+}
+
+.btn-comentario-excluir:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
+/* Quadro semelhante a um post do Instagram: proporção 4:5 e largura controlada. */
+.post-imagem {
+  display: block;
+  width: min(100%, 540px) !important;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  max-height: none !important;
+  margin: 16px auto 2px !important;
+  object-fit: cover;
+  object-position: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #eef4f0;
+}
+
+/* Notícias usam um quadro mais horizontal e também não extrapolam o conteúdo. */
+.noticia-imagem {
+  display: block;
+  width: 100% !important;
+  max-width: 760px !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9;
+  margin: 14px auto 8px !important;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 14px;
+  background: #eef4f0;
+}
+
+@media (max-width: 720px) {
+  .comentario {
+    grid-template-columns: 1fr;
+  }
+
+  .comentario-acoes {
+    justify-content: flex-end;
+  }
+
+  .btn-comentario-excluir {
+    min-height: 38px;
+  }
+
+  .post-imagem {
+    width: 100% !important;
+    aspect-ratio: 4 / 5;
+    border-radius: 12px;
+  }
+
+  .noticia-imagem {
+    width: 100% !important;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+  }
+}
