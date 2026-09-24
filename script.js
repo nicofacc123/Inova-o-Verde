@@ -68,54 +68,10 @@ function shuffleArray(array) {
   return array;
 }
 
-const curiosidades = [
-  {
-    title: "Blocos feitos com plástico",
-    img: "imagens/tijolo.webp",
-    text: "Empresas transformam plástico em blocos resistentes e ecológicos."
-  },
-  {
-    title: "Água solar para cisternas",
-    img: "imagens/aguapurifica.png",
-    text: "Tecnologia que usa energia solar para purificar água em regiões rurais."
-  },
-  {
-    title: "Economia circular",
-    img: "imagens/circular.jpeg",
-    text: "Modelo onde resíduos se tornam insumos de novos ciclos produtivos."
-  }
-];
-
-function openCurio(i) {
-  const c = curiosidades[i];
-  const modal = document.getElementById("curio-modal");
-
-  document.getElementById("curio-title").innerText = c.title;
-  document.getElementById("curio-img").src = c.img;
-  document.getElementById("curio-img").alt = c.title;
-  document.getElementById("curio-text").innerText = c.text;
-  modal.style.display = "flex";
-  document.body.style.overflow = "hidden";
-  modal.querySelector(".modal-close")?.focus();
+function toggleFlashcard(card) {
+  const virado = card.classList.toggle("virado");
+  card.setAttribute("aria-pressed", String(virado));
 }
-
-function closeModal(event) {
-  if (event && event.target !== event.currentTarget) return;
-  const modal = document.getElementById("curio-modal");
-  modal.style.display = "none";
-  document.body.style.overflow = "";
-}
-
-function handleCardKey(event, index) {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    openCurio(index);
-  }
-}
-
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape") closeModal();
-});
 
 const quizQuestions = [
   {

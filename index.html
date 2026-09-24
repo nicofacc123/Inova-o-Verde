@@ -289,48 +289,116 @@
       <div class="section-heading">
         <span class="section-kicker">Aprenda explorando</span>
         <h2>Curiosidades</h2>
-        <p>Descubra fatos interessantes sobre sustentabilidade e inovação. Clique em um card para mais detalhes e depois teste seu conhecimento.</p>
+        <p>Aprenda sobre sustentabilidade e inovação com flash cards. Vire os cards e depois teste seu conhecimento no quiz.</p>
       </div>
 
-      <div class="cards-grid curiosity-grid">
-        <article class="card interactive-card" role="button" tabindex="0" onclick="openCurio(0)" onkeydown="handleCardKey(event, 0)">
-          <img src="imagens/tijolo.webp" alt="Plástico reciclado">
-          <div class="card-body">
-            <span class="card-tag">Economia circular</span>
-            <h3>Blocos feitos com plástico</h3>
-            <p>Transformar plástico em blocos mais leves que concreto.</p>
-            <span class="card-link">Ver curiosidade →</span>
-          </div>
-        </article>
-
-        <article class="card interactive-card" role="button" tabindex="0" onclick="openCurio(1)" onkeydown="handleCardKey(event, 1)">
-          <img src="imagens/aguapurifica.png" alt="Água solar">
-          <div class="card-body">
-            <span class="card-tag">Tecnologia limpa</span>
-            <h3>Água solar para cisternas</h3>
-            <p>Purificação de água de cisternas com energia solar.</p>
-            <span class="card-link">Ver curiosidade →</span>
-          </div>
-        </article>
-
-        <article class="card interactive-card" role="button" tabindex="0" onclick="openCurio(2)" onkeydown="handleCardKey(event, 2)">
-          <img src="imagens/circular.jpeg" alt="Economia circular">
-          <div class="card-body">
-            <span class="card-tag">Novo ciclo</span>
-            <h3>Economia circular</h3>
-            <p>Resíduos se tornam matéria-prima em novos ciclos.</p>
-            <span class="card-link">Ver curiosidade →</span>
-          </div>
-        </article>
+      <div class="flashcards-intro">
+        <span>6 cards</span>
+        <p>Clique ou toque em um card para revelar a resposta.</p>
       </div>
 
-      <div id="curio-modal" class="modal" onclick="closeModal(event)" role="dialog" aria-modal="true" aria-labelledby="curio-title">
-        <div class="modal-content" onclick="event.stopPropagation()">
-          <button class="modal-close" onclick="closeModal()" aria-label="Fechar janela">×</button>
-          <h3 id="curio-title"></h3>
-          <img id="curio-img" src="" alt="">
-          <p id="curio-text"></p>
-        </div>
+      <div class="flashcards-grid" aria-label="Flash cards de curiosidades">
+        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
+          <span class="flashcard-inner">
+            <span class="flashcard-face flashcard-front">
+              <span class="flashcard-numero">01</span>
+              <span class="flashcard-tag">Economia circular</span>
+              <strong>O que pode ser feito com plástico reciclado?</strong>
+              <span class="flashcard-hint">Toque para revelar</span>
+            </span>
+            <span class="flashcard-face flashcard-back">
+              <span class="flashcard-tag">Resposta</span>
+              <strong>Blocos sustentáveis</strong>
+              <span>O plástico pode ser transformado em blocos resistentes e ecológicos.</span>
+              <span class="flashcard-hint">Toque para voltar</span>
+            </span>
+          </span>
+        </button>
+
+        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
+          <span class="flashcard-inner">
+            <span class="flashcard-face flashcard-front">
+              <span class="flashcard-numero">02</span>
+              <span class="flashcard-tag">Tecnologia limpa</span>
+              <strong>Como a energia solar pode ajudar em cisternas?</strong>
+              <span class="flashcard-hint">Toque para revelar</span>
+            </span>
+            <span class="flashcard-face flashcard-back">
+              <span class="flashcard-tag">Resposta</span>
+              <strong>Purificação de água</strong>
+              <span>A energia solar pode ser usada em tecnologias para purificar a água armazenada.</span>
+              <span class="flashcard-hint">Toque para voltar</span>
+            </span>
+          </span>
+        </button>
+
+        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
+          <span class="flashcard-inner">
+            <span class="flashcard-face flashcard-front">
+              <span class="flashcard-numero">03</span>
+              <span class="flashcard-tag">Novo ciclo</span>
+              <strong>O que acontece na economia circular?</strong>
+              <span class="flashcard-hint">Toque para revelar</span>
+            </span>
+            <span class="flashcard-face flashcard-back">
+              <span class="flashcard-tag">Resposta</span>
+              <strong>Os resíduos ganham novo uso</strong>
+              <span>Eles podem voltar ao ciclo produtivo como matéria-prima para novos produtos.</span>
+              <span class="flashcard-hint">Toque para voltar</span>
+            </span>
+          </span>
+        </button>
+
+        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
+          <span class="flashcard-inner">
+            <span class="flashcard-face flashcard-front">
+              <span class="flashcard-numero">04</span>
+              <span class="flashcard-tag">Economia local</span>
+              <strong>Por que escolher fornecedores locais?</strong>
+              <span class="flashcard-hint">Toque para revelar</span>
+            </span>
+            <span class="flashcard-face flashcard-back">
+              <span class="flashcard-tag">Resposta</span>
+              <strong>Menos transporte e mais apoio local</strong>
+              <span>Isso valoriza a economia regional e pode reduzir a poluição causada pelo transporte.</span>
+              <span class="flashcard-hint">Toque para voltar</span>
+            </span>
+          </span>
+        </button>
+
+        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
+          <span class="flashcard-inner">
+            <span class="flashcard-face flashcard-front">
+              <span class="flashcard-numero">05</span>
+              <span class="flashcard-tag">Uso consciente</span>
+              <strong>Como economizar água e energia?</strong>
+              <span class="flashcard-hint">Toque para revelar</span>
+            </span>
+            <span class="flashcard-face flashcard-back">
+              <span class="flashcard-tag">Resposta</span>
+              <strong>Pequenas ações ajudam</strong>
+              <span>Use lâmpadas LED, desligue equipamentos e reaproveite água da chuva.</span>
+              <span class="flashcard-hint">Toque para voltar</span>
+            </span>
+          </span>
+        </button>
+
+        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
+          <span class="flashcard-inner">
+            <span class="flashcard-face flashcard-front">
+              <span class="flashcard-numero">06</span>
+              <span class="flashcard-tag">Resíduos</span>
+              <strong>O que uma boa gestão de resíduos pode incluir?</strong>
+              <span class="flashcard-hint">Toque para revelar</span>
+            </span>
+            <span class="flashcard-face flashcard-back">
+              <span class="flashcard-tag">Resposta</span>
+              <strong>Coleta seletiva e compostagem</strong>
+              <span>Essas práticas ajudam a diminuir a quantidade de resíduos e o impacto ambiental.</span>
+              <span class="flashcard-hint">Toque para voltar</span>
+            </span>
+          </span>
+        </button>
       </div>
 
       <div class="quiz-box" id="quiz">
