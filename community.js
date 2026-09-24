@@ -1415,14 +1415,21 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
 // -------------------------------
 // Ordenação do feed
 // -------------------------------
-document.querySelectorAll(".filtro-post").forEach(botao => {
-  botao.addEventListener("click", () => {
-    document.querySelectorAll(".filtro-post").forEach(btn => btn.classList.remove("ativo"));
-    botao.classList.add("ativo");
-    ordenacaoAtual = botao.dataset.order || "recentes";
-    atualizarTextoOrdenacao();
-    reordenarCards();
+const filtrosComunidade = document.querySelector(".filtros-comunidade");
+
+filtrosComunidade?.addEventListener("click", event => {
+  const botao = event.target.closest(".filtro-post");
+  if (!botao || !filtrosComunidade.contains(botao)) return;
+
+  document.querySelectorAll(".filtro-post").forEach(btn => {
+    btn.classList.toggle("ativo", btn === botao);
   });
+
+  ordenacaoAtual = botao.dataset.order || "recentes";
+  atualizarTextoOrdenacao();
+
+  // Reordena os cards que já estão na tela sem esperar nova leitura do Firebase.
+  reordenarCards();
 });
 
 function atualizarTextoOrdenacao() {
@@ -1431,7 +1438,7 @@ function atualizarTextoOrdenacao() {
   nota.textContent = {
     recentes: "Mais recentes primeiro",
     populares: "Mais populares primeiro",
-    comentados: "Mais comentados primeiro"
+    curtidos: "Mais curtidos primeiro"
   }[ordenacaoAtual] || "Mais recentes primeiro";
 }
 
@@ -1472,26 +1479,36 @@ function reordenarCards() {
   if (!feed) return;
 
   const cards = [...feed.querySelectorAll(".post-comunidade")];
+
   cards.sort((a, b) => {
     const criadoA = Number(a.dataset.criado || 0);
     const criadoB = Number(b.dataset.criado || 0);
-    const scoreA = Number(a.dataset.score || 0);
-    const scoreB = Number(b.dataset.score || 0);
+    const likesA = Number(a.dataset.likes || 0);
+    const likesB = Number(b.dataset.likes || 0);
     const comentariosA = Number(a.dataset.comentarios || 0);
     const comentariosB = Number(b.dataset.comentarios || 0);
 
     if (ordenacaoAtual === "populares") {
-      const popularidadeA = scoreA + comentariosA;
-      const popularidadeB = scoreB + comentariosB;
-      if (popularidadeB !== popularidadeA) return popularidadeB - popularidadeA;
-      if (scoreB !== scoreA) return scoreB - scoreA;
-      if (comentariosB !== comentariosA) return comentariosB - comentariosA;
+      // Popularidade = curtidas + comentários/respostas.
+      const popularidadeA = likesA + comentariosA;
+      const popularidadeB = likesB + comentariosB;
+
+      if (popularidadeB !== popularidadeA) {
+        return popularidadeB - popularidadeA;
+      }
+
+      if (likesB !== likesA) return likesB - likesA;
+      if (comentariosB !== comentariosA) {
+        return comentariosB - comentariosA;
+      }
+
       return criadoB - criadoA;
     }
 
-    if (ordenacaoAtual === "comentados") {
-      if (comentariosB !== comentariosA) return comentariosB - comentariosA;
-      if (scoreB !== scoreA) return scoreB - scoreA;
+    if (ordenacaoAtual === "curtidos") {
+      if (likesB !== likesA) return likesB - likesA;
+
+      // Em empate, o mais recente aparece primeiro.
       return criadoB - criadoA;
     }
 
@@ -1524,17 +1541,23 @@ function renderizarPosts() {
     const criadoB = b.criadoEm?.toMillis?.() || 0;
 
     if (ordenacaoAtual === "populares") {
-      const popularidadeA = ea.score + ea.comentarios;
-      const popularidadeB = eb.score + eb.comentarios;
-      if (popularidadeB !== popularidadeA) return popularidadeB - popularidadeA;
-      if (eb.score !== ea.score) return eb.score - ea.score;
-      if (eb.comentarios !== ea.comentarios) return eb.comentarios - ea.comentarios;
+      const popularidadeA = ea.likes + ea.comentarios;
+      const popularidadeB = eb.likes + eb.comentarios;
+
+      if (popularidadeB !== popularidadeA) {
+        return popularidadeB - popularidadeA;
+      }
+
+      if (eb.likes !== ea.likes) return eb.likes - ea.likes;
+      if (eb.comentarios !== ea.comentarios) {
+        return eb.comentarios - ea.comentarios;
+      }
+
       return criadoB - criadoA;
     }
 
-    if (ordenacaoAtual === "comentados") {
-      if (eb.comentarios !== ea.comentarios) return eb.comentarios - ea.comentarios;
-      if (eb.score !== ea.score) return eb.score - ea.score;
+    if (ordenacaoAtual === "curtidos") {
+      if (eb.likes !== ea.likes) return eb.likes - ea.likes;
       return criadoB - criadoA;
     }
 
@@ -1553,6 +1576,7 @@ function criarCardPost(post) {
   card.dataset.minhaReacao = "";
 
   const stats = obterEstatisticas(post.id);
+  card.dataset.likes = String(stats.likes);
   card.dataset.score = String(stats.score);
   card.dataset.comentarios = String(stats.comentarios);
   card.dataset.criado = String(post.criadoEm?.toMillis?.() || Date.now());
@@ -1922,6 +1946,7 @@ function observarReacoes(postId, card, votacao) {
     votacao.contadorDislikes.textContent = String(dislikes);
     votacao.cima.title = `${likes} voto(s) positivo(s)`;
     votacao.baixo.title = `${dislikes} voto(s) negativo(s)`;
+    card.dataset.likes = String(likes);
     card.dataset.score = String(score);
     card.dataset.minhaReacao = minhaReacao;
 
