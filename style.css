@@ -5141,9 +5141,6 @@ body.admin-modal-aberto * {
    Somente celular. Desktop permanece igual.
    ========================================================= */
 
-.mobile-app-title {
-  display: none;
-}
 
 @media (max-width: 720px) {
   html,
@@ -5718,5 +5715,174 @@ body.admin-modal-aberto * {
 
   .hero-content {
     padding: 22px 0 26px !important;
+  }
+}
+
+
+/* =========================================================
+   V7.4 — MENU MOBILE CORRIGIDO + LOGO ALINHADA
+   ========================================================= */
+
+@media (max-width: 720px) {
+  :root {
+    --mobile-nav-height: 52px;
+  }
+
+  /* Barra sempre acima da lista do menu. */
+  .nav-shell {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    min-height: var(--mobile-nav-height) !important;
+    height: var(--mobile-nav-height) !important;
+    overflow: visible !important;
+    isolation: isolate;
+  }
+
+  /* O botão/X nunca pode ficar atrás da lista. */
+  .menu-toggle {
+    position: relative !important;
+    z-index: 1003 !important;
+  }
+
+  .nav-acoes-usuario {
+    position: relative !important;
+    z-index: 1003 !important;
+  }
+
+  /* A lista começa exatamente embaixo da barra. */
+  #site-nav {
+    position: fixed !important;
+    z-index: 999 !important;
+    top: var(--mobile-nav-height) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: calc(100dvh - var(--mobile-nav-height)) !important;
+    margin: 0 !important;
+    padding: 8px 10px 12px !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+
+  #site-nav:not(.open) {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  #site-nav.open {
+    display: flex !important;
+    pointer-events: auto !important;
+  }
+
+  /* X simples, estável e centralizado. */
+  .menu-toggle.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg) !important;
+  }
+
+  .menu-toggle.open span:nth-child(2) {
+    opacity: 0 !important;
+  }
+
+  .menu-toggle.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg) !important;
+  }
+
+  /* HERO: título e logo lado a lado, sem logo cortada. */
+  .hero-content {
+    width: calc(100% - 24px) !important;
+    padding: 22px 0 24px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 86px !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .hero-copy {
+    min-width: 0;
+  }
+
+  .hero-copy > p {
+    display: none !important;
+  }
+
+  .hero-copy .eyebrow {
+    margin-bottom: 7px !important;
+    padding: 5px 8px !important;
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+  }
+
+  .hero h1 {
+    margin: 0 !important;
+    font-size: clamp(34px, 10.8vw, 45px) !important;
+    line-height: .96 !important;
+  }
+
+  .hero-button {
+    margin-top: 14px !important;
+    min-height: 38px !important;
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+  }
+
+  /* Logo normal: inteira, opaca e sem sair da tela. */
+  .hero-logo-wrap {
+    position: static !important;
+    width: 86px !important;
+    height: 86px !important;
+    min-height: 86px !important;
+    display: grid !important;
+    place-items: center !important;
+    opacity: 1 !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+
+  .hero-logo {
+    width: 78px !important;
+    max-width: 78px !important;
+    max-height: 78px !important;
+    opacity: 1 !important;
+    object-fit: contain !important;
+    filter: none !important;
+  }
+
+  .hero-logo-glow {
+    display: none !important;
+  }
+
+  /* Notificações também respeitam a altura real da barra. */
+  .nav-acoes-usuario .notificacoes-painel {
+    top: var(--mobile-nav-height) !important;
+    max-height: calc(100dvh - var(--mobile-nav-height)) !important;
+    z-index: 999 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  :root {
+    --mobile-nav-height: 50px;
+  }
+
+  .hero-content {
+    grid-template-columns: minmax(0, 1fr) 74px !important;
+    gap: 8px !important;
+    padding: 20px 0 22px !important;
+  }
+
+  .hero-logo-wrap {
+    width: 74px !important;
+    height: 74px !important;
+    min-height: 74px !important;
+  }
+
+  .hero-logo {
+    width: 68px !important;
+    max-width: 68px !important;
+    max-height: 68px !important;
   }
 }

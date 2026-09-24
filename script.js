@@ -74,6 +74,17 @@ document.querySelectorAll("#site-nav a").forEach(link => {
   });
 });
 
+// No celular, tocar fora da lista também fecha o menu.
+document.addEventListener("click", event => {
+  const nav = document.getElementById("site-nav");
+  const button = document.querySelector(".menu-toggle");
+
+  if (!nav || !button || !nav.classList.contains("open")) return;
+  if (nav.contains(event.target) || button.contains(event.target)) return;
+
+  closeMobileMenu();
+});
+
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
