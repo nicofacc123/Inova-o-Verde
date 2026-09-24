@@ -92,6 +92,8 @@ const feed = document.getElementById("feed-comunidade");
 const postTexto = document.getElementById("post-texto");
 const contadorTexto = document.getElementById("contador-texto");
 const btnPublicar = document.getElementById("btn-publicar");
+const cadastroErro = document.getElementById("cadastro-erro");
+const loginErro = document.getElementById("login-erro");
 const postImagemInput = document.getElementById("post-imagem");
 const postImagemPreview = document.getElementById("post-imagem-preview");
 const postImagemPreviewImg = document.getElementById("post-imagem-preview-img");
@@ -119,6 +121,8 @@ function mostrarMensagem(texto, tipo = "sucesso", tempo = 5000) {
 
 function mostrarPainelAuth(modo) {
   const cadastro = modo === "cadastro";
+  if (cadastroErro) cadastroErro.textContent = "";
+  if (loginErro) loginErro.textContent = "";
 
   painelCadastro.hidden = !cadastro;
   painelLogin.hidden = cadastro;
@@ -142,6 +146,7 @@ document.getElementById("ir-cadastro").addEventListener("click", () => mostrarPa
 // -------------------------------
 document.getElementById("form-cadastro").addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (cadastroErro) cadastroErro.textContent = "";
 
   const nome = document.getElementById("cadastro-nome").value.trim();
   const email = document.getElementById("cadastro-email").value.trim();
@@ -152,6 +157,7 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
     await updateProfile(credencial.user, { displayName: nome });
     atualizarInterfaceUsuario(credencial.user);
     event.target.reset();
+    if (cadastroErro) cadastroErro.textContent = "";
     mostrarMensagem("Conta criada com sucesso! Agora você já pode publicar, comentar e votar. 🌱");
   } catch (erro) {
     console.error("Erro no cadastro:", erro);
@@ -163,7 +169,11 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
       "auth/too-many-requests": "Muitas tentativas. Aguarde um pouco e tente novamente.",
       "auth/network-request-failed": "Falha de conexão. Verifique sua internet e tente novamente."
     };
-    mostrarMensagem(mensagens[erro.code] || `Não foi possível criar a conta (${erro.code || "erro desconhecido"}).`, "erro", 8000);
+    if (cadastroErro) {
+      cadastroErro.textContent =
+        mensagens[erro.code] ||
+        `Não foi possível criar a conta (${erro.code || "erro desconhecido"}).`;
+    }
   }
 });
 
@@ -172,6 +182,7 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
 // -------------------------------
 document.getElementById("form-login").addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (loginErro) loginErro.textContent = "";
 
   const email = document.getElementById("login-email").value.trim();
   const senha = document.getElementById("login-senha").value;
@@ -180,10 +191,13 @@ document.getElementById("form-login").addEventListener("submit", async (event) =
     const credencial = await signInWithEmailAndPassword(auth, email, senha);
     atualizarInterfaceUsuario(credencial.user);
     event.target.reset();
+    if (loginErro) loginErro.textContent = "";
     mostrarMensagem("Login realizado com sucesso!");
   } catch (erro) {
     console.error("Erro no login:", erro);
-    mostrarMensagem("E-mail ou senha incorretos.", "erro");
+    if (loginErro) {
+      loginErro.textContent = "Usuário ou senha incorretos.";
+    }
   }
 });
 
@@ -601,6 +615,125 @@ function criarCardPost(post) {
   autorArea.append(autor, data);
   cabecalho.append(avatar, autorArea);
 
+  // Menu ••• da publicação principal
+  const postMenuWrap = document.createElement("div");
+  postMenuWrap.className = "post-menu-wrap";
+
+  const postMenuBotao = document.createElement("button");
+  postMenuBotao.type = "button";
+  postMenuBotao.className = "post-menu-botao";
+  postMenuBotao.textContent = "•••";
+  postMenuBotao.setAttribute("aria-label", "Opções da publicação");
+  postMenuBotao.setAttribute("aria-expanded", "false");
+
+  const postMenu = document.createElement("div");
+  postMenu.className = "post-menu";
+  postMenu.hidden = true;
+
+  postMenuBotao.addEventListener("click", event => {
+    event.stopPropagation();
+
+    document.querySelectorAll(".post-menu").forEach(outro => {
+      if (outro !== postMenu) {
+        outro.hidden = true;
+        outro.parentElement
+          ?.querySelector(".post-menu-botao")
+          ?.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    const abrir = postMenu.hidden;
+    postMenu.hidden = !abrir;
+    postMenuBotao.setAttribute("aria-expanded", String(abrir));
+  });
+
+  postMenu.addEventListener("click", event => event.stopPropagation());
+
+  const usuarioPostAtual = auth.currentUser;
+  const ehDonoPost = Boolean(
+    usuarioPostAtual?.uid &&
+    post.uid &&
+    usuarioPostAtual.uid === post.uid
+  );
+  const ehAdminPost = usuarioEhAdmin(usuarioPostAtual);
+
+  if (ehDonoPost || ehAdminPost) {
+    const excluirPost = document.createElement("button");
+    excluirPost.type = "button";
+    excluirPost.className = "post-menu-item post-menu-excluir";
+    excluirPost.textContent = "Excluir";
+
+    excluirPost.addEventListener("click", async () => {
+      postMenu.hidden = true;
+      postMenuBotao.setAttribute("aria-expanded", "false");
+
+      const textoConfirmacao = ehAdminPost && !ehDonoPost
+        ? "Excluir esta publicação como administrador?"
+        : "Excluir sua publicação?";
+
+      if (!window.confirm(textoConfirmacao)) return;
+
+      try {
+        await deleteDoc(doc(db, "posts", post.id));
+        mostrarMensagem("Publicação excluída.");
+      } catch (erro) {
+        console.error("Erro ao excluir publicação:", erro);
+        mostrarMensagem(
+          `Não foi possível excluir (${erro.code || "erro"}).`,
+          "erro",
+          8000
+        );
+      }
+    });
+
+    postMenu.appendChild(excluirPost);
+  } else {
+    const denunciarPost = document.createElement("button");
+    denunciarPost.type = "button";
+    denunciarPost.className = "post-menu-item post-menu-denunciar";
+    denunciarPost.textContent = "Denunciar";
+
+    denunciarPost.addEventListener("click", async () => {
+      postMenu.hidden = true;
+      postMenuBotao.setAttribute("aria-expanded", "false");
+
+      if (!auth.currentUser) {
+        mostrarPainelAuth("login");
+        areaAuth.hidden = false;
+        mostrarMensagem("Faça login para denunciar uma publicação.", "aviso", 7000);
+        areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+
+      try {
+        const usuario = auth.currentUser;
+
+        await setDoc(
+          doc(db, "posts", post.id, "denuncias", usuario.uid),
+          {
+            uid: usuario.uid,
+            postId: post.id,
+            criadoEm: serverTimestamp()
+          }
+        );
+
+        mostrarMensagem("Publicação denunciada.");
+      } catch (erro) {
+        console.error("Erro ao denunciar publicação:", erro);
+        mostrarMensagem(
+          `Não foi possível denunciar (${erro.code || "erro"}).`,
+          "erro",
+          8000
+        );
+      }
+    });
+
+    postMenu.appendChild(denunciarPost);
+  }
+
+  postMenuWrap.append(postMenuBotao, postMenu);
+  cabecalho.appendChild(postMenuWrap);
+
   const titulo = document.createElement("h4");
   titulo.textContent = post.titulo || "Sem título";
 
@@ -853,6 +986,13 @@ async function registrarReacao(postId, tipo, card) {
 let menuComentarioAberto = null;
 
 document.addEventListener("click", () => {
+  document.querySelectorAll(".post-menu").forEach(menu => {
+    menu.hidden = true;
+    menu.parentElement
+      ?.querySelector(".post-menu-botao")
+      ?.setAttribute("aria-expanded", "false");
+  });
+
   if (!menuComentarioAberto) return;
   menuComentarioAberto.hidden = true;
   const botao = menuComentarioAberto.parentElement?.querySelector(".comentario-menu-botao");
