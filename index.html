@@ -54,6 +54,11 @@
       <a href="#curiosidades" data-page="curiosidades" onclick="showPage('curiosidades')">Curiosidades</a>
       <a href="#links" data-page="links" onclick="showPage('links')">Links e Dicas</a>
     </nav>
+
+    <button type="button" id="perfil-atalho" class="perfil-atalho" aria-label="Abrir perfil" title="Perfil" hidden onclick="showPage('perfil')">
+      <img id="perfil-atalho-img" alt="" hidden>
+      <span id="perfil-atalho-inicial">U</span>
+    </button>
   </div>
 
   <main>
@@ -354,8 +359,31 @@
             <p>Crie sua conta para publicar, comentar e avaliar ideias da comunidade.</p>
 
             <form id="form-cadastro">
-              <label for="cadastro-nome">Nome</label>
-              <input type="text" id="cadastro-nome" placeholder="Seu nome" maxlength="40" autocomplete="name" required>
+              <label for="cadastro-perfil-nome">Nome do perfil</label>
+              <input
+                type="text"
+                id="cadastro-perfil-nome"
+                placeholder="Ex: Nícolas Ferreira"
+                maxlength="40"
+                autocomplete="name"
+                required
+              >
+
+              <label for="cadastro-nome">Nome de usuário</label>
+              <div class="username-input-wrap">
+                <span aria-hidden="true">@</span>
+                <input
+                  type="text"
+                  id="cadastro-nome"
+                  placeholder="nicolas12"
+                  minlength="3"
+                  maxlength="24"
+                  autocomplete="username"
+                  pattern="[A-Za-z0-9._-]{3,24}"
+                  required
+                >
+              </div>
+              <small class="auth-campo-ajuda">O @nome de usuário é único.</small>
 
               <label for="cadastro-email">E-mail</label>
               <input type="email" id="cadastro-email" placeholder="seuemail@gmail.com" autocomplete="email" required>
@@ -457,6 +485,74 @@
     </section>
 
     
+    <section id="perfil" class="page">
+      <div class="section-heading">
+        <span class="section-kicker">SUA CONTA</span>
+        <h2>Perfil</h2>
+        <p>Edite seu nome, seu @usuário e sua foto.</p>
+      </div>
+
+      <div id="perfil-deslogado" class="perfil-deslogado">
+        <p>Entre na sua conta para acessar o perfil.</p>
+        <button type="button" id="perfil-ir-login" class="btn-comunidade">Entrar</button>
+      </div>
+
+      <div id="perfil-conteudo" class="perfil-card" hidden>
+        <div class="perfil-cabecalho">
+          <div class="perfil-avatar-grande">
+            <img id="perfil-foto-atual" alt="Foto de perfil" hidden>
+            <span id="perfil-inicial-grande">U</span>
+          </div>
+          <div class="perfil-identidade">
+            <div class="perfil-nome-linha">
+              <h3 id="perfil-nome-exibicao">Usuário</h3>
+              <span id="perfil-selo-admin"></span>
+            </div>
+            <p id="perfil-username-exibicao" class="perfil-username-exibicao">@usuario</p>
+            <p id="perfil-email" class="perfil-email"></p>
+          </div>
+        </div>
+
+        <form id="form-perfil" class="perfil-form">
+          <label for="perfil-nome">Nome do perfil</label>
+          <input
+            type="text"
+            id="perfil-nome"
+            maxlength="40"
+            autocomplete="name"
+            required
+          >
+
+          <label for="perfil-usuario">Nome de usuário</label>
+          <div class="username-input-wrap">
+            <span aria-hidden="true">@</span>
+            <input
+              type="text"
+              id="perfil-usuario"
+              minlength="3"
+              maxlength="24"
+              pattern="[A-Za-z0-9._-]{3,24}"
+              autocomplete="username"
+              required
+            >
+          </div>
+          <small class="auth-campo-ajuda">O @nome de usuário é único.</small>
+
+          <label for="perfil-foto-input">Foto de perfil</label>
+          <input type="file" id="perfil-foto-input" accept="image/jpeg,image/png,image/webp">
+          <div id="perfil-foto-preview" class="perfil-foto-preview" hidden>
+            <img id="perfil-foto-preview-img" alt="Prévia da foto de perfil">
+          </div>
+          <div class="perfil-acoes-foto">
+            <button type="button" id="perfil-remover-foto" class="btn-perfil-secundario">Remover foto</button>
+          </div>
+
+          <button type="submit" id="btn-salvar-perfil" class="btn-comunidade">Salvar alterações</button>
+          <p id="perfil-mensagem" class="perfil-mensagem" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
     <section id="links" class="page">
       <div class="section-heading">
         <span class="section-kicker">Continue aprendendo</span>

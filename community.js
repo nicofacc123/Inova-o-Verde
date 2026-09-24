@@ -8,7 +8,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  deleteUser
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
 import {
@@ -20,9 +21,11 @@ import {
   onSnapshot,
   serverTimestamp,
   getDocs,
+  getDoc,
   doc,
   setDoc,
-  deleteDoc
+  deleteDoc,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 
@@ -98,6 +101,27 @@ const postImagemInput = document.getElementById("post-imagem");
 const postImagemPreview = document.getElementById("post-imagem-preview");
 const postImagemPreviewImg = document.getElementById("post-imagem-preview-img");
 const postImagemRemover = document.getElementById("post-imagem-remover");
+const perfilAtalho = document.getElementById("perfil-atalho");
+const perfilAtalhoImg = document.getElementById("perfil-atalho-img");
+const perfilAtalhoInicial = document.getElementById("perfil-atalho-inicial");
+const perfilDeslogado = document.getElementById("perfil-deslogado");
+const perfilConteudo = document.getElementById("perfil-conteudo");
+const perfilIrLogin = document.getElementById("perfil-ir-login");
+const perfilFotoAtual = document.getElementById("perfil-foto-atual");
+const perfilInicialGrande = document.getElementById("perfil-inicial-grande");
+const perfilNomeExibicao = document.getElementById("perfil-nome-exibicao");
+const perfilUsernameExibicao = document.getElementById("perfil-username-exibicao");
+const perfilEmail = document.getElementById("perfil-email");
+const perfilSeloAdmin = document.getElementById("perfil-selo-admin");
+const formPerfil = document.getElementById("form-perfil");
+const perfilNomeInput = document.getElementById("perfil-nome");
+const perfilUsuarioInput = document.getElementById("perfil-usuario");
+const perfilFotoInput = document.getElementById("perfil-foto-input");
+const perfilFotoPreview = document.getElementById("perfil-foto-preview");
+const perfilFotoPreviewImg = document.getElementById("perfil-foto-preview-img");
+const perfilRemoverFoto = document.getElementById("perfil-remover-foto");
+const btnSalvarPerfil = document.getElementById("btn-salvar-perfil");
+const perfilMensagem = document.getElementById("perfil-mensagem");
 
 let ordenacaoAtual = "recentes";
 let postsSalvos = [];
@@ -105,6 +129,9 @@ let unsubscribeReacoes = [];
 let unsubscribeContagemComentarios = [];
 const estatisticasPosts = new Map();
 const comentariosAbertos = new Map();
+const perfisUsuarios = new Map();
+let perfilAtual = null;
+let fotoPerfilPendente = undefined;
 
 const adminUidsPublicos = new Set();
 
@@ -114,11 +141,11 @@ function uidEhAdminPublico(uid) {
 
 function criarSeloVerificado() {
   const selo = document.createElement("img");
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1D9BF0" d="M12 1.8l2.07 1.75 2.69-.2 1.04 2.5 2.38 1.27-.6 2.63L21 12l-1.42 2.25.6 2.63-2.38 1.27-1.04 2.5-2.69-.2L12 22.2l-2.07-1.75-2.69.2-1.04-2.5-2.38-1.27.6-2.63L3 12l1.42-2.25-.6-2.63L6.2 5.85l1.04-2.5 2.69.2L12 1.8z"/><path fill="#fff" d="M10.55 16.3 6.9 12.65l1.45-1.45 2.2 2.2 5.1-5.1 1.45 1.45-6.55 6.55z"/></svg>';
+  selo.src = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   selo.className = "selo-admin-verificado";
-  selo.src = "verificado-admin.svg";
   selo.alt = "Verificado";
   selo.title = "Administrador verificado";
-  selo.loading = "eager";
   return selo;
 }
 
@@ -137,6 +164,249 @@ function criarNomeComSelo(nome, verificado = false, tag = "span") {
   return linha;
 }
 
+
+function normalizarUsername(valor) {
+  return String(valor || "").trim().toLowerCase();
+}
+
+function usernameValido(valor) {
+  return /^[A-Za-z0-9._-]{3,24}$/.test(String(valor || "").trim());
+}
+
+function usernameReservadoParaAdmin(usernameKey) {
+  return ["nicolas", "rillary", "ismael"].includes(usernameKey);
+}
+
+function obterPerfil(uid) {
+  return uid ? (perfisUsuarios.get(String(uid)) || null) : null;
+}
+
+function obterNomePorUid(uid, fallback = "Usuário") {
+  const perfil = obterPerfil(uid);
+  return perfil?.nome || perfil?.username || fallback || "Usuário";
+}
+
+function obterUsernamePorUid(uid, fallback = "") {
+  const perfil = obterPerfil(uid);
+  return perfil?.username || fallback || "";
+}
+
+function obterFotoPorUid(uid) {
+  return obterPerfil(uid)?.foto || "";
+}
+
+function obterNomePerfilAtual() {
+  return perfilAtual?.nome || perfilAtual?.username || auth.currentUser?.displayName || "Usuário";
+}
+
+function obterUsernameAtual() {
+  return perfilAtual?.username || "";
+}
+
+function aplicarAvatar(container, uid, fallbackNome = "Usuário") {
+  if (!container) return;
+  container.replaceChildren();
+  const foto = obterFotoPorUid(uid);
+  if (foto) {
+    const img = document.createElement("img");
+    img.src = foto;
+    img.alt = "";
+    img.loading = "lazy";
+    container.appendChild(img);
+    container.classList.add("tem-foto");
+  } else {
+    container.classList.remove("tem-foto");
+    container.textContent = (obterNomePorUid(uid, fallbackNome).charAt(0) || "U").toUpperCase();
+  }
+}
+
+function definirImagemOuInicial(img, inicial, foto, nome = "Usuário") {
+  if (!img || !inicial) return;
+  if (foto) {
+    img.src = foto;
+    img.hidden = false;
+    inicial.hidden = true;
+  } else {
+    img.removeAttribute("src");
+    img.hidden = true;
+    inicial.hidden = false;
+    inicial.textContent = (String(nome || "U").charAt(0) || "U").toUpperCase();
+  }
+}
+
+function mensagemPerfil(texto = "", tipo = "") {
+  if (!perfilMensagem) return;
+  perfilMensagem.textContent = texto;
+  perfilMensagem.className = `perfil-mensagem${tipo ? ` perfil-mensagem-${tipo}` : ""}`;
+}
+
+async function salvarPerfilNoFirestore(usuario, nomePerfil, username, foto) {
+  if (!usuario) throw new Error("Faça login novamente.");
+
+  const nomeLimpo = String(nomePerfil || "").trim();
+  const usernameLimpo = normalizarUsername(username);
+  const usernameKey = usernameLimpo;
+
+  if (!nomeLimpo || nomeLimpo.length > 40) {
+    const erro = new Error("Digite um nome de perfil com até 40 caracteres.");
+    erro.codigoPerfil = "nome-invalido";
+    throw erro;
+  }
+
+  if (!usernameValido(usernameLimpo)) {
+    const erro = new Error("Use de 3 a 24 caracteres: letras, números, ponto, _ ou -.");
+    erro.codigoPerfil = "username-invalido";
+    throw erro;
+  }
+
+  if (usernameReservadoParaAdmin(usernameKey) && !usuarioEhAdmin(usuario)) {
+    const erro = new Error("Esse nome de usuário está reservado.");
+    erro.codigoPerfil = "username-reservado";
+    throw erro;
+  }
+
+  const usuarioRef = doc(db, "usuarios", usuario.uid);
+  const novoUsernameRef = doc(db, "usernames", usernameKey);
+
+  await runTransaction(db, async transaction => {
+    const usuarioSnap = await transaction.get(usuarioRef);
+    const usernameSnap = await transaction.get(novoUsernameRef);
+
+    const perfilAnterior = usuarioSnap.exists() ? usuarioSnap.data() : null;
+    const usernameKeyAnterior = perfilAnterior?.usernameKey || "";
+
+    let usernameAnteriorRef = null;
+    let usernameAnteriorSnap = null;
+
+    if (usernameKeyAnterior && usernameKeyAnterior !== usernameKey) {
+      usernameAnteriorRef = doc(db, "usernames", usernameKeyAnterior);
+      usernameAnteriorSnap = await transaction.get(usernameAnteriorRef);
+    }
+
+    if (usernameSnap.exists() && usernameSnap.data()?.uid !== usuario.uid) {
+      const erro = new Error("Esse nome de usuário já está em uso.");
+      erro.codigoPerfil = "username-em-uso";
+      throw erro;
+    }
+
+    if (!usernameSnap.exists()) {
+      transaction.set(novoUsernameRef, {
+        uid: usuario.uid,
+        criadoEm: serverTimestamp()
+      });
+    }
+
+    const dadosPerfil = {
+      nome: nomeLimpo,
+      username: usernameLimpo,
+      usernameKey,
+      foto: String(foto || ""),
+      atualizadoEm: serverTimestamp()
+    };
+
+    if (!usuarioSnap.exists()) {
+      dadosPerfil.criadoEm = serverTimestamp();
+    }
+
+    transaction.set(usuarioRef, dadosPerfil, { merge: true });
+
+    if (
+      usernameAnteriorRef &&
+      usernameAnteriorSnap?.exists() &&
+      usernameAnteriorSnap.data()?.uid === usuario.uid
+    ) {
+      transaction.delete(usernameAnteriorRef);
+    }
+  });
+
+  await updateProfile(usuario, { displayName: nomeLimpo });
+
+  return {
+    nome: nomeLimpo,
+    username: usernameLimpo,
+    usernameKey,
+    foto: String(foto || "")
+  };
+}
+
+async function garantirPerfilAdmin(usuario) {
+  const admin = obterAdminAtual(usuario);
+  if (!admin || !usuario) return null;
+  const base = admin.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9._-]/g, "");
+  for (const candidato of [base, `${base}.admin`]) {
+    try {
+      await salvarPerfilNoFirestore(usuario, admin.nome, candidato, "");
+      const snap = await getDoc(doc(db, "usuarios", usuario.uid));
+      return snap.exists() ? { uid: usuario.uid, ...snap.data() } : null;
+    } catch (erro) {
+      if (erro?.codigoPerfil !== "username-em-uso") throw erro;
+    }
+  }
+  return null;
+}
+
+async function carregarPerfilAtual(usuario) {
+  perfilAtual = null;
+  fotoPerfilPendente = undefined;
+  if (!usuario) {
+    atualizarInterfacePerfil(null);
+    return;
+  }
+  try {
+    let snap = await getDoc(doc(db, "usuarios", usuario.uid));
+    if (!snap.exists() && usuarioEhAdmin(usuario)) {
+      await garantirPerfilAdmin(usuario);
+      snap = await getDoc(doc(db, "usuarios", usuario.uid));
+    }
+    if (snap.exists()) {
+      perfilAtual = { uid: usuario.uid, ...snap.data() };
+      perfisUsuarios.set(usuario.uid, perfilAtual);
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar perfil:", erro);
+  }
+  atualizarInterfacePerfil(usuario);
+}
+
+function atualizarInterfacePerfil(usuario = auth.currentUser) {
+  const logado = Boolean(usuario);
+
+  if (perfilAtalho) perfilAtalho.hidden = !logado;
+  if (perfilDeslogado) perfilDeslogado.hidden = logado;
+  if (perfilConteudo) perfilConteudo.hidden = !logado;
+
+  if (!logado) {
+    if (perfilAtalhoImg) perfilAtalhoImg.hidden = true;
+    if (perfilAtalhoInicial) {
+      perfilAtalhoInicial.hidden = false;
+      perfilAtalhoInicial.textContent = "U";
+    }
+    return;
+  }
+
+  const perfil = perfilAtual || obterPerfil(usuario.uid);
+  const nome = perfil?.nome || perfil?.username || usuario.displayName || "Usuário";
+  const username = perfil?.username || "";
+  const foto = perfil?.foto || "";
+
+  definirImagemOuInicial(perfilAtalhoImg, perfilAtalhoInicial, foto, nome);
+  definirImagemOuInicial(perfilFotoAtual, perfilInicialGrande, foto, nome);
+
+  if (perfilNomeExibicao) perfilNomeExibicao.textContent = nome;
+  if (perfilUsernameExibicao) {
+    perfilUsernameExibicao.textContent = username ? `@${username}` : "@usuario";
+  }
+  if (perfilEmail) perfilEmail.textContent = usuario.email || "";
+  if (perfilNomeInput) perfilNomeInput.value = nome;
+  if (perfilUsuarioInput) perfilUsuarioInput.value = username;
+
+  if (perfilSeloAdmin) {
+    perfilSeloAdmin.replaceChildren();
+    if (usuarioEhAdmin(usuario)) {
+      perfilSeloAdmin.appendChild(criarSeloVerificado());
+    }
+  }
+}
 
 function mostrarMensagem(texto, tipo = "sucesso", tempo = 5000) {
   mensagem.textContent = texto;
@@ -179,33 +449,59 @@ document.getElementById("ir-cadastro").addEventListener("click", () => mostrarPa
 document.getElementById("form-cadastro").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (cadastroErro) cadastroErro.textContent = "";
-
-  const nome = document.getElementById("cadastro-nome").value.trim();
+  const nomePerfil = document.getElementById("cadastro-perfil-nome").value.trim();
+  const username = document.getElementById("cadastro-nome").value.trim();
+  const usernameKey = normalizarUsername(username);
   const email = document.getElementById("cadastro-email").value.trim();
   const senha = document.getElementById("cadastro-senha").value;
 
+  if (!nomePerfil || nomePerfil.length > 40) {
+    cadastroErro.textContent = "Digite um nome de perfil com até 40 caracteres.";
+    return;
+  }
+
+  if (!usernameValido(username)) {
+    cadastroErro.textContent = "Use de 3 a 24 caracteres: letras, números, ponto, _ ou -.";
+    return;
+  }
+  if (usernameReservadoParaAdmin(usernameKey)) {
+    cadastroErro.textContent = "Esse nome de usuário está reservado.";
+    return;
+  }
+
   try {
+    const usernameExistente = await getDoc(doc(db, "usernames", usernameKey));
+    if (usernameExistente.exists()) {
+      cadastroErro.textContent = "Esse nome de usuário já está em uso.";
+      return;
+    }
+
     const credencial = await createUserWithEmailAndPassword(auth, email, senha);
-    await updateProfile(credencial.user, { displayName: nome });
+    try {
+      await salvarPerfilNoFirestore(credencial.user, nomePerfil, username, "");
+    } catch (erroPerfil) {
+      try { await deleteUser(credencial.user); } catch (erroExcluirConta) { console.error("Erro ao desfazer cadastro:", erroExcluirConta); }
+      throw erroPerfil;
+    }
+
+    await carregarPerfilAtual(credencial.user);
     atualizarInterfaceUsuario(credencial.user);
     event.target.reset();
-    if (cadastroErro) cadastroErro.textContent = "";
-    mostrarMensagem("Conta criada com sucesso! Agora você já pode publicar, comentar e votar. 🌱");
+    cadastroErro.textContent = "";
+    mostrarMensagem("Conta criada com sucesso! 🌱");
   } catch (erro) {
     console.error("Erro no cadastro:", erro);
+    if (erro?.codigoPerfil === "username-em-uso") return cadastroErro.textContent = "Esse nome de usuário já está em uso.";
+    if (erro?.codigoPerfil === "username-reservado") return cadastroErro.textContent = "Esse nome de usuário está reservado.";
     const mensagens = {
       "auth/email-already-in-use": "Este e-mail já possui uma conta. Faça login.",
       "auth/invalid-email": "Digite um e-mail válido.",
       "auth/weak-password": "Escolha uma senha mais forte.",
       "auth/operation-not-allowed": "O login por e-mail e senha não está ativado no Firebase.",
-      "auth/too-many-requests": "Muitas tentativas. Aguarde um pouco e tente novamente.",
-      "auth/network-request-failed": "Falha de conexão. Verifique sua internet e tente novamente."
+      "auth/too-many-requests": "Muitas tentativas. Tente novamente depois.",
+      "auth/network-request-failed": "Falha de conexão. Verifique sua internet."
     };
-    if (cadastroErro) {
-      cadastroErro.textContent =
-        mensagens[erro.code] ||
-        `Não foi possível criar a conta (${erro.code || "erro desconhecido"}).`;
-    }
+    cadastroErro.textContent = mensagens[erro.code] || erro?.message || "Não foi possível criar a conta.";
   }
 });
 
@@ -244,28 +540,19 @@ document.getElementById("btn-sair").addEventListener("click", async () => {
 });
 
 onAuthStateChanged(auth, async usuario => {
+  await carregarPerfilAtual(usuario);
   atualizarInterfaceUsuario(usuario);
   atualizarPainelAdmin(usuario);
 
-  // Quando um administrador entra, registra seu UID público.
-  // Isso permite mostrar o selo também em posts/comentários antigos dele.
   const adminAtual = obterAdminAtual(usuario);
   if (adminAtual && usuario?.uid) {
     try {
-      await setDoc(
-        doc(db, "adminsPublicos", usuario.uid),
-        {
-          nome: adminAtual.nome,
-          atualizadoEm: serverTimestamp()
-        },
-        { merge: true }
-      );
+      await setDoc(doc(db, "adminsPublicos", usuario.uid), { nome: adminAtual.nome, atualizadoEm: serverTimestamp() }, { merge: true });
     } catch (erro) {
       console.error("Erro ao registrar administrador verificado:", erro);
     }
   }
 
-  // Recalcula os menus dos comentários já abertos.
   window.setTimeout(() => {
     comentariosAbertos.forEach((elemento, postId) => {
       if (elemento?.isConnected) carregarComentarios(postId, elemento);
@@ -291,19 +578,53 @@ function atualizarInterfaceUsuario(usuario) {
     criarPublicacao.hidden = true;
     btnPublicacaoPlus.setAttribute("aria-expanded", "false");
     nomeUsuario.replaceChildren();
+
+    const identidadeLogada = document.createElement("span");
+    identidadeLogada.className = "usuario-logado-identidade";
+
+    const linhaNome = document.createElement("span");
+    linhaNome.className = "usuario-logado-nome-linha";
+
     const nomeLogado = document.createElement("span");
-    nomeLogado.textContent = usuario.displayName || usuario.email || "Usuário";
-    nomeUsuario.appendChild(nomeLogado);
+    nomeLogado.className = "usuario-logado-nome";
+    nomeLogado.textContent = obterNomePorUid(
+      usuario.uid,
+      usuario.displayName || usuario.email || "Usuário"
+    );
+
+    linhaNome.appendChild(nomeLogado);
+
     if (usuarioEhAdmin(usuario)) {
-      nomeUsuario.appendChild(criarSeloVerificado());
-      nomeUsuario.classList.add("nome-usuario-verificado");
-    } else {
-      nomeUsuario.classList.remove("nome-usuario-verificado");
+      linhaNome.appendChild(criarSeloVerificado());
     }
+
+    const usernameLogado = document.createElement("span");
+    usernameLogado.className = "usuario-logado-username";
+    const handle = obterUsernamePorUid(usuario.uid, perfilAtual?.username || "");
+    usernameLogado.textContent = handle ? `@${handle}` : "";
+
+    identidadeLogada.append(linhaNome, usernameLogado);
+    nomeUsuario.appendChild(identidadeLogada);
   }
 
+  atualizarInterfacePerfil(usuario);
   renderizarPosts();
 }
+
+// Perfis públicos: nome de usuário e foto atual
+onSnapshot(collection(db, "usuarios"), snapshot => {
+  perfisUsuarios.clear();
+  snapshot.forEach(item => perfisUsuarios.set(item.id, { uid: item.id, ...item.data() }));
+  if (auth.currentUser) {
+    const atual = perfisUsuarios.get(auth.currentUser.uid);
+    if (atual) perfilAtual = atual;
+  }
+  atualizarInterfacePerfil(auth.currentUser);
+  renderizarPosts();
+  comentariosAbertos.forEach((elemento, postId) => {
+    if (elemento?.isConnected) carregarComentarios(postId, elemento);
+  });
+}, erro => console.error("Erro ao carregar perfis:", erro));
 
 // Administradores verificados visíveis publicamente
 onSnapshot(collection(db, "adminsPublicos"), snapshot => {
@@ -326,6 +647,11 @@ function usuarioPodeInteragir() {
     areaAuth.hidden = false;
     mostrarMensagem("Faça login para participar da comunidade.", "aviso");
     areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
+    return false;
+  }
+  if (!perfilAtual?.usernameKey) {
+    mensagemPerfil("Escolha um nome de usuário para continuar.", "erro");
+    window.showPage?.("perfil");
     return false;
   }
   return true;
@@ -445,6 +771,33 @@ async function comprimirImagem(arquivo) {
   return resultado;
 }
 
+async function comprimirFotoPerfil(arquivo) {
+  if (!arquivo) return "";
+  if (!arquivo.type?.startsWith("image/")) throw new Error("Escolha uma imagem.");
+  if (arquivo.size > LIMITE_ARQUIVO_ORIGINAL) throw new Error("A imagem deve ter no máximo 12 MB.");
+  const original = await lerArquivoComoDataURL(arquivo);
+  const imagem = await carregarImagem(original);
+  const iw = imagem.naturalWidth || imagem.width;
+  const ih = imagem.naturalHeight || imagem.height;
+  const lado = Math.min(iw, ih);
+  const ox = Math.max(0, (iw - lado) / 2);
+  const oy = Math.max(0, (ih - lado) / 2);
+  const canvas = document.createElement("canvas");
+  canvas.width = 240; canvas.height = 240;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) throw new Error("Não foi possível preparar a foto.");
+  ctx.fillStyle = "#fff"; ctx.fillRect(0,0,240,240);
+  ctx.drawImage(imagem, ox, oy, lado, lado, 0, 0, 240, 240);
+  let qualidade = .82;
+  let resultado = canvas.toDataURL("image/jpeg", qualidade);
+  while (resultado.length > 80000 && qualidade > .42) {
+    qualidade -= .08;
+    resultado = canvas.toDataURL("image/jpeg", qualidade);
+  }
+  if (resultado.length > 80000) throw new Error("Escolha uma foto menor.");
+  return resultado;
+}
+
 function configurarPreviewImagem(input, caixa, imagem, remover) {
   if (!input || !caixa || !imagem || !remover) return;
 
@@ -474,6 +827,83 @@ function configurarPreviewImagem(input, caixa, imagem, remover) {
 }
 
 configurarPreviewImagem(postImagemInput, postImagemPreview, postImagemPreviewImg, postImagemRemover);
+
+perfilIrLogin?.addEventListener("click", () => {
+  window.showPage?.("comunidade");
+  mostrarPainelAuth("login");
+  areaAuth.hidden = false;
+  areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+perfilFotoInput?.addEventListener("change", async () => {
+  const arquivo = perfilFotoInput.files?.[0];
+  if (!arquivo) {
+    fotoPerfilPendente = undefined;
+    perfilFotoPreview.hidden = true;
+    perfilFotoPreviewImg.removeAttribute("src");
+    return;
+  }
+  try {
+    mensagemPerfil("");
+    fotoPerfilPendente = await comprimirFotoPerfil(arquivo);
+    perfilFotoPreviewImg.src = fotoPerfilPendente;
+    perfilFotoPreview.hidden = false;
+  } catch (erro) {
+    perfilFotoInput.value = "";
+    fotoPerfilPendente = undefined;
+    perfilFotoPreview.hidden = true;
+    mensagemPerfil(erro.message || "Não foi possível preparar a foto.", "erro");
+  }
+});
+
+perfilRemoverFoto?.addEventListener("click", () => {
+  fotoPerfilPendente = "";
+  perfilFotoInput.value = "";
+  perfilFotoPreview.hidden = true;
+  perfilFotoPreviewImg.removeAttribute("src");
+  mensagemPerfil("A foto será removida quando você salvar.");
+});
+
+formPerfil?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const usuario = auth.currentUser;
+  if (!usuario) return mensagemPerfil("Faça login novamente.", "erro");
+  const nomePerfil = perfilNomeInput.value.trim();
+  const username = perfilUsuarioInput.value.trim();
+
+  if (!nomePerfil || nomePerfil.length > 40) {
+    return mensagemPerfil("Digite um nome de perfil com até 40 caracteres.", "erro");
+  }
+
+  if (!usernameValido(username)) {
+    return mensagemPerfil("Use de 3 a 24 caracteres: letras, números, ponto, _ ou -.", "erro");
+  }
+
+  const fotoFinal = fotoPerfilPendente === undefined
+    ? (perfilAtual?.foto || "")
+    : fotoPerfilPendente;
+  try {
+    btnSalvarPerfil.disabled = true;
+    btnSalvarPerfil.textContent = "Salvando...";
+    mensagemPerfil("");
+    await salvarPerfilNoFirestore(usuario, nomePerfil, username, fotoFinal);
+    await carregarPerfilAtual(usuario);
+    fotoPerfilPendente = undefined;
+    perfilFotoInput.value = "";
+    perfilFotoPreview.hidden = true;
+    perfilFotoPreviewImg.removeAttribute("src");
+    mensagemPerfil("Perfil atualizado.", "sucesso");
+  } catch (erro) {
+    console.error("Erro ao salvar perfil:", erro);
+    if (erro?.codigoPerfil === "username-em-uso") mensagemPerfil("Esse nome de usuário já está em uso.", "erro");
+    else if (erro?.codigoPerfil === "username-reservado") mensagemPerfil("Esse nome de usuário está reservado.", "erro");
+    else mensagemPerfil(erro?.message || "Não foi possível salvar o perfil.", "erro");
+  } finally {
+    btnSalvarPerfil.disabled = false;
+    btnSalvarPerfil.textContent = "Salvar alterações";
+  }
+});
+
 
 // -------------------------------
 // Nova publicação
@@ -505,7 +935,7 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
 
     await addDoc(collection(db, "posts"), {
       uid: usuario.uid,
-      autor: usuario.displayName || "Usuário",
+      autor: obterNomePerfilAtual(),
       titulo,
       texto,
       imagem,
@@ -676,7 +1106,7 @@ function criarCardPost(post) {
 
   const avatar = document.createElement("div");
   avatar.className = "post-avatar";
-  avatar.textContent = (post.autor || "U").charAt(0).toUpperCase();
+  aplicarAvatar(avatar, post.uid, post.autor || "Usuário");
 
   const autorArea = document.createElement("div");
   autorArea.className = "post-autor";
@@ -684,17 +1114,23 @@ function criarCardPost(post) {
   autorLinha.className = "post-autor-linha";
 
   const autor = document.createElement("strong");
-  autor.textContent = post.autor || "Usuário";
+  autor.textContent = obterNomePorUid(post.uid, post.autor || "Usuário");
   autorLinha.appendChild(autor);
 
   if (uidEhAdminPublico(post.uid)) {
     autorLinha.appendChild(criarSeloVerificado());
   }
 
+  const usernameAutor = document.createElement("span");
+  usernameAutor.className = "post-username";
+  const usernamePost = obterUsernamePorUid(post.uid, "");
+  usernameAutor.textContent = usernamePost ? `@${usernamePost}` : "";
+
   const data = document.createElement("span");
   data.className = "post-data";
   data.textContent = formatarData(post.criadoEm);
-  autorArea.append(autorLinha, data);
+
+  autorArea.append(autorLinha, usernameAutor, data);
   cabecalho.append(avatar, autorArea);
 
   // Menu ••• da publicação principal
@@ -920,7 +1356,7 @@ function criarCardPost(post) {
         const usuario = auth.currentUser;
         await addDoc(collection(db, "posts", post.id, "comentarios"), {
           uid: usuario.uid,
-          autor: usuario.displayName || "Usuário",
+          autor: obterNomePerfilAtual(),
           texto: comentario,
           criadoEm: serverTimestamp()
         });
@@ -1115,6 +1551,10 @@ async function carregarComentarios(postId, elemento) {
       const caixa = document.createElement("div");
       caixa.className = "comentario";
 
+      const avatarComentario = document.createElement("div");
+      avatarComentario.className = "comentario-avatar";
+      aplicarAvatar(avatarComentario, comentario.uid, comentario.autor || "Usuário");
+
       const conteudo = document.createElement("div");
       conteudo.className = "comentario-conteudo";
 
@@ -1122,19 +1562,24 @@ async function carregarComentarios(postId, elemento) {
       nomeLinha.className = "comentario-nome-linha";
 
       const nome = document.createElement("strong");
-      nome.textContent = comentario.autor || "Usuário";
+      nome.textContent = obterNomePorUid(comentario.uid, comentario.autor || "Usuário");
       nomeLinha.appendChild(nome);
 
       if (uidEhAdminPublico(comentario.uid)) {
         nomeLinha.appendChild(criarSeloVerificado());
       }
 
+      const usernameComentario = document.createElement("div");
+      usernameComentario.className = "comentario-username";
+      const handleComentario = obterUsernamePorUid(comentario.uid, "");
+      usernameComentario.textContent = handleComentario ? `@${handleComentario}` : "";
+
       const corpo = document.createElement("div");
       corpo.className = "comentario-texto";
       corpo.textContent = comentario.texto || "";
 
-      conteudo.append(nomeLinha, corpo);
-      caixa.appendChild(conteudo);
+      conteudo.append(nomeLinha, usernameComentario, corpo);
+      caixa.append(avatarComentario, conteudo);
 
       const uidComentario = String(comentario.uid || "");
       const ehDono = Boolean(uidAtual && uidComentario && uidAtual === uidComentario);
