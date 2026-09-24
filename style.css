@@ -4659,20 +4659,19 @@ body.imagem-ampliada-aberta {
 
 
 /* =========================================================
-   V5.4 — BOTÃO + CRIAR
+   BOTÃO NOVA PUBLICAÇÃO
    ========================================================= */
 
 .btn-publicacao-plus {
   width: auto !important;
-  min-width: 104px;
+  min-width: 164px;
   height: 50px;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 9px;
   padding: 0 18px !important;
   border-radius: 999px !important;
-  font-size: 15px !important;
   font-weight: 800 !important;
 }
 
@@ -4687,18 +4686,19 @@ body.imagem-ampliada-aberta {
   font-size: 14px;
   font-weight: 800;
   line-height: 1;
+  white-space: nowrap;
 }
 
 @media (max-width: 520px) {
   .btn-publicacao-plus {
-    min-width: 96px;
+    min-width: 148px;
     height: 46px;
     padding: 0 15px !important;
     gap: 7px;
   }
 
   .btn-publicacao-plus-icone {
-    font-size: 26px;
+    font-size: 25px;
   }
 
   .btn-publicacao-plus-texto {
