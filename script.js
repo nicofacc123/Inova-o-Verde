@@ -67,6 +67,13 @@ function closeMobileMenu() {
   button.setAttribute("aria-label", "Abrir menu");
 }
 
+// Fecha o menu mobile imediatamente ao escolher uma página.
+document.querySelectorAll("#site-nav a").forEach(link => {
+  link.addEventListener("click", () => {
+    closeMobileMenu();
+  });
+});
+
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

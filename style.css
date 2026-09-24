@@ -5601,3 +5601,122 @@ body.admin-modal-aberto * {
     padding-inline: 10px !important;
   }
 }
+
+
+/* =========================================================
+   V7.3 — MOBILE MAIS COMPACTO
+   ========================================================= */
+
+@media (max-width: 720px) {
+  /* Topo com apenas menu à esquerda e ações à direita. */
+  .nav-shell {
+    min-height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 6px 9px !important;
+  }
+
+  .menu-toggle {
+    width: 38px !important;
+    height: 38px !important;
+    flex: 0 0 38px !important;
+  }
+
+  .nav-acoes-usuario {
+    margin-left: auto !important;
+  }
+
+  .nav-acoes-usuario .notificacoes-botao,
+  .nav-acoes-usuario .perfil-atalho {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* Garante que o menu realmente suma depois de tocar numa opção. */
+  #site-nav:not(.open) {
+    display: none !important;
+  }
+
+  #site-nav.open {
+    display: flex !important;
+  }
+
+  #site-nav {
+    top: 52px !important;
+    max-height: calc(100dvh - 52px) !important;
+  }
+
+  .nav-acoes-usuario .notificacoes-painel {
+    top: 52px !important;
+    max-height: calc(100dvh - 52px) !important;
+  }
+
+  /* Hero menor e mais direto no celular. */
+  .hero {
+    min-height: auto !important;
+  }
+
+  .hero-content {
+    width: calc(100% - 22px) !important;
+    padding: 25px 0 29px !important;
+    gap: 0 !important;
+  }
+
+  /* Frase longa removida apenas no celular. */
+  .hero-copy > p {
+    display: none !important;
+  }
+
+  .hero-copy .eyebrow {
+    margin-bottom: 8px !important;
+    font-size: 9px !important;
+  }
+
+  .hero h1 {
+    margin-bottom: 0 !important;
+    font-size: clamp(36px, 12vw, 48px) !important;
+    line-height: .98 !important;
+  }
+
+  .hero-button {
+    margin-top: 18px !important;
+    min-height: 42px !important;
+    padding: 10px 14px !important;
+    font-size: 12px !important;
+  }
+
+  .hero-logo-wrap {
+    width: 115px !important;
+    min-height: 115px !important;
+    right: -26px !important;
+    bottom: -28px !important;
+    opacity: .16 !important;
+  }
+
+  .hero-logo {
+    width: 96px !important;
+  }
+
+  .hero-logo-glow {
+    width: 104px !important;
+    height: 104px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .nav-shell {
+    min-height: 50px !important;
+    padding: 5px 8px !important;
+  }
+
+  #site-nav,
+  .nav-acoes-usuario .notificacoes-painel {
+    top: 50px !important;
+  }
+
+  .hero-content {
+    padding: 22px 0 26px !important;
+  }
+}
