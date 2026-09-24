@@ -1859,7 +1859,8 @@ async function carregarRespostasDoComentario(
           nome: obterNomePorUid(
             resposta.uid,
             resposta.autor || "Usuário"
-          )
+          ),
+          ehResposta: true
         });
       });
 
@@ -2128,17 +2129,20 @@ async function carregarComentarios(postId, elemento) {
         comentario.uid,
         comentario.autor || "Usuário"
       );
+      let alvoEhResposta = false;
 
       function abrirFormularioResposta({
         uid = "",
         handle = "",
-        nome = "Usuário"
+        nome = "Usuário",
+        ehResposta = false
       } = {}) {
         if (!usuarioPodeInteragir()) return;
 
         alvoRespostaUid = uid;
         alvoRespostaHandle = handle;
         alvoRespostaNome = nome || "Usuário";
+        alvoEhResposta = Boolean(ehResposta);
 
         elemento
           .querySelectorAll(".form-resposta-comentario")
@@ -2161,7 +2165,8 @@ async function carregarComentarios(postId, elemento) {
           nome: obterNomePorUid(
             comentario.uid,
             comentario.autor || "Usuário"
-          )
+          ),
+          ehResposta: false
         });
       });
 
@@ -2199,7 +2204,7 @@ async function carregarComentarios(postId, elemento) {
               autor: obterNomePerfilAtual(),
               texto: textoResposta,
               respondendoUid: alvoRespostaUid,
-              respondendoA: alvoRespostaHandle,
+              respondendoA: alvoEhResposta ? alvoRespostaHandle : "",
               criadoEm: serverTimestamp()
             }
           );
