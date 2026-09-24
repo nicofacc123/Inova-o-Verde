@@ -48,24 +48,67 @@ function showPage(pageId, updateHash = true) {
   });
 }
 
-function toggleMenu(button) {
-  const nav = document.getElementById("site-nav");
-  const open = nav.classList.toggle("open");
-  button.classList.toggle("open", open);
-  button.setAttribute("aria-expanded", String(open));
-  button.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
-}
+const MOBILE_MENU_BREAKPOINT = 860;
 
-function closeMobileMenu() {
+function setMobileMenu(open) {
   const nav = document.getElementById("site-nav");
   const button = document.querySelector(".menu-toggle");
   if (!nav || !button) return;
 
-  nav.classList.remove("open");
-  button.classList.remove("open");
-  button.setAttribute("aria-expanded", "false");
-  button.setAttribute("aria-label", "Abrir menu");
+  const shouldOpen =
+    Boolean(open) &&
+    window.matchMedia(`(max-width: ${MOBILE_MENU_BREAKPOINT}px)`).matches;
+
+  nav.classList.toggle("open", shouldOpen);
+  button.classList.toggle("open", shouldOpen);
+  button.setAttribute("aria-expanded", String(shouldOpen));
+  button.setAttribute("aria-label", shouldOpen ? "Fechar menu" : "Abrir menu");
+  document.body.classList.toggle("menu-mobile-aberto", shouldOpen);
+
+  if (shouldOpen) {
+    const painel = document.getElementById("notificacoes-painel");
+    const sino = document.getElementById("notificacoes-botao");
+
+    if (painel) painel.hidden = true;
+    sino?.setAttribute("aria-expanded", "false");
+  }
 }
+
+function toggleMenu() {
+  const nav = document.getElementById("site-nav");
+  if (!nav) return;
+  setMobileMenu(!nav.classList.contains("open"));
+}
+
+function closeMobileMenu() {
+  setMobileMenu(false);
+}
+
+
+/* Menu mobile: fecha fora, no Escape, ao ampliar a tela e ao abrir notificações. */
+document.addEventListener("click", event => {
+  const nav = document.getElementById("site-nav");
+  const button = document.querySelector(".menu-toggle");
+
+  if (!nav?.classList.contains("open") || !button) return;
+  if (nav.contains(event.target) || button.contains(event.target)) return;
+
+  closeMobileMenu();
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeMobileMenu();
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > MOBILE_MENU_BREAKPOINT) closeMobileMenu();
+}, { passive: true });
+
+document.getElementById("notificacoes-botao")?.addEventListener(
+  "click",
+  closeMobileMenu,
+  true
+);
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
