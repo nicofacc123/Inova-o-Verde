@@ -1542,14 +1542,254 @@ document.addEventListener("click", () => {
   menuComentarioAberto = null;
 });
 
+function configurarMenuComentario(menu, botao) {
+  botao.addEventListener("click", event => {
+    event.stopPropagation();
+
+    if (menuComentarioAberto && menuComentarioAberto !== menu) {
+      menuComentarioAberto.hidden = true;
+      menuComentarioAberto.parentElement
+        ?.querySelector(".comentario-menu-botao")
+        ?.setAttribute("aria-expanded", "false");
+    }
+
+    const abrir = menu.hidden;
+    menu.hidden = !abrir;
+    botao.setAttribute("aria-expanded", String(abrir));
+    menuComentarioAberto = abrir ? menu : null;
+  });
+
+  menu.addEventListener("click", event => event.stopPropagation());
+}
+
+function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarregar) {
+  const usuarioAtual = auth.currentUser;
+  const ehAdminAtual = usuarioEhAdmin(usuarioAtual);
+  const ehDono = Boolean(
+    usuarioAtual?.uid &&
+    respostaUid &&
+    String(usuarioAtual.uid) === String(respostaUid)
+  );
+
+  const wrap = document.createElement("div");
+  wrap.className = "comentario-menu-wrap resposta-menu-wrap";
+
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "comentario-menu-botao";
+  botao.textContent = "•••";
+  botao.setAttribute("aria-label", "Opções da resposta");
+  botao.setAttribute("aria-expanded", "false");
+
+  const menu = document.createElement("div");
+  menu.className = "comentario-menu";
+  menu.hidden = true;
+
+  configurarMenuComentario(menu, botao);
+
+  if (ehAdminAtual || ehDono) {
+    const excluir = document.createElement("button");
+    excluir.type = "button";
+    excluir.className = "comentario-menu-item comentario-menu-excluir";
+    excluir.textContent = "Excluir";
+
+    excluir.addEventListener("click", async () => {
+      menu.hidden = true;
+      menuComentarioAberto = null;
+      botao.setAttribute("aria-expanded", "false");
+
+      if (!window.confirm("Excluir esta resposta?")) return;
+
+      try {
+        await deleteDoc(
+          doc(
+            db,
+            "posts",
+            postId,
+            "comentarios",
+            comentarioId,
+            "respostas",
+            respostaId
+          )
+        );
+        await recarregar();
+        mostrarMensagem("Resposta excluída.");
+      } catch (erro) {
+        console.error("Erro ao excluir resposta:", erro);
+        mostrarMensagem(
+          `Não foi possível excluir (${erro.code || "erro"}).`,
+          "erro",
+          8000
+        );
+      }
+    });
+
+    menu.appendChild(excluir);
+  } else {
+    const denunciar = document.createElement("button");
+    denunciar.type = "button";
+    denunciar.className = "comentario-menu-item comentario-menu-denunciar";
+    denunciar.textContent = "Denunciar";
+
+    denunciar.addEventListener("click", async () => {
+      menu.hidden = true;
+      menuComentarioAberto = null;
+      botao.setAttribute("aria-expanded", "false");
+
+      if (!auth.currentUser) {
+        mostrarPainelAuth("login");
+        areaAuth.hidden = false;
+        mostrarMensagem("Faça login para denunciar uma resposta.", "aviso", 7000);
+        areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+
+      try {
+        const usuario = auth.currentUser;
+
+        await setDoc(
+          doc(
+            db,
+            "posts",
+            postId,
+            "comentarios",
+            comentarioId,
+            "respostas",
+            respostaId,
+            "denuncias",
+            usuario.uid
+          ),
+          {
+            uid: usuario.uid,
+            postId,
+            comentarioId,
+            respostaId,
+            criadoEm: serverTimestamp()
+          }
+        );
+
+        mostrarMensagem("Resposta denunciada.");
+      } catch (erro) {
+        console.error("Erro ao denunciar resposta:", erro);
+        mostrarMensagem(
+          `Não foi possível denunciar (${erro.code || "erro"}).`,
+          "erro",
+          8000
+        );
+      }
+    });
+
+    menu.appendChild(denunciar);
+  }
+
+  wrap.append(botao, menu);
+  return wrap;
+}
+
+async function carregarRespostasDoComentario(postId, comentarioId, elemento) {
+  elemento.replaceChildren();
+
+  try {
+    const resultado = await getDocs(
+      collection(
+        db,
+        "posts",
+        postId,
+        "comentarios",
+        comentarioId,
+        "respostas"
+      )
+    );
+
+    const respostas = resultado.docs.map(item => ({
+      id: item.id,
+      ...item.data()
+    }));
+
+    respostas.sort((a, b) => {
+      const ta = a.criadoEm?.toMillis?.() || 0;
+      const tb = b.criadoEm?.toMillis?.() || 0;
+      return ta - tb;
+    });
+
+    elemento.hidden = respostas.length === 0;
+
+    respostas.forEach(resposta => {
+      const caixa = document.createElement("div");
+      caixa.className = "comentario resposta-comentario";
+
+      const avatar = document.createElement("div");
+      avatar.className = "comentario-avatar resposta-avatar";
+      aplicarAvatar(avatar, resposta.uid, resposta.autor || "Usuário");
+
+      const conteudo = document.createElement("div");
+      conteudo.className = "comentario-conteudo";
+
+      const nomeLinha = document.createElement("div");
+      nomeLinha.className = "comentario-nome-linha";
+
+      const nome = document.createElement("strong");
+      nome.textContent = obterNomePorUid(
+        resposta.uid,
+        resposta.autor || "Usuário"
+      );
+      nomeLinha.appendChild(nome);
+
+      if (uidEhAdminPublico(resposta.uid)) {
+        nomeLinha.appendChild(criarSeloVerificado());
+      }
+
+      const username = document.createElement("div");
+      username.className = "comentario-username";
+      const handle = obterUsernamePorUid(resposta.uid, "");
+      username.textContent = handle ? `@${handle}` : "";
+
+      const texto = document.createElement("div");
+      texto.className = "comentario-texto resposta-texto";
+
+      if (resposta.respondendoA) {
+        const mencao = document.createElement("span");
+        mencao.className = "resposta-mencao";
+        mencao.textContent = `@${resposta.respondendoA} `;
+        texto.appendChild(mencao);
+      }
+
+      texto.appendChild(document.createTextNode(resposta.texto || ""));
+
+      conteudo.append(nomeLinha, username, texto);
+      caixa.append(avatar, conteudo);
+
+      caixa.appendChild(
+        criarMenuResposta(
+          postId,
+          comentarioId,
+          resposta.id,
+          resposta.uid,
+          () => carregarRespostasDoComentario(postId, comentarioId, elemento)
+        )
+      );
+
+      elemento.appendChild(caixa);
+    });
+  } catch (erro) {
+    console.error("Erro ao carregar respostas:", erro);
+    elemento.hidden = false;
+    elemento.textContent = "Erro ao carregar respostas.";
+  }
+}
+
 async function carregarComentarios(postId, elemento) {
   elemento.textContent = "Carregando comentários...";
 
   try {
-    // Sem orderBy: assim comentários antigos continuam aparecendo mesmo se algum
-    // documento não tiver o campo criadoEm.
-    const resultado = await getDocs(collection(db, "posts", postId, "comentarios"));
-    const itens = resultado.docs.map(item => ({ ref: item, dados: item.data() }));
+    const resultado = await getDocs(
+      collection(db, "posts", postId, "comentarios")
+    );
+
+    const itens = resultado.docs.map(item => ({
+      ref: item,
+      dados: item.data()
+    }));
 
     itens.sort((a, b) => {
       const ta = a.dados.criadoEm?.toMillis?.() || 0;
@@ -1572,12 +1812,15 @@ async function carregarComentarios(postId, elemento) {
     const uidAtual = String(usuarioAtual?.uid || "");
 
     itens.forEach(({ ref: item, dados: comentario }) => {
-      const caixa = document.createElement("div");
-      caixa.className = "comentario";
+      const bloco = document.createElement("div");
+      bloco.className = "comentario-bloco";
 
-      const avatarComentario = document.createElement("div");
-      avatarComentario.className = "comentario-avatar";
-      aplicarAvatar(avatarComentario, comentario.uid, comentario.autor || "Usuário");
+      const caixa = document.createElement("div");
+      caixa.className = "comentario comentario-principal";
+
+      const avatar = document.createElement("div");
+      avatar.className = "comentario-avatar";
+      aplicarAvatar(avatar, comentario.uid, comentario.autor || "Usuário");
 
       const conteudo = document.createElement("div");
       conteudo.className = "comentario-conteudo";
@@ -1586,27 +1829,39 @@ async function carregarComentarios(postId, elemento) {
       nomeLinha.className = "comentario-nome-linha";
 
       const nome = document.createElement("strong");
-      nome.textContent = obterNomePorUid(comentario.uid, comentario.autor || "Usuário");
+      nome.textContent = obterNomePorUid(
+        comentario.uid,
+        comentario.autor || "Usuário"
+      );
       nomeLinha.appendChild(nome);
 
       if (uidEhAdminPublico(comentario.uid)) {
         nomeLinha.appendChild(criarSeloVerificado());
       }
 
-      const usernameComentario = document.createElement("div");
-      usernameComentario.className = "comentario-username";
+      const username = document.createElement("div");
+      username.className = "comentario-username";
       const handleComentario = obterUsernamePorUid(comentario.uid, "");
-      usernameComentario.textContent = handleComentario ? `@${handleComentario}` : "";
+      username.textContent = handleComentario ? `@${handleComentario}` : "";
 
       const corpo = document.createElement("div");
       corpo.className = "comentario-texto";
       corpo.textContent = comentario.texto || "";
 
-      conteudo.append(nomeLinha, usernameComentario, corpo);
-      caixa.append(avatarComentario, conteudo);
+      const responder = document.createElement("button");
+      responder.type = "button";
+      responder.className = "btn-responder-comentario";
+      responder.textContent = "Responder";
+
+      conteudo.append(nomeLinha, username, corpo, responder);
+      caixa.append(avatar, conteudo);
 
       const uidComentario = String(comentario.uid || "");
-      const ehDono = Boolean(uidAtual && uidComentario && uidAtual === uidComentario);
+      const ehDono = Boolean(
+        uidAtual &&
+        uidComentario &&
+        uidAtual === uidComentario
+      );
 
       const menuWrap = document.createElement("div");
       menuWrap.className = "comentario-menu-wrap";
@@ -1622,23 +1877,7 @@ async function carregarComentarios(postId, elemento) {
       menu.className = "comentario-menu";
       menu.hidden = true;
 
-      menuBotao.addEventListener("click", event => {
-        event.stopPropagation();
-
-        if (menuComentarioAberto && menuComentarioAberto !== menu) {
-          menuComentarioAberto.hidden = true;
-          menuComentarioAberto.parentElement
-            ?.querySelector(".comentario-menu-botao")
-            ?.setAttribute("aria-expanded", "false");
-        }
-
-        const abrir = menu.hidden;
-        menu.hidden = !abrir;
-        menuBotao.setAttribute("aria-expanded", String(abrir));
-        menuComentarioAberto = abrir ? menu : null;
-      });
-
-      menu.addEventListener("click", event => event.stopPropagation());
+      configurarMenuComentario(menu, menuBotao);
 
       if (ehAdminAtual || ehDono) {
         const excluir = document.createElement("button");
@@ -1651,17 +1890,21 @@ async function carregarComentarios(postId, elemento) {
           menuComentarioAberto = null;
           menuBotao.setAttribute("aria-expanded", "false");
 
-          if (!window.confirm(ehAdminAtual && !ehDono
-            ? "Excluir este comentário?"
-            : "Excluir seu comentário?")) return;
+          if (!window.confirm("Excluir este comentário?")) return;
 
           try {
-            await deleteDoc(doc(db, "posts", postId, "comentarios", item.id));
+            await deleteDoc(
+              doc(db, "posts", postId, "comentarios", item.id)
+            );
             await carregarComentarios(postId, elemento);
             mostrarMensagem("Comentário excluído.");
           } catch (erro) {
             console.error("Erro ao excluir comentário:", erro);
-            mostrarMensagem(`Não foi possível excluir (${erro.code || "erro"}).`, "erro", 8000);
+            mostrarMensagem(
+              `Não foi possível excluir (${erro.code || "erro"}).`,
+              "erro",
+              8000
+            );
           }
         });
 
@@ -1680,15 +1923,31 @@ async function carregarComentarios(postId, elemento) {
           if (!auth.currentUser) {
             mostrarPainelAuth("login");
             areaAuth.hidden = false;
-            mostrarMensagem("Faça login para denunciar um comentário.", "aviso", 7000);
-            areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
+            mostrarMensagem(
+              "Faça login para denunciar um comentário.",
+              "aviso",
+              7000
+            );
+            areaAuth.scrollIntoView({
+              behavior: "smooth",
+              block: "center"
+            });
             return;
           }
 
           try {
             const usuario = auth.currentUser;
+
             await setDoc(
-              doc(db, "posts", postId, "comentarios", item.id, "denuncias", usuario.uid),
+              doc(
+                db,
+                "posts",
+                postId,
+                "comentarios",
+                item.id,
+                "denuncias",
+                usuario.uid
+              ),
               {
                 uid: usuario.uid,
                 postId,
@@ -1696,10 +1955,15 @@ async function carregarComentarios(postId, elemento) {
                 criadoEm: serverTimestamp()
               }
             );
+
             mostrarMensagem("Comentário denunciado.");
           } catch (erro) {
             console.error("Erro ao denunciar comentário:", erro);
-            mostrarMensagem(`Não foi possível denunciar (${erro.code || "erro"}).`, "erro", 8000);
+            mostrarMensagem(
+              `Não foi possível denunciar (${erro.code || "erro"}).`,
+              "erro",
+              8000
+            );
           }
         });
 
@@ -1708,7 +1972,118 @@ async function carregarComentarios(postId, elemento) {
 
       menuWrap.append(menuBotao, menu);
       caixa.appendChild(menuWrap);
-      elemento.appendChild(caixa);
+
+      const formResposta = document.createElement("form");
+      formResposta.className = "form-resposta-comentario";
+      formResposta.hidden = true;
+
+      const alvo = document.createElement("div");
+      alvo.className = "resposta-alvo";
+      alvo.textContent = handleComentario
+        ? `Respondendo a @${handleComentario}`
+        : `Respondendo a ${comentario.autor || "Usuário"}`;
+
+      const linhaResposta = document.createElement("div");
+      linhaResposta.className = "resposta-linha";
+
+      const inputResposta = document.createElement("input");
+      inputResposta.type = "text";
+      inputResposta.maxLength = 500;
+      inputResposta.placeholder = "Escreva sua resposta";
+      inputResposta.required = true;
+
+      const enviar = document.createElement("button");
+      enviar.type = "submit";
+      enviar.textContent = "Responder";
+
+      const cancelar = document.createElement("button");
+      cancelar.type = "button";
+      cancelar.className = "btn-cancelar-resposta";
+      cancelar.textContent = "Cancelar";
+
+      linhaResposta.append(inputResposta, enviar, cancelar);
+      formResposta.append(alvo, linhaResposta);
+
+      responder.addEventListener("click", () => {
+        if (!usuarioPodeInteragir()) return;
+
+        elemento
+          .querySelectorAll(".form-resposta-comentario")
+          .forEach(form => {
+            if (form !== formResposta) form.hidden = true;
+          });
+
+        formResposta.hidden = false;
+        inputResposta.focus();
+      });
+
+      cancelar.addEventListener("click", () => {
+        formResposta.hidden = true;
+        inputResposta.value = "";
+      });
+
+      const listaRespostas = document.createElement("div");
+      listaRespostas.className = "lista-respostas-comentario";
+      listaRespostas.hidden = true;
+
+      formResposta.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        if (!usuarioPodeInteragir()) return;
+
+        const textoResposta = inputResposta.value.trim();
+        if (!textoResposta) return;
+
+        try {
+          const usuario = auth.currentUser;
+
+          await addDoc(
+            collection(
+              db,
+              "posts",
+              postId,
+              "comentarios",
+              item.id,
+              "respostas"
+            ),
+            {
+              uid: usuario.uid,
+              autor: obterNomePerfilAtual(),
+              texto: textoResposta,
+              respondendoUid: comentario.uid || "",
+              respondendoA: handleComentario || "",
+              criadoEm: serverTimestamp()
+            }
+          );
+
+          inputResposta.value = "";
+          formResposta.hidden = true;
+
+          await carregarRespostasDoComentario(
+            postId,
+            item.id,
+            listaRespostas
+          );
+
+          mostrarMensagem("Resposta enviada.");
+        } catch (erro) {
+          console.error("Erro ao responder comentário:", erro);
+          mostrarMensagem(
+            `Não foi possível responder (${erro.code || "erro"}).`,
+            "erro",
+            8000
+          );
+        }
+      });
+
+      bloco.append(caixa, formResposta, listaRespostas);
+      elemento.appendChild(bloco);
+
+      carregarRespostasDoComentario(
+        postId,
+        item.id,
+        listaRespostas
+      );
     });
   } catch (erro) {
     console.error("Erro ao carregar comentários:", erro);

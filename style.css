@@ -4000,3 +4000,122 @@ body.imagem-ampliada-aberta {
   font-size: 11px;
   font-weight: 650;
 }
+
+
+/* V4.0 — publicação > comentário > resposta */
+.comentario-bloco { display:grid; gap:7px; }
+
+.btn-responder-comentario {
+  display:inline-flex;
+  width:fit-content;
+  margin-top:7px;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#61776b;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+.btn-responder-comentario:hover {
+  color:var(--green-700);
+  text-decoration:underline;
+}
+
+.form-resposta-comentario {
+  display:grid;
+  gap:6px;
+  margin:2px 8px 3px 52px;
+}
+.form-resposta-comentario[hidden] { display:none !important; }
+
+.resposta-alvo {
+  color:#71847a;
+  font-size:11px;
+  font-weight:750;
+}
+
+.resposta-linha {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  gap:7px;
+}
+.resposta-linha input {
+  width:100%;
+  min-width:0;
+  padding:10px 12px;
+  border:1px solid #d9e7df;
+  border-radius:10px;
+  background:#fff;
+  font:inherit;
+  font-size:13px;
+  outline:none;
+}
+.resposta-linha input:focus {
+  border-color:#25a163;
+  box-shadow:0 0 0 3px rgba(37,161,99,.09);
+}
+.resposta-linha button {
+  min-height:40px;
+  padding:8px 13px;
+  border:0;
+  border-radius:10px;
+  background:var(--green-700);
+  color:#fff;
+  font:inherit;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+.resposta-linha .btn-cancelar-resposta {
+  border:1px solid #d9e7df;
+  background:#fff;
+  color:#61776b;
+}
+
+.lista-respostas-comentario {
+  display:grid;
+  gap:7px;
+  margin-left:46px;
+  padding-left:12px;
+  border-left:2px solid #e4eee8;
+}
+.lista-respostas-comentario[hidden] { display:none !important; }
+
+.resposta-comentario {
+  grid-template-columns:30px minmax(0,1fr) 40px !important;
+  padding:9px 7px 9px 10px !important;
+  background:#fbfdfc !important;
+  border:1px solid #e7efea;
+}
+.resposta-avatar {
+  width:30px !important;
+  height:30px !important;
+  font-size:11px !important;
+}
+.resposta-mencao {
+  color:var(--green-700);
+  font-weight:800;
+}
+.resposta-menu-wrap { grid-column:3 !important; }
+
+@media (max-width:720px) {
+  .form-resposta-comentario { margin-left:36px; }
+  .resposta-linha { grid-template-columns:1fr auto; }
+  .resposta-linha .btn-cancelar-resposta {
+    grid-column:1 / -1;
+    justify-self:start;
+  }
+  .lista-respostas-comentario {
+    margin-left:28px;
+    padding-left:8px;
+  }
+  .resposta-comentario {
+    grid-template-columns:28px minmax(0,1fr) 38px !important;
+  }
+  .resposta-avatar {
+    width:28px !important;
+    height:28px !important;
+  }
+}
