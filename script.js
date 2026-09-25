@@ -659,6 +659,8 @@ let activeQuizQuestions = [];
 let currentQuestion = 0;
 let score = 0;
 let answered = false;
+let quizAdvanceTimer = null;
+const QUIZ_ADVANCE_DELAY = 1500;
 
 function updateTracker() {
   document.getElementById("score-tracker").innerText =
@@ -666,6 +668,8 @@ function updateTracker() {
 }
 
 function startQuiz() {
+  clearTimeout(quizAdvanceTimer);
+  quizAdvanceTimer = null;
   currentQuestion = 0;
   score = 0;
   answered = false;
@@ -729,15 +733,21 @@ function selectOption(i, correctIndex) {
 
   const feedback = document.getElementById("quiz-feedback");
   feedback.textContent = i === correctIndex
-    ? "Você acertou! Avance quando quiser."
+    ? "Você acertou! Avançando automaticamente…"
     : `Resposta correta: ${opts[correctIndex].innerText}`;
   feedback.hidden = false;
-  const lastQuestion = currentQuestion === activeQuizQuestions.length - 1;
-  document.getElementById("next-btn").hidden = lastQuestion;
-  document.getElementById("finish-btn").hidden = !lastQuestion;
+  document.getElementById("next-btn").hidden = true;
+  document.getElementById("finish-btn").hidden = true;
+  quizAdvanceTimer = setTimeout(() => {
+    quizAdvanceTimer = null;
+    if (currentQuestion < activeQuizQuestions.length - 1) nextQuestion();
+    else finishQuiz();
+  }, QUIZ_ADVANCE_DELAY);
 }
 
 function nextQuestion() {
+  clearTimeout(quizAdvanceTimer);
+  quizAdvanceTimer = null;
   if (!answered || currentQuestion >= activeQuizQuestions.length - 1) return;
   currentQuestion++;
   showQuestion();
@@ -745,6 +755,8 @@ function nextQuestion() {
 }
 
 function finishQuiz() {
+  clearTimeout(quizAdvanceTimer);
+  quizAdvanceTimer = null;
   if (!answered || currentQuestion !== activeQuizQuestions.length - 1) return;
   document.getElementById("quiz-question").hidden = true;
   document.getElementById("quiz-result").hidden = false;
@@ -757,6 +769,8 @@ function finishQuiz() {
 }
 
 function resetQuiz() {
+  clearTimeout(quizAdvanceTimer);
+  quizAdvanceTimer = null;
   currentQuestion = 0;
   score = 0;
   answered = false;
