@@ -988,30 +988,19 @@ document.getElementById("form-login").addEventListener("submit", async (event) =
 
 function posicionarPainelNotificacoesMobile() {
   if (!notificacoesPainel) return;
-
-  if (window.innerWidth > 720) {
-    notificacoesPainel.style.removeProperty("top");
-    notificacoesPainel.style.removeProperty("max-height");
+  if (window.innerWidth > 860) {
+    notificacoesPainel.style.removeProperty("--notifications-top");
+    notificacoesPainel.style.removeProperty("--notifications-height");
     return;
   }
-
   const navShell = document.querySelector(".nav-shell");
   if (!navShell) return;
-
-  const viewportHeight =
-    window.visualViewport?.height ||
-    window.innerHeight ||
-    document.documentElement.clientHeight;
-
-  const navRect = navShell.getBoundingClientRect();
-  const topoPainel = Math.max(0, Math.round(navRect.bottom));
-  const alturaDisponivel = Math.max(
-    180,
-    Math.floor(viewportHeight - topoPainel)
-  );
-
-  notificacoesPainel.style.top = `${topoPainel}px`;
-  notificacoesPainel.style.maxHeight = `${alturaDisponivel}px`;
+  const viewport = window.visualViewport;
+  const viewportTop = viewport?.offsetTop || 0;
+  const viewportBottom = viewportTop + (viewport?.height || window.innerHeight);
+  const top = Math.min(viewportBottom, Math.max(viewportTop, Math.round(navShell.getBoundingClientRect().bottom)));
+  notificacoesPainel.style.setProperty("--notifications-top", `${top}px`);
+  notificacoesPainel.style.setProperty("--notifications-height", `${Math.max(0, Math.floor(viewportBottom - top - 8))}px`);
 }
 
 notificacoesBotao?.addEventListener("click", event => {
@@ -1034,8 +1023,7 @@ notificacoesPainel?.addEventListener("click", event => {
 function atualizarPosicaoNotificacoesAbertas() {
   if (
     notificacoesPainel &&
-    !notificacoesPainel.hidden &&
-    window.innerWidth <= 720
+    !notificacoesPainel.hidden
   ) {
     posicionarPainelNotificacoesMobile();
   }

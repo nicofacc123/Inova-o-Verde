@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Inovação Verde: sustentabilidade, empreendedorismo e boas práticas para jovens empreendedores.">
   <title>Inovação Verde</title>
 
@@ -41,18 +41,20 @@
   </header>
 
   <div class="nav-shell">
-    <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" onclick="toggleMenu()">
+    <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-controls="site-nav" aria-expanded="false" onclick="toggleMenu()">
       <span></span><span></span><span></span>
     </button>
 
+    <span class="mobile-page-label" id="mobile-page-label">Início</span>
+
     <nav id="site-nav" aria-label="Navegação principal">
-      <a href="#home" data-page="home" class="active-tab" onclick="showPage('home')">Início</a>
-      <a href="#noticias" data-page="noticias" onclick="showPage('noticias')">Notícias</a>
-      <a href="#comunidade" data-page="comunidade" onclick="showPage('comunidade')">Comunidade</a>
-      <a href="#praticas" data-page="praticas" onclick="showPage('praticas')">Boas Práticas</a>
-      <a href="#casos" data-page="casos" onclick="showPage('casos')">Casos de Sucesso</a>
-      <a href="#curiosidades" data-page="curiosidades" onclick="showPage('curiosidades')">Curiosidades</a>
-      <a href="#links" data-page="links" onclick="showPage('links')">Links e Dicas</a>
+      <a href="#home" data-page="home" class="active-tab">Início</a>
+      <a href="#noticias" data-page="noticias">Notícias</a>
+      <a href="#comunidade" data-page="comunidade">Comunidade</a>
+      <a href="#praticas" data-page="praticas">Boas Práticas</a>
+      <a href="#casos" data-page="casos">Casos de Sucesso</a>
+      <a href="#curiosidades" data-page="curiosidades">Quiz e flashcards</a>
+      <a href="#links" data-page="links">Links e Dicas</a>
     </nav>
 
     <div id="nav-acoes-usuario" class="nav-acoes-usuario">
@@ -62,6 +64,7 @@
           id="notificacoes-botao"
           class="notificacoes-botao"
           aria-label="Abrir notificações"
+          aria-controls="notificacoes-painel"
           aria-expanded="false"
           title="Notificações"
         >
@@ -72,10 +75,11 @@
           <span id="notificacoes-badge" class="notificacoes-badge" hidden>0</span>
         </button>
 
-        <div id="notificacoes-painel" class="notificacoes-painel" hidden>
+        <div id="notificacoes-painel" class="notificacoes-painel" role="region" aria-label="Notificações" hidden>
           <div class="notificacoes-cabecalho">
             <strong>Notificações</strong>
             <button type="button" id="notificacoes-marcar-lidas">Marcar como lidas</button>
+            <button type="button" class="notifications-close" aria-label="Fechar notificações" onclick="closeNotifications(true)">×</button>
           </div>
           <div id="notificacoes-lista" class="notificacoes-lista"></div>
         </div>
@@ -95,6 +99,8 @@
       </button>
     </div>
   </div>
+
+  <button type="button" id="mobile-backdrop" class="mobile-backdrop" aria-label="Fechar painel aberto" tabindex="-1" onclick="closeMobilePanels(true)" hidden></button>
 
   <main>
     <section id="home" class="page active">
@@ -355,6 +361,7 @@
             <div class="score-tracker" id="score-tracker"></div>
             <div class="quiz-question" id="q-text"></div>
             <div class="options" id="q-options"></div>
+            <p id="quiz-feedback" class="quiz-feedback" role="status" aria-live="polite" hidden></p>
             <div class="quiz-actions">
               <button class="primary-button" onclick="nextQuestion()" id="next-btn" hidden>Próxima</button>
               <button class="primary-button" onclick="finishQuiz()" id="finish-btn" hidden>Finalizar</button>

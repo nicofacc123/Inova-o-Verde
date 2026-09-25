@@ -5479,7 +5479,7 @@ body.admin-modal-aberto * {
   /* Enquanto aberto, nada do conteúdo de trás recebe toque/scroll. */
   body.menu-mobile-aberto {
     overflow: hidden !important;
-    touch-action: none;
+    touch-action: pan-y pinch-zoom;
   }
 
   #site-nav.open {
@@ -5882,4 +5882,84 @@ body.admin-modal-aberto * {
     padding: 24px 16px !important;
     text-align: center;
   }
+}
+
+
+/* Mobile: navegação, painéis e controles de toque. */
+.mobile-page-label, .mobile-backdrop { display: none; }
+.notificacoes-cabecalho .notifications-close { display: inline-grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; padding: 0; border: 0; border-radius: 10px; background: #edf5f0; color: #183128; font-size: 26px; cursor: pointer; }
+.quiz-feedback { margin: 16px 0 0; padding: 14px; border-radius: 12px; color: #183128; background: #edf5f0; line-height: 1.6; }
+button.option { width: 100%; font: inherit; text-align: left; }
+button.option:disabled { opacity: 1; cursor: default; }
+button.option:focus-visible { outline: 3px solid #158253; outline-offset: 3px; }
+#quiz, #study-session { scroll-margin-top: 84px; }
+@media (max-width: 860px) {
+  html { scroll-padding-top: 80px; overflow-x: clip; }
+  body { overflow-x: clip; }
+  .nav-shell {
+    position: sticky !important; top: 0 !important; z-index: 1000 !important;
+    display: flex !important; align-items: center; gap: 10px !important;
+    min-height: 64px !important; height: auto !important; width: 100%;
+    padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left)) !important;
+    overflow: visible !important; background: #fff !important;
+    border-bottom: 1px solid #dce6df; transform: none !important;
+    filter: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; contain: none !important; will-change: auto !important;
+  }
+  .menu-toggle { display: inline-flex !important; flex: 0 0 44px !important; width: 44px !important; height: 44px !important; margin: 0 !important; }
+  .mobile-page-label { display: block; min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #183128; font-size: 15px; font-weight: 700; }
+  .nav-acoes-usuario { position: static !important; flex: 0 0 auto; margin: 0 !important; gap: 8px !important; transform: none !important; }
+  .nav-acoes-usuario .notificacoes-botao, .nav-acoes-usuario .perfil-atalho { width: 44px !important; height: 44px !important; }
+  #site-nav {
+    position: absolute !important; top: 100% !important; left: 0 !important; right: 0 !important;
+    display: none !important; flex-direction: column !important; align-items: stretch !important;
+    width: 100% !important; max-height: var(--menu-mobile-max-height, 65dvh) !important;
+    margin: 0 !important; padding: 12px 12px max(16px, env(safe-area-inset-bottom)) !important;
+    gap: 5px !important; overflow-y: auto !important; overscroll-behavior: contain;
+    touch-action: pan-y pinch-zoom; background: #fff !important; border-radius: 0 0 18px 18px !important;
+  }
+  #site-nav.open { display: flex !important; }
+  #site-nav a { display: flex; align-items: center; min-height: 48px !important; padding: 12px 16px !important; white-space: normal; font-size: 16px !important; }
+  #site-nav a.active-tab { background: #e6f4eb !important; color: #0e4a34 !important; font-weight: 800; }
+  .mobile-backdrop { display: block; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 999; border: 0; padding: 0; background: rgba(12,35,24,.35); touch-action: none; }
+  body.mobile-panel-open, body.menu-mobile-aberto { overflow: hidden !important; touch-action: pan-y pinch-zoom; }
+  .nav-acoes-usuario .notificacoes-painel {
+    position: fixed !important; display: flex; flex-direction: column;
+    top: var(--notifications-top, 64px) !important; left: 8px !important; right: 8px !important;
+    width: auto !important; max-width: none !important; max-height: var(--notifications-height, 70dvh) !important;
+    margin: 0 !important; padding: 0 !important; border-radius: 0 0 16px 16px !important;
+    overflow: hidden !important; background: #fff !important;
+  }
+  .notificacoes-cabecalho { position: static !important; display: flex; flex-wrap: wrap; flex: 0 0 auto; align-items: center; gap: 8px; min-height: 60px !important; padding: 8px 12px !important; }
+  .notificacoes-cabecalho strong { flex: 1; font-size: 15px; }
+  #notificacoes-marcar-lidas { min-height: 44px; padding: 8px; font-size: 12px; }
+  .notificacoes-lista { flex: 1 1 auto; min-height: 0; max-height: none !important; overflow-y: auto !important; overscroll-behavior: contain; touch-action: pan-y pinch-zoom; padding-bottom: env(safe-area-inset-bottom); }
+  .notificacao-item { min-height: 64px; }
+  main { width: calc(100% - 28px) !important; min-width: 0; }
+  .hero-content { display: grid !important; grid-template-columns: minmax(0, 1fr) 90px !important; gap: 12px !important; width: calc(100% - 32px) !important; padding: 28px 0 !important; }
+  .hero-copy { width: auto !important; max-width: none !important; min-width: 0; }
+  .hero h1 { font-size: clamp(30px, 7.8vw, 48px) !important; }
+  .hero-logo-wrap { width: 90px !important; height: 104px !important; min-height: 0 !important; margin: 0 !important; }
+  .hero-logo { width: 90px !important; max-width: 90px !important; max-height: 104px !important; }
+  .hero-button { min-height: 44px; white-space: normal; }
+  .section-heading p, .intro-highlight p, .feature-copy p, .caso-conteudo p { font-size: 16px !important; line-height: 1.65 !important; }
+  input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea, select { font-size: 16px !important; min-height: 48px; max-width: 100%; }
+  button, a { -webkit-tap-highlight-color: rgba(21,130,83,.12); }
+  .primary-button, .secondary-button, .btn-comunidade, .btn-sair, .filtro-caso, .filtro-post, .btn-publicacao-plus, .btn-comentar, .botao-voto, .post-menu-botao, .comentario-menu-botao, .btn-responder-comentario, .btn-curtir-comentario { min-height: 44px !important; }
+  .filtros-comunidade { gap: 8px !important; }
+  .filtro-post { font-size: 12px !important; padding: 10px 5px !important; }
+  .post-cabecalho { grid-template-columns: 40px minmax(0, 1fr) 44px !important; }
+  .post-menu-wrap, .post-menu-botao { width: 44px !important; height: 44px !important; }
+  .comentario-acoes-inline { flex-wrap: wrap; gap: 8px; }
+  .post-texto, .notificacao-texto { font-size: 15px !important; line-height: 1.6 !important; }
+  .post-texto, .comentario-texto, .notificacao-conteudo { overflow-wrap: anywhere; }
+  .quiz-box { padding: 18px !important; }
+  .option { min-height: 52px; padding: 14px !important; font-size: 16px !important; line-height: 1.5; }
+  .quiz-actions button { width: 100%; justify-content: center; }
+  .study-face { min-height: 280px; padding: 24px 18px; }
+  .study-face strong { font-size: 23px; }
+  .study-controls { gap: 12px; }
+  .admin-card { padding-bottom: max(24px, env(safe-area-inset-bottom)) !important; }
+  .admin-menu { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; gap: 8px; }
+  .admin-menu-item { flex: 0 0 auto; min-height: 44px; }
+  .admin-layout { grid-template-columns: minmax(0, 1fr) !important; }
 }
