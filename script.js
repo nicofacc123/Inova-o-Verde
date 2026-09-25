@@ -160,16 +160,7 @@ function toggleFlashcard(card) {
 }
 
 const quizQuestions = [
-  // Perguntas que já existiam no site
-  {
-    q: "O que é economia circular?",
-    options: [
-      "Modelo de reduzir, reutilizar e reciclar recursos",
-      "Economia que cresce em círculo",
-      "Só vender produtos circulares"
-    ],
-    answer: 0
-  },
+  // Banco de perguntas: cada rodada sorteia 10 sem repetição.
   {
     q: "Qual vantagem dos blocos de plástico reciclado?",
     options: [
@@ -270,7 +261,7 @@ const quizQuestions = [
     answer: 2
   },
 
-  // Novas perguntas
+  // Perguntas sobre as boas práticas e os casos de sucesso do projeto
   {
     q: "O que significa empreender de forma sustentável?",
     options: [
@@ -479,6 +470,7 @@ let activeQuizQuestions = [];
 let currentQuestion = 0;
 let score = 0;
 let answered = false;
+let quizAdvanceTimer = null;
 
 function updateTracker() {
   document.getElementById("score-tracker").innerText =
@@ -486,11 +478,14 @@ function updateTracker() {
 }
 
 function startQuiz() {
+  clearTimeout(quizAdvanceTimer);
+  quizAdvanceTimer = null;
   currentQuestion = 0;
   score = 0;
   answered = false;
 
-  // Cada tentativa recebe 10 perguntas diferentes, escolhidas aleatoriamente.
+  // Sorteia uma cópia do banco: não repete perguntas na mesma rodada.
+  // Entre rodadas, algumas perguntas podem aparecer novamente.
   activeQuizQuestions = shuffleArray([...quizQuestions])
     .slice(0, Math.min(QUIZ_QUESTION_COUNT, quizQuestions.length));
 
@@ -551,7 +546,8 @@ function selectOption(i, correctIndex) {
   if (i === correctIndex) score++;
   updateTracker();
 
-  setTimeout(() => {
+  quizAdvanceTimer = setTimeout(() => {
+    quizAdvanceTimer = null;
     if (currentQuestion < activeQuizQuestions.length - 1) {
       currentQuestion++;
       showQuestion();
@@ -579,6 +575,11 @@ function finishQuiz() {
 }
 
 function resetQuiz() {
+  clearTimeout(quizAdvanceTimer);
+  quizAdvanceTimer = null;
+  currentQuestion = 0;
+  score = 0;
+  answered = false;
   activeQuizQuestions = [];
   document.getElementById("quiz-result").hidden = true;
   document.getElementById("quiz-question").hidden = true;
