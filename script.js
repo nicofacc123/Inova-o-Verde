@@ -160,6 +160,7 @@ function toggleFlashcard(card) {
 }
 
 const quizQuestions = [
+  // Perguntas que já existiam no site
   {
     q: "O que é economia circular?",
     options: [
@@ -207,7 +208,11 @@ const quizQuestions = [
   },
   {
     q: "Qual dessas é uma fonte de energia renovável?",
-    options: ["Carvão mineral", "Energia das ondas", "Petróleo"],
+    options: [
+      "Carvão mineral",
+      "Energia das ondas",
+      "Petróleo"
+    ],
     answer: 1
   },
   {
@@ -230,7 +235,11 @@ const quizQuestions = [
   },
   {
     q: "Qual dessas energias NÃO é renovável?",
-    options: ["Solar", "Petróleo", "Eólica"],
+    options: [
+      "Solar",
+      "Petróleo",
+      "Eólica"
+    ],
     answer: 1
   },
   {
@@ -253,10 +262,219 @@ const quizQuestions = [
   },
   {
     q: "Qual país é conhecido por reciclar mais de 90% do seu lixo?",
-    options: ["Brasil", "Japão", "Suécia"],
+    options: [
+      "Brasil",
+      "Japão",
+      "Suécia"
+    ],
     answer: 2
+  },
+
+  // Novas perguntas
+  {
+    q: "O que significa empreender de forma sustentável?",
+    options: [
+      "Buscar apenas o lucro.",
+      "Equilibrar crescimento econômico, meio ambiente e bem-estar social.",
+      "Aumentar o consumo de recursos naturais.",
+      "Evitar qualquer tipo de inovação."
+    ],
+    answer: 1
+  },
+  {
+    q: "Qual prática ajuda a reduzir o uso de plástico e papel?",
+    options: [
+      "Utilizar alternativas digitais e reutilizáveis.",
+      "Usar mais produtos descartáveis.",
+      "Aumentar o consumo de papel.",
+      "Jogar materiais recicláveis no lixo comum."
+    ],
+    answer: 0
+  },
+  {
+    q: "O que são embalagens sustentáveis?",
+    options: [
+      "Embalagens feitas exclusivamente de plástico.",
+      "Embalagens que não podem ser recicladas.",
+      "Opções recicláveis ou biodegradáveis.",
+      "Embalagens usadas apenas para aumentar o consumo."
+    ],
+    answer: 2
+  },
+  {
+    q: "Qual é uma vantagem de utilizar fornecedores locais?",
+    options: [
+      "Aumentar a distância do transporte.",
+      "Aumentar a poluição.",
+      "Diminuir a economia regional.",
+      "Valorizar a economia regional e reduzir a poluição do transporte."
+    ],
+    answer: 3
+  },
+  {
+    q: "Qual atitude ajuda a economizar energia e água?",
+    options: [
+      "Deixar equipamentos ligados o tempo todo.",
+      "Usar lâmpadas LED e reaproveitar água da chuva.",
+      "Desperdiçar água.",
+      "Aumentar o consumo de energia."
+    ],
+    answer: 1
+  },
+  {
+    q: "O que a educação ambiental pode ensinar?",
+    options: [
+      "Práticas sustentáveis para colaboradores e clientes.",
+      "Formas de aumentar o desperdício.",
+      "Como evitar a reciclagem.",
+      "Como aumentar o consumo de recursos."
+    ],
+    answer: 0
+  },
+  {
+    q: "Qual prática faz parte da gestão de resíduos?",
+    options: [
+      "Misturar todos os tipos de lixo.",
+      "Jogar resíduos em rios.",
+      "Implementar coleta seletiva e compostagem.",
+      "Aumentar a quantidade de lixo produzido."
+    ],
+    answer: 2
+  },
+  {
+    q: "O que é economia circular?",
+    options: [
+      "Descartar produtos rapidamente.",
+      "Reutilizar e transformar materiais para diminuir desperdícios.",
+      "Usar recursos naturais sem preocupação.",
+      "Evitar a reciclagem."
+    ],
+    answer: 1
+  },
+  {
+    q: "Em que os blocos feitos com plástico podem ser utilizados?",
+    options: [
+      "Somente para fabricar alimentos.",
+      "Apenas para produzir papel.",
+      "Para substituir computadores.",
+      "Como materiais de construção."
+    ],
+    answer: 3
+  },
+  {
+    q: "Quem criou uma tecnologia para tratar água de cisterna usando luz solar?",
+    options: [
+      "Anna Luísa Beserra Santos.",
+      "Fatemah Alzelzela.",
+      "Nzambi Matee.",
+      "Lefteris Arapakis."
+    ],
+    answer: 0
+  },
+  {
+    q: "Qual empresa foi fundada por Anna Luísa Beserra Santos?",
+    options: [
+      "Eco Star.",
+      "Enaleia.",
+      "Safe Drinking Water For All (SDW).",
+      "Gjenje Makers."
+    ],
+    answer: 2
+  },
+  {
+    q: "O que a organização Eco Star faz?",
+    options: [
+      "Produz veículos.",
+      "Coleta e recicla resíduos.",
+      "Fabrica computadores.",
+      "Produz combustíveis."
+    ],
+    answer: 1
+  },
+  {
+    q: "Qual era um dos objetivos de Fatemah Alzelzela?",
+    options: [
+      "Aumentar a produção de lixo.",
+      "Incentivar o uso de plástico descartável.",
+      "Reduzir a reciclagem.",
+      "Promover a gestão sustentável de resíduos."
+    ],
+    answer: 3
+  },
+  {
+    q: "O que Lefteris Arapakis percebeu nas redes de pesca?",
+    options: [
+      "Elas estavam coletando mais plástico do que peixe.",
+      "Elas não coletavam nenhum resíduo.",
+      "Elas estavam capturando somente peixes grandes.",
+      "Elas não precisavam ser utilizadas."
+    ],
+    answer: 0
+  },
+  {
+    q: "O que a Enaleia ensina aos pescadores?",
+    options: [
+      "A fabricar barcos.",
+      "A produzir combustível.",
+      "A pescar resíduos plásticos e levá-los para reciclagem.",
+      "A aumentar a quantidade de plástico no mar."
+    ],
+    answer: 2
+  },
+  {
+    q: "Quem criou uma máquina que mistura plástico e areia?",
+    options: [
+      "Anna Luísa Beserra Santos.",
+      "Nzambi Matee.",
+      "Fatemah Alzelzela.",
+      "Lefteris Arapakis."
+    ],
+    answer: 1
+  },
+  {
+    q: "O que é produzido com plástico e areia no projeto de Nzambi Matee?",
+    options: [
+      "Tijolos/blocos para construção.",
+      "Garrafas de vidro.",
+      "Papel reciclado.",
+      "Painéis solares."
+    ],
+    answer: 0
+  },
+  {
+    q: "Aproximadamente quantos blocos a empresa de Nzambi Matee fabrica por dia?",
+    options: [
+      "150.",
+      "500.",
+      "1.500.",
+      "15.000."
+    ],
+    answer: 2
+  },
+  {
+    q: "Por que a colaboração é importante no empreendedorismo sustentável?",
+    options: [
+      "Porque impede a troca de ideias.",
+      "Porque permite compartilhar ideias, recursos e experiências.",
+      "Porque aumenta o desperdício.",
+      "Porque diminui o apoio entre empreendedores."
+    ],
+    answer: 1
+  },
+  {
+    q: "Qual é uma consequência da colaboração entre empreendedores e comunidades?",
+    options: [
+      "Aumento da poluição.",
+      "Maior desperdício de recursos.",
+      "Redução das práticas sustentáveis.",
+      "Uma economia local mais forte e uma produção mais sustentável."
+    ],
+    answer: 3
   }
 ];
+
+const QUIZ_QUESTION_COUNT = 10;
+let activeQuizQuestions = [];
 
 let currentQuestion = 0;
 let score = 0;
@@ -264,13 +482,17 @@ let answered = false;
 
 function updateTracker() {
   document.getElementById("score-tracker").innerText =
-    `Questão ${currentQuestion + 1} de ${quizQuestions.length} • Pontos: ${score}`;
+    `Questão ${currentQuestion + 1} de ${activeQuizQuestions.length} • Pontos: ${score}`;
 }
 
 function startQuiz() {
   currentQuestion = 0;
   score = 0;
   answered = false;
+
+  // Cada tentativa recebe 10 perguntas diferentes, escolhidas aleatoriamente.
+  activeQuizQuestions = shuffleArray([...quizQuestions])
+    .slice(0, Math.min(QUIZ_QUESTION_COUNT, quizQuestions.length));
 
   document.getElementById("quiz-start").hidden = true;
   document.getElementById("quiz-result").hidden = true;
@@ -282,7 +504,7 @@ function showQuestion() {
   answered = false;
   updateTracker();
 
-  const q = quizQuestions[currentQuestion];
+  const q = activeQuizQuestions[currentQuestion];
   document.getElementById("q-text").innerText = q.q;
 
   let optsWithIndex = q.options.map((o, i) => ({ text: o, index: i }));
@@ -330,7 +552,7 @@ function selectOption(i, correctIndex) {
   updateTracker();
 
   setTimeout(() => {
-    if (currentQuestion < quizQuestions.length - 1) {
+    if (currentQuestion < activeQuizQuestions.length - 1) {
       currentQuestion++;
       showQuestion();
     } else {
@@ -349,14 +571,15 @@ function finishQuiz() {
   document.getElementById("quiz-result").hidden = false;
 
   const text = document.getElementById("result-text");
-  text.innerHTML = `Você acertou <strong>${score}</strong> de <strong>${quizQuestions.length}</strong> perguntas. `;
+  text.innerHTML = `Você acertou <strong>${score}</strong> de <strong>${activeQuizQuestions.length}</strong> perguntas. `;
 
-  if (score === quizQuestions.length) text.innerHTML += "Perfeito!";
-  else if (score >= Math.ceil(quizQuestions.length / 2)) text.innerHTML += "Muito bem!";
+  if (score === activeQuizQuestions.length) text.innerHTML += "Perfeito!";
+  else if (score >= Math.ceil(activeQuizQuestions.length / 2)) text.innerHTML += "Muito bem!";
   else text.innerHTML += "Continue estudando e tente novamente.";
 }
 
 function resetQuiz() {
+  activeQuizQuestions = [];
   document.getElementById("quiz-result").hidden = true;
   document.getElementById("quiz-question").hidden = true;
   document.getElementById("quiz-start").hidden = false;
