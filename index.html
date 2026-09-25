@@ -289,117 +289,52 @@
       <div class="section-heading">
         <span class="section-kicker">Aprenda explorando</span>
         <h2>Curiosidades</h2>
-        <p>Aprenda sobre sustentabilidade e inovação com flash cards. Vire os cards e depois teste seu conhecimento no quiz.</p>
+        <p>Explore os flashcards de sustentabilidade e inovação. Pense, vire o cartão e depois teste seu conhecimento no quiz.</p>
       </div>
 
-      <div class="flashcards-intro">
-        <span>6 cards</span>
-        <p>Clique ou toque em um card para revelar a resposta.</p>
-      </div>
+      <section class="study-deck" aria-label="Flashcards de sustentabilidade">
+        <div id="study-start" class="study-welcome">
+          <span class="study-eyebrow">24 FLASHCARDS · NO SEU RITMO</span>
+          <h3>Uma pergunta. Uma descoberta.</h3>
+          <p>Pense na resposta antes de virar. Explore um cartão de cada vez e prepare-se para o quiz.</p>
+          <button id="study-start-button" type="button" class="primary-button" onclick="startFlashcards()">Começar flashcards <span aria-hidden="true">→</span></button>
+        </div>
 
-      <div class="flashcards-grid" aria-label="Flash cards de curiosidades">
-        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
-          <span class="flashcard-inner">
-            <span class="flashcard-face flashcard-front">
-              <span class="flashcard-numero">01</span>
-              <span class="flashcard-tag">Economia circular</span>
-              <strong>O que pode ser feito com plástico reciclado?</strong>
-              <span class="flashcard-hint">Toque para revelar</span>
+        <div id="study-session" hidden>
+          <div class="study-toolbar">
+            <span id="study-counter" role="status" aria-live="polite" aria-atomic="true"></span>
+            <button type="button" class="study-text-button" onclick="closeFlashcards()">Sair dos cards</button>
+          </div>
+          <progress id="study-progress" class="study-progress" value="1" max="24" aria-label="Posição no baralho"></progress>
+          <button id="study-card" type="button" class="study-card" aria-pressed="false" aria-label="Virar cartão para ver a resposta" onclick="flipFlashcard()">
+            <span class="study-card-inner">
+              <span id="study-front" class="study-face study-front">
+                <span id="study-topic" class="study-eyebrow"></span>
+                <strong id="study-question"></strong>
+                <span class="study-hint">Pense primeiro. Toque para revelar ↻</span>
+              </span>
+              <span id="study-back" class="study-face study-back" aria-hidden="true">
+                <span class="study-eyebrow">RESPOSTA</span>
+                <strong id="study-answer-title"></strong>
+                <span id="study-answer"></span>
+                <span class="study-hint">Toque para ver a pergunta ↻</span>
+              </span>
             </span>
-            <span class="flashcard-face flashcard-back">
-              <span class="flashcard-tag">Resposta</span>
-              <strong>Blocos sustentáveis</strong>
-              <span>O plástico pode ser transformado em blocos resistentes e ecológicos.</span>
-              <span class="flashcard-hint">Toque para voltar</span>
-            </span>
-          </span>
-        </button>
+          </button>
+          <div class="study-controls">
+            <button id="study-prev" type="button" class="secondary-button" onclick="moveFlashcard(-1)">← Anterior</button>
+            <button id="study-flip" type="button" class="secondary-button" onclick="flipFlashcard()">Ver resposta</button>
+            <button id="study-next" type="button" class="primary-button" onclick="moveFlashcard(1)">Próximo →</button>
+          </div>
+        </div>
 
-        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
-          <span class="flashcard-inner">
-            <span class="flashcard-face flashcard-front">
-              <span class="flashcard-numero">02</span>
-              <span class="flashcard-tag">Tecnologia limpa</span>
-              <strong>Como a energia solar pode ajudar em cisternas?</strong>
-              <span class="flashcard-hint">Toque para revelar</span>
-            </span>
-            <span class="flashcard-face flashcard-back">
-              <span class="flashcard-tag">Resposta</span>
-              <strong>Purificação de água</strong>
-              <span>A energia solar pode ser usada em tecnologias para purificar a água armazenada.</span>
-              <span class="flashcard-hint">Toque para voltar</span>
-            </span>
-          </span>
-        </button>
-
-        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
-          <span class="flashcard-inner">
-            <span class="flashcard-face flashcard-front">
-              <span class="flashcard-numero">03</span>
-              <span class="flashcard-tag">Novo ciclo</span>
-              <strong>O que acontece na economia circular?</strong>
-              <span class="flashcard-hint">Toque para revelar</span>
-            </span>
-            <span class="flashcard-face flashcard-back">
-              <span class="flashcard-tag">Resposta</span>
-              <strong>Os resíduos ganham novo uso</strong>
-              <span>Eles podem voltar ao ciclo produtivo como matéria-prima para novos produtos.</span>
-              <span class="flashcard-hint">Toque para voltar</span>
-            </span>
-          </span>
-        </button>
-
-        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
-          <span class="flashcard-inner">
-            <span class="flashcard-face flashcard-front">
-              <span class="flashcard-numero">04</span>
-              <span class="flashcard-tag">Economia local</span>
-              <strong>Por que escolher fornecedores locais?</strong>
-              <span class="flashcard-hint">Toque para revelar</span>
-            </span>
-            <span class="flashcard-face flashcard-back">
-              <span class="flashcard-tag">Resposta</span>
-              <strong>Menos transporte e mais apoio local</strong>
-              <span>Isso valoriza a economia regional e pode reduzir a poluição causada pelo transporte.</span>
-              <span class="flashcard-hint">Toque para voltar</span>
-            </span>
-          </span>
-        </button>
-
-        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
-          <span class="flashcard-inner">
-            <span class="flashcard-face flashcard-front">
-              <span class="flashcard-numero">05</span>
-              <span class="flashcard-tag">Uso consciente</span>
-              <strong>Como economizar água e energia?</strong>
-              <span class="flashcard-hint">Toque para revelar</span>
-            </span>
-            <span class="flashcard-face flashcard-back">
-              <span class="flashcard-tag">Resposta</span>
-              <strong>Pequenas ações ajudam</strong>
-              <span>Use lâmpadas LED, desligue equipamentos e reaproveite água da chuva.</span>
-              <span class="flashcard-hint">Toque para voltar</span>
-            </span>
-          </span>
-        </button>
-
-        <button class="flashcard" type="button" aria-pressed="false" onclick="toggleFlashcard(this)">
-          <span class="flashcard-inner">
-            <span class="flashcard-face flashcard-front">
-              <span class="flashcard-numero">06</span>
-              <span class="flashcard-tag">Resíduos</span>
-              <strong>O que uma boa gestão de resíduos pode incluir?</strong>
-              <span class="flashcard-hint">Toque para revelar</span>
-            </span>
-            <span class="flashcard-face flashcard-back">
-              <span class="flashcard-tag">Resposta</span>
-              <strong>Coleta seletiva e compostagem</strong>
-              <span>Essas práticas ajudam a diminuir a quantidade de resíduos e o impacto ambiental.</span>
-              <span class="flashcard-hint">Toque para voltar</span>
-            </span>
-          </span>
-        </button>
-      </div>
+        <div id="study-end" class="study-welcome" hidden>
+          <span class="study-eyebrow">BARALHO CONCLUÍDO</span>
+          <h3>Agora é hora de testar!</h3>
+          <p>Você chegou ao fim dos 24 cartões. Reveja o baralho ou continue para o quiz logo abaixo.</p>
+          <button id="study-restart" type="button" class="primary-button" onclick="startFlashcards()">Rever flashcards ↻</button>
+        </div>
+      </section>
 
       <div class="quiz-box" id="quiz">
         <div class="quiz-heading">

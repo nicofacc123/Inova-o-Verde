@@ -154,9 +154,224 @@ function shuffleArray(array) {
   return array;
 }
 
-function toggleFlashcard(card) {
-  const virado = card.classList.toggle("virado");
-  card.setAttribute("aria-pressed", String(virado));
+const flashcardDeck = [
+  {
+    "topic": "Plástico reciclado",
+    "question": "O que pode ser feito com plástico reciclado?",
+    "title": "Novos produtos",
+    "answer": "O plástico reciclado pode virar novos objetos e, em processos específicos, blocos para construção."
+  },
+  {
+    "topic": "Tecnologia limpa",
+    "question": "Como a energia solar pode ajudar no tratamento da água?",
+    "title": "Energia a favor da água",
+    "answer": "Tecnologias específicas usam a energia do sol para tratar a água. Apenas deixar a água ao sol não garante que ela seja potável."
+  },
+  {
+    "topic": "Economia circular",
+    "question": "O que acontece na economia circular?",
+    "title": "Os materiais continuam em uso",
+    "answer": "Produtos são mantidos, consertados e reutilizados. A reciclagem permite que materiais voltem ao ciclo produtivo."
+  },
+  {
+    "topic": "Economia local",
+    "question": "Por que escolher fornecedores locais?",
+    "title": "Apoio à região",
+    "answer": "A compra local fortalece a economia regional e pode reduzir distâncias de transporte e suas emissões."
+  },
+  {
+    "topic": "Uso consciente",
+    "question": "Como economizar água e energia no dia a dia?",
+    "title": "Evite desperdícios",
+    "answer": "Apague luzes desnecessárias, use lâmpadas LED e conserte vazamentos. Água da chuva pode ser aproveitada para usos não potáveis."
+  },
+  {
+    "topic": "Gestão de resíduos",
+    "question": "O que uma boa gestão de resíduos pode incluir?",
+    "title": "Reduzir, separar e destinar",
+    "answer": "Evite gerar resíduos, separe os recicláveis e destine os orgânicos à compostagem quando possível."
+  },
+  {
+    "topic": "Empreendedorismo",
+    "question": "O que significa empreender de forma sustentável?",
+    "title": "Equilibrar três dimensões",
+    "answer": "Buscar viabilidade econômica considerando também os impactos ambientais e o bem-estar das pessoas."
+  },
+  {
+    "topic": "Os 3 Rs",
+    "question": "Quais são os três Rs da sustentabilidade?",
+    "title": "Reduzir, reutilizar e reciclar",
+    "answer": "Reduza o consumo e o desperdício; reutilize o que ainda serve; encaminhe materiais para reciclagem."
+  },
+  {
+    "topic": "Consumo consciente",
+    "question": "Qual é a primeira pergunta antes de comprar algo?",
+    "title": "Eu realmente preciso disso?",
+    "answer": "Avalie a necessidade, a durabilidade e a possibilidade de consertar, compartilhar ou reutilizar algo que já existe."
+  },
+  {
+    "topic": "Menos descartáveis",
+    "question": "Como reduzir o uso de plástico e papel?",
+    "title": "Troque hábitos",
+    "answer": "Use garrafas e sacolas reutilizáveis, evite embalagens desnecessárias e prefira documentos digitais quando fizer sentido."
+  },
+  {
+    "topic": "Embalagens",
+    "question": "Uma embalagem reciclável será sempre reciclada?",
+    "title": "Depende da destinação",
+    "answer": "Ela precisa ser separada e aceita pelo sistema de coleta e reciclagem disponível na região."
+  },
+  {
+    "topic": "Reutilização",
+    "question": "Qual é a diferença entre reutilizar e reciclar?",
+    "title": "Novo uso ou transformação",
+    "answer": "Reutilizar é usar novamente, como reaproveitar um pote. Reciclar envolve transformar o material em matéria-prima ou outro produto."
+  },
+  {
+    "topic": "Coleta seletiva",
+    "question": "Por que separar os resíduos?",
+    "title": "Facilitar o aproveitamento",
+    "answer": "Separar os materiais ajuda a evitar contaminação e facilita o trabalho de coleta, triagem e reciclagem."
+  },
+  {
+    "topic": "Compostagem",
+    "question": "O que é compostagem?",
+    "title": "Resíduos orgânicos viram composto",
+    "answer": "É a decomposição controlada de materiais orgânicos, como restos vegetais, para produzir um composto que pode melhorar o solo."
+  },
+  {
+    "topic": "Desperdício de alimentos",
+    "question": "Como evitar jogar comida fora?",
+    "title": "Planeje e aproveite",
+    "answer": "Planeje compras, armazene corretamente e priorize os alimentos que precisam ser consumidos primeiro."
+  },
+  {
+    "topic": "Energia renovável",
+    "question": "O que caracteriza uma fonte de energia renovável?",
+    "title": "Reposição por processos naturais",
+    "answer": "O sol e o vento são exemplos. Renovável não significa ausência de impactos: produção e instalação também precisam ser avaliadas."
+  },
+  {
+    "topic": "Eficiência energética",
+    "question": "O que significa usar energia com eficiência?",
+    "title": "Mesmo serviço, menos consumo",
+    "answer": "É realizar uma tarefa usando menos energia, como iluminar um ambiente com equipamentos mais eficientes."
+  },
+  {
+    "topic": "Água",
+    "question": "Por que consertar um pequeno vazamento faz diferença?",
+    "title": "O desperdício se acumula",
+    "answer": "Mesmo uma perda pequena, quando contínua, pode desperdiçar muita água ao longo dos dias."
+  },
+  {
+    "topic": "Educação ambiental",
+    "question": "O que a educação ambiental ensina em uma empresa?",
+    "title": "Transformar conhecimento em prática",
+    "answer": "Ajuda colaboradores e clientes a entender impactos e adotar atitudes como reduzir desperdícios e separar resíduos."
+  },
+  {
+    "topic": "Colaboração",
+    "question": "Por que empreendedores e comunidades devem colaborar?",
+    "title": "Somar conhecimentos e recursos",
+    "answer": "A troca de experiências ajuda a encontrar soluções adequadas à realidade local e a fortalecer iniciativas sustentáveis."
+  },
+  {
+    "topic": "Reparo",
+    "question": "Por que consertar antes de substituir?",
+    "title": "Prolongar a vida útil",
+    "answer": "Quando o reparo é viável e seguro, ele evita descarte precoce e reduz a necessidade de fabricar um novo produto."
+  },
+  {
+    "topic": "Logística reversa",
+    "question": "O que é logística reversa?",
+    "title": "O produto faz o caminho de volta",
+    "answer": "É o retorno de produtos e materiais após o uso para reaproveitamento ou destinação adequada, por canais de recebimento."
+  },
+  {
+    "topic": "Lixo eletrônico",
+    "question": "Onde descartar aparelhos eletrônicos sem uso?",
+    "title": "Em pontos de recebimento adequados",
+    "answer": "Procure programas de devolução ou coleta de eletrônicos na sua região. Apague seus dados pessoais antes de entregar o aparelho."
+  },
+  {
+    "topic": "Medir para melhorar",
+    "question": "Como saber se uma ação sustentável está funcionando?",
+    "title": "Acompanhe os resultados",
+    "answer": "Compare indicadores antes e depois, como consumo de água, gasto de energia e quantidade de resíduos gerados."
+  }
+];
+
+let currentFlashcard = 0;
+let flashcardIsFlipped = false;
+
+function setFlashcardSide(flipped) {
+  flashcardIsFlipped = flipped;
+  const card = document.getElementById("study-card");
+  card.classList.toggle("is-flipped", flipped);
+  card.setAttribute("aria-pressed", String(flipped));
+  const item = flashcardDeck[currentFlashcard];
+  card.setAttribute("aria-label", flipped
+    ? `${item.title}. ${item.answer} Toque para ver a pergunta.`
+    : `${item.question} Toque para ver a resposta.`);
+  document.getElementById("study-front").setAttribute("aria-hidden", String(flipped));
+  document.getElementById("study-back").setAttribute("aria-hidden", String(!flipped));
+  document.getElementById("study-flip").textContent = flipped ? "Ver pergunta" : "Ver resposta";
+}
+
+function renderFlashcard() {
+  const item = flashcardDeck[currentFlashcard];
+  const card = document.getElementById("study-card");
+  // Troca de cartão sempre começa pela pergunta, sem exibir o verso anterior.
+  card.classList.add("is-changing");
+  setFlashcardSide(false);
+  document.getElementById("study-topic").textContent = item.topic;
+  document.getElementById("study-question").textContent = item.question;
+  document.getElementById("study-answer-title").textContent = item.title;
+  document.getElementById("study-answer").textContent = item.answer;
+  document.getElementById("study-counter").textContent = `Cartão ${currentFlashcard + 1} de ${flashcardDeck.length}`;
+  const progress = document.getElementById("study-progress");
+  progress.max = flashcardDeck.length;
+  progress.value = currentFlashcard + 1;
+  document.getElementById("study-prev").disabled = currentFlashcard === 0;
+  document.getElementById("study-next").textContent = currentFlashcard === flashcardDeck.length - 1 ? "Concluir ✓" : "Próximo →";
+  void card.offsetWidth;
+  card.classList.remove("is-changing");
+}
+
+function startFlashcards() {
+  currentFlashcard = 0;
+  document.getElementById("study-start").hidden = true;
+  document.getElementById("study-end").hidden = true;
+  document.getElementById("study-session").hidden = false;
+  renderFlashcard();
+  document.getElementById("study-card").focus({ preventScroll: true });
+}
+
+function flipFlashcard() {
+  if (document.getElementById("study-session").hidden) return;
+  setFlashcardSide(!flashcardIsFlipped);
+}
+
+function moveFlashcard(direction) {
+  if (document.getElementById("study-session").hidden || ![-1, 1].includes(direction)) return;
+  const next = currentFlashcard + direction;
+  if (next < 0) return;
+  if (next >= flashcardDeck.length) {
+    document.getElementById("study-session").hidden = true;
+    document.getElementById("study-end").hidden = false;
+    document.getElementById("study-restart").focus({ preventScroll: true });
+    return;
+  }
+  currentFlashcard = next;
+  renderFlashcard();
+  document.getElementById("study-card").focus({ preventScroll: true });
+}
+
+function closeFlashcards() {
+  document.getElementById("study-session").hidden = true;
+  document.getElementById("study-end").hidden = true;
+  document.getElementById("study-start").hidden = false;
+  document.getElementById("study-start-button").focus({ preventScroll: true });
 }
 
 const quizQuestions = [
