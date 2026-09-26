@@ -1,4 +1,4 @@
-// Tema independente do login; a escolha manual tem prioridade sobre o sistema.
+
 const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
 let preferredTheme = null;
 try {
@@ -24,9 +24,7 @@ function syncSystemTheme(event) {
 if (themeMedia.addEventListener) themeMedia.addEventListener('change', syncSystemTheme);
 else if (themeMedia.addListener) themeMedia.addListener(syncSystemTheme);
 applyTheme(preferredTheme || (themeMedia.matches ? 'dark' : 'light'));
-
 const MOBILE_MENU_BREAKPOINT = 860;
-
 function closeNotifications(restoreFocus = false) {
   const panel = document.getElementById("notificacoes-painel");
   const button = document.getElementById("notificacoes-botao");
@@ -36,7 +34,6 @@ function closeNotifications(restoreFocus = false) {
   syncMobilePanels();
   if (restoreFocus && wasOpen) button?.focus({ preventScroll: true });
 }
-
 function syncMobilePanels() {
   const mobile = window.matchMedia(`(max-width: ${MOBILE_MENU_BREAKPOINT}px)`).matches;
   const menuOpen = document.getElementById("site-nav")?.classList.contains("open");
@@ -46,14 +43,12 @@ function syncMobilePanels() {
   if (backdrop) backdrop.hidden = !open;
   document.body.classList.toggle("mobile-panel-open", open);
 }
-
 function closeMobilePanels(restoreFocus = false) {
   const menuOpen = document.getElementById("site-nav")?.classList.contains("open");
   closeMobileMenu();
   closeNotifications(restoreFocus);
   if (restoreFocus && menuOpen) document.querySelector(".menu-toggle")?.focus({ preventScroll: true });
 }
-
 function showPage(pageId, updateHash = true, scroll = true) {
   const target = document.getElementById(pageId);
   if (!target?.classList.contains("page")) return;
@@ -77,7 +72,6 @@ function showPage(pageId, updateHash = true, scroll = true) {
   heading?.setAttribute("tabindex", "-1");
   heading?.focus({ preventScroll: true });
 }
-
 function atualizarAlturaMenuMobile() {
   const nav = document.getElementById("site-nav");
   const shell = document.querySelector(".nav-shell");
@@ -86,7 +80,6 @@ function atualizarAlturaMenuMobile() {
   const bottom = (viewport?.offsetTop || 0) + (viewport?.height || window.innerHeight);
   nav.style.setProperty("--menu-mobile-max-height", `${Math.max(0, Math.floor(bottom - shell.getBoundingClientRect().bottom - 8))}px`);
 }
-
 function setMobileMenu(open) {
   const nav = document.getElementById("site-nav");
   const button = document.querySelector(".menu-toggle");
@@ -102,17 +95,14 @@ function setMobileMenu(open) {
 }
 function toggleMenu() { setMobileMenu(!document.getElementById("site-nav")?.classList.contains("open")); }
 function closeMobileMenu() { setMobileMenu(false); }
-
 function scrollToLearningBlock(id) {
   if (window.innerWidth <= MOBILE_MENU_BREAKPOINT) document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "auto" });
 }
-
 function restorePageFromHash() {
   const id = window.location.hash.slice(1) || "home";
   const target = document.getElementById(id);
   if (target?.classList.contains("page") && !target.classList.contains("active")) showPage(id, false);
 }
-
 window.addEventListener("popstate", restorePageFromHash);
 window.addEventListener("hashchange", restorePageFromHash);
 document.addEventListener("DOMContentLoaded", () => {
@@ -144,7 +134,6 @@ window.visualViewport?.addEventListener("resize", resizeMobileNavigation, { pass
 document.getElementById("notificacoes-botao")?.addEventListener("click", closeMobileMenu, true);
 const notificationsPanel = document.getElementById("notificacoes-painel");
 if (notificationsPanel) new MutationObserver(syncMobilePanels).observe(notificationsPanel, { attributes: true, attributeFilter: ["hidden"] });
-
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -152,7 +141,6 @@ function shuffleArray(array) {
   }
   return array;
 }
-
 const flashcardDeck = [
   {
     "topic": "Plástico reciclado",
@@ -299,10 +287,8 @@ const flashcardDeck = [
     "answer": "Compare indicadores antes e depois, como consumo de água, gasto de energia e quantidade de resíduos gerados."
   }
 ];
-
 let currentFlashcard = 0;
 let flashcardIsFlipped = false;
-
 function setFlashcardSide(flipped) {
   flashcardIsFlipped = flipped;
   const card = document.getElementById("study-card");
@@ -316,11 +302,9 @@ function setFlashcardSide(flipped) {
   document.getElementById("study-back").setAttribute("aria-hidden", String(!flipped));
   document.getElementById("study-flip").textContent = flipped ? "Ver pergunta" : "Ver resposta";
 }
-
 function renderFlashcard() {
   const item = flashcardDeck[currentFlashcard];
   const card = document.getElementById("study-card");
-  // Troca de cartão sempre começa pela pergunta, sem exibir o verso anterior.
   card.classList.add("is-changing");
   setFlashcardSide(false);
   document.getElementById("study-topic").textContent = item.topic;
@@ -336,7 +320,6 @@ function renderFlashcard() {
   void card.offsetWidth;
   card.classList.remove("is-changing");
 }
-
 function startFlashcards() {
   currentFlashcard = 0;
   document.getElementById("study-start").hidden = true;
@@ -346,12 +329,10 @@ function startFlashcards() {
   scrollToLearningBlock("study-session");
   document.getElementById("study-card").focus({ preventScroll: true });
 }
-
 function flipFlashcard() {
   if (document.getElementById("study-session").hidden) return;
   setFlashcardSide(!flashcardIsFlipped);
 }
-
 function moveFlashcard(direction) {
   if (document.getElementById("study-session").hidden || ![-1, 1].includes(direction)) return;
   const next = currentFlashcard + direction;
@@ -367,16 +348,13 @@ function moveFlashcard(direction) {
   scrollToLearningBlock("study-session");
   document.getElementById("study-card").focus({ preventScroll: true });
 }
-
 function closeFlashcards() {
   document.getElementById("study-session").hidden = true;
   document.getElementById("study-end").hidden = true;
   document.getElementById("study-start").hidden = false;
   document.getElementById("study-start-button").focus({ preventScroll: true });
 }
-
 const quizQuestions = [
-  // Banco de perguntas: cada rodada sorteia 10 sem repetição.
   {
     q: "Qual vantagem dos blocos de plástico reciclado?",
     options: [
@@ -476,8 +454,7 @@ const quizQuestions = [
     ],
     answer: 2
   },
-
-  // Perguntas sobre as boas práticas e os casos de sucesso do projeto
+  
   {
     q: "O que significa empreender de forma sustentável?",
     options: [
@@ -679,85 +656,67 @@ const quizQuestions = [
     answer: 3
   }
 ];
-
 const QUIZ_QUESTION_COUNT = 10;
 let activeQuizQuestions = [];
-
 let currentQuestion = 0;
 let score = 0;
 let answered = false;
 let quizAdvanceTimer = null;
 const QUIZ_ADVANCE_DELAY = 1500;
-
 function updateTracker() {
   document.getElementById("score-tracker").innerText =
     `Questão ${currentQuestion + 1} de ${activeQuizQuestions.length} • Pontos: ${score}`;
 }
-
 function startQuiz() {
   clearTimeout(quizAdvanceTimer);
   quizAdvanceTimer = null;
   currentQuestion = 0;
   score = 0;
   answered = false;
-
-  // Sorteia uma cópia do banco: não repete perguntas na mesma rodada.
-  // Entre rodadas, algumas perguntas podem aparecer novamente.
+  
   activeQuizQuestions = shuffleArray([...quizQuestions])
     .slice(0, Math.min(QUIZ_QUESTION_COUNT, quizQuestions.length));
-
   document.getElementById("quiz-start").hidden = true;
   document.getElementById("quiz-result").hidden = true;
   document.getElementById("quiz-question").hidden = false;
   showQuestion();
   scrollToLearningBlock("quiz");
 }
-
 function showQuestion() {
   answered = false;
   document.getElementById("quiz-feedback").hidden = true;
   updateTracker();
-
   const q = activeQuizQuestions[currentQuestion];
   document.getElementById("q-text").innerText = q.q;
-
   let optsWithIndex = q.options.map((o, i) => ({ text: o, index: i }));
   optsWithIndex = shuffleArray(optsWithIndex);
   const correctIndexAfterShuffle = optsWithIndex.findIndex(opt => opt.index === q.answer);
   const opts = document.getElementById("q-options");
   opts.innerHTML = "";
-
   optsWithIndex.forEach((opt, pos) => {
     const div = document.createElement("button");
     div.type = "button";
     div.className = "option";
     div.innerText = opt.text;
-
     const select = () => selectOption(pos, correctIndexAfterShuffle);
     div.onclick = select;
 
-
     opts.appendChild(div);
   });
-
   document.getElementById("next-btn").hidden = true;
   document.getElementById("finish-btn").hidden = true;
 }
-
 function selectOption(i, correctIndex) {
   if (answered) return;
   answered = true;
-
   const opts = document.querySelectorAll("#q-options .option");
   opts.forEach((el, idx) => {
     el.disabled = true;
     if (idx === correctIndex) el.classList.add("correct");
     if (idx === i && idx !== correctIndex) el.classList.add("wrong");
   });
-
   if (i === correctIndex) score++;
   updateTracker();
-
   const feedback = document.getElementById("quiz-feedback");
   feedback.textContent = i === correctIndex
     ? "Você acertou! Avançando automaticamente…"
@@ -771,7 +730,6 @@ function selectOption(i, correctIndex) {
     else finishQuiz();
   }, QUIZ_ADVANCE_DELAY);
 }
-
 function nextQuestion() {
   clearTimeout(quizAdvanceTimer);
   quizAdvanceTimer = null;
@@ -780,7 +738,6 @@ function nextQuestion() {
   showQuestion();
   scrollToLearningBlock("quiz");
 }
-
 function finishQuiz() {
   clearTimeout(quizAdvanceTimer);
   quizAdvanceTimer = null;
@@ -794,7 +751,6 @@ function finishQuiz() {
   else text.innerHTML += "Continue estudando e tente novamente.";
   scrollToLearningBlock("quiz");
 }
-
 function resetQuiz() {
   clearTimeout(quizAdvanceTimer);
   quizAdvanceTimer = null;
@@ -806,36 +762,29 @@ function resetQuiz() {
   document.getElementById("quiz-question").hidden = true;
   document.getElementById("quiz-start").hidden = false;
 }
-
 function filtrarCasos(filtro, botao) {
   const casos = document.querySelectorAll("#lista-casos .caso-sucesso");
   const botoes = document.querySelectorAll(".filtro-caso");
   const mensagemVazia = document.getElementById("sem-casos");
   let quantidadeVisivel = 0;
-
   casos.forEach(caso => {
     const tipo = caso.dataset.tipo;
     const regiao = caso.dataset.regiao;
-
     const mostrar =
       filtro === "todos" ||
       (filtro === "brasil" && tipo === "brasil") ||
       filtro === tipo ||
       filtro === regiao;
-
     caso.hidden = !mostrar;
     if (mostrar) quantidadeVisivel++;
   });
-
   botoes.forEach(btn => {
     btn.classList.remove("ativo");
     btn.setAttribute("aria-pressed", "false");
   });
-
   if (botao) {
     botao.classList.add("ativo");
     botao.setAttribute("aria-pressed", "true");
   }
-
   mensagemVazia.hidden = quantidadeVisivel !== 0;
 }

@@ -1,7 +1,5 @@
-// Comunidade - Firebase Authentication + Firestore
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
-
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -11,7 +9,6 @@ import {
   updateProfile,
   deleteUser
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
-
 import {
   getFirestore,
   collection,
@@ -28,7 +25,6 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
-
 const firebaseConfig = {
   apiKey: "AIzaSyAiBmXnCxsFyWEvJxE5LZydQSvCahoWRn0",
   authDomain: "inovacaoverde-8dec8.firebaseapp.com",
@@ -38,46 +34,34 @@ const firebaseConfig = {
   appId: "1:673592779541:web:b03bf46dba419c180bbf1c",
   measurementId: "G-P4PW6FNLDT"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 auth.languageCode = "pt-BR";
 
-// -------------------------------
-// Administradores
-// O ID apenas escolhe a conta interna. A senha NÃO fica no código.
-// -------------------------------
+
 const ADMIN_LOGIN_MAP = {
   "NV-R9Y8J9": { email: "admin.nicolas@inovacaoverde.app", nome: "Nícolas" },
   "RL-RLXVN9": { email: "admin.rillary@inovacaoverde.app", nome: "Rillary" },
   "IS-V58L38": { email: "admin.ismael@inovacaoverde.app", nome: "Ismael" }
 };
-
 const ADMIN_EMAILS = new Set(
   Object.values(ADMIN_LOGIN_MAP).map(admin => admin.email.toLowerCase())
 );
-
 function obterAdminAtual(usuario = auth.currentUser) {
   if (!usuario?.email) return null;
   const email = usuario.email.toLowerCase();
   if (!ADMIN_EMAILS.has(email)) return null;
-
   const entrada = Object.entries(ADMIN_LOGIN_MAP)
     .find(([, admin]) => admin.email.toLowerCase() === email);
-
   if (!entrada) return null;
   return { id: entrada[0], ...entrada[1], uid: usuario.uid };
 }
-
 function usuarioEhAdmin(usuario = auth.currentUser) {
   return Boolean(obterAdminAtual(usuario));
 }
 
 
-// -------------------------------
-// Elementos
-// -------------------------------
 const areaAuth = document.getElementById("area-auth");
 const comunidadeTopoAuth = document.getElementById("comunidade-topo-auth");
 const painelCadastro = document.getElementById("painel-cadastro");
@@ -129,30 +113,23 @@ const perfilFotoPreviewImg = document.getElementById("perfil-foto-preview-img");
 const perfilRemoverFoto = document.getElementById("perfil-remover-foto");
 const btnSalvarPerfil = document.getElementById("btn-salvar-perfil");
 const perfilMensagem = document.getElementById("perfil-mensagem");
-
 const cadastroUsuarioInput = document.getElementById("cadastro-nome");
-
 function forcarUsernameMinusculo(input) {
   if (!input) return;
-
   input.addEventListener("input", () => {
     const inicio = input.selectionStart;
     const fim = input.selectionEnd;
     const valorMinusculo = input.value.toLowerCase();
-
     if (input.value !== valorMinusculo) {
       input.value = valorMinusculo;
-
       try {
         input.setSelectionRange(inicio, fim);
       } catch {}
     }
   });
 }
-
 forcarUsernameMinusculo(cadastroUsuarioInput);
 forcarUsernameMinusculo(perfilUsuarioInput);
-
 
 let ordenacaoAtual = "recentes";
 let postsSalvos = [];
@@ -171,51 +148,40 @@ let fotoPerfilPendente = undefined;
 let notificacoesAtuais = [];
 let unsubscribeNotificacoes = null;
 const unsubscribeCurtidasItens = new Map();
-
 const adminUidsPublicos = new Set();
-
 
 function executarQuandoLivre(callback) {
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(() => callback(), { timeout: 700 });
     return;
   }
-
   window.setTimeout(callback, 40);
 }
-
 function proximoFrame() {
   return new Promise(resolve => {
     window.requestAnimationFrame(() => resolve());
   });
 }
-
 function agendarRenderPosts() {
   if (renderPostsRaf) return;
-
   renderPostsRaf = window.requestAnimationFrame(() => {
     renderPostsRaf = 0;
     renderizarPosts();
   });
 }
-
 function agendarReordenacao() {
   if (reordenarCardsRaf) return;
-
   reordenarCardsRaf = window.requestAnimationFrame(() => {
     reordenarCardsRaf = 0;
     reordenarCards();
   });
 }
-
 function chaveResposta(postId, comentarioId) {
   return `${postId}:${comentarioId}`;
 }
-
 function uidEhAdminPublico(uid) {
   return Boolean(uid && adminUidsPublicos.has(String(uid)));
 }
-
 function criarSeloVerificado() {
   const selo = document.createElement("img");
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1D9BF0" d="M12 1.8l2.07 1.75 2.69-.2 1.04 2.5 2.38 1.27-.6 2.63L21 12l-1.42 2.25.6 2.63-2.38 1.27-1.04 2.5-2.69-.2L12 22.2l-2.07-1.75-2.69.2-1.04-2.5-2.38-1.27.6-2.63L3 12l1.42-2.25-.6-2.63L6.2 5.85l1.04-2.5 2.69.2L12 1.8z"/><path fill="#fff" d="M10.55 16.3 6.9 12.65l1.45-1.45 2.2 2.2 5.1-5.1 1.45 1.45-6.55 6.55z"/></svg>';
@@ -225,61 +191,47 @@ function criarSeloVerificado() {
   selo.title = "Administrador verificado";
   return selo;
 }
-
 function criarNomeComSelo(nome, verificado = false, tag = "span") {
   const linha = document.createElement(tag);
   linha.className = "nome-com-verificado";
-
   const texto = document.createElement("span");
   texto.textContent = nome || "Usuário";
   linha.appendChild(texto);
-
   if (verificado) {
     linha.appendChild(criarSeloVerificado());
   }
-
   return linha;
 }
-
 
 function normalizarUsername(valor) {
   return String(valor || "").trim().toLowerCase();
 }
-
 function usernameValido(valor) {
   return /^[a-z0-9._-]{3,24}$/.test(String(valor || "").trim());
 }
-
 function usernameReservadoParaAdmin(usernameKey) {
   return ["nicolas", "rillary", "ismael"].includes(usernameKey);
 }
-
 function obterPerfil(uid) {
   return uid ? (perfisUsuarios.get(String(uid)) || null) : null;
 }
-
 function obterNomePorUid(uid, fallback = "Usuário") {
   const perfil = obterPerfil(uid);
   return perfil?.nome || perfil?.username || fallback || "Usuário";
 }
-
 function obterUsernamePorUid(uid, fallback = "") {
   const perfil = obterPerfil(uid);
   return perfil?.username || fallback || "";
 }
-
 function obterFotoPorUid(uid) {
   return obterPerfil(uid)?.foto || "";
 }
-
 function obterNomePerfilAtual() {
   return perfilAtual?.nome || perfilAtual?.username || auth.currentUser?.displayName || "Usuário";
 }
-
 function obterUsernameAtual() {
   return perfilAtual?.username || "";
 }
-
 function aplicarAvatar(container, uid, fallbackNome = "Usuário") {
   if (!container) return;
   container.replaceChildren();
@@ -297,7 +249,6 @@ function aplicarAvatar(container, uid, fallbackNome = "Usuário") {
     container.textContent = (obterNomePorUid(uid, fallbackNome).charAt(0) || "U").toUpperCase();
   }
 }
-
 function definirImagemOuInicial(img, inicial, foto, nome = "Usuário") {
   if (!img || !inicial) return;
   if (foto) {
@@ -311,69 +262,55 @@ function definirImagemOuInicial(img, inicial, foto, nome = "Usuário") {
     inicial.textContent = (String(nome || "U").charAt(0) || "U").toUpperCase();
   }
 }
-
 function mensagemPerfil(texto = "", tipo = "") {
   if (!perfilMensagem) return;
   perfilMensagem.textContent = texto;
   perfilMensagem.className = `perfil-mensagem${tipo ? ` perfil-mensagem-${tipo}` : ""}`;
 }
-
 async function salvarPerfilNoFirestore(usuario, nomePerfil, username, foto) {
   if (!usuario) throw new Error("Faça login novamente.");
-
   const nomeLimpo = String(nomePerfil || "").trim();
   const usernameLimpo = normalizarUsername(username);
   const usernameKey = usernameLimpo;
-
   if (!nomeLimpo || nomeLimpo.length > 40) {
     const erro = new Error("Digite um nome de perfil com até 40 caracteres.");
     erro.codigoPerfil = "nome-invalido";
     throw erro;
   }
-
   if (!usernameValido(usernameLimpo)) {
     const erro = new Error("Use de 3 a 24 caracteres, somente letras minúsculas, números, ponto, _ ou -.");
     erro.codigoPerfil = "username-invalido";
     throw erro;
   }
-
   if (usernameReservadoParaAdmin(usernameKey) && !usuarioEhAdmin(usuario)) {
     const erro = new Error("Esse nome de usuário está reservado.");
     erro.codigoPerfil = "username-reservado";
     throw erro;
   }
-
   const usuarioRef = doc(db, "usuarios", usuario.uid);
   const novoUsernameRef = doc(db, "usernames", usernameKey);
-
   await runTransaction(db, async transaction => {
     const usuarioSnap = await transaction.get(usuarioRef);
     const usernameSnap = await transaction.get(novoUsernameRef);
-
     const perfilAnterior = usuarioSnap.exists() ? usuarioSnap.data() : null;
     const usernameKeyAnterior = perfilAnterior?.usernameKey || "";
-
     let usernameAnteriorRef = null;
     let usernameAnteriorSnap = null;
-
     if (usernameKeyAnterior && usernameKeyAnterior !== usernameKey) {
       usernameAnteriorRef = doc(db, "usernames", usernameKeyAnterior);
       usernameAnteriorSnap = await transaction.get(usernameAnteriorRef);
     }
-
     if (usernameSnap.exists() && usernameSnap.data()?.uid !== usuario.uid) {
       const erro = new Error("Esse nome de usuário já está em uso.");
       erro.codigoPerfil = "username-em-uso";
       throw erro;
     }
-
     if (!usernameSnap.exists()) {
       transaction.set(novoUsernameRef, {
         uid: usuario.uid,
         criadoEm: serverTimestamp()
       });
     }
-
     const dadosPerfil = {
       nome: nomeLimpo,
       username: usernameLimpo,
@@ -381,13 +318,10 @@ async function salvarPerfilNoFirestore(usuario, nomePerfil, username, foto) {
       foto: String(foto || ""),
       atualizadoEm: serverTimestamp()
     };
-
     if (!usuarioSnap.exists()) {
       dadosPerfil.criadoEm = serverTimestamp();
     }
-
     transaction.set(usuarioRef, dadosPerfil, { merge: true });
-
     if (
       usernameAnteriorRef &&
       usernameAnteriorSnap?.exists() &&
@@ -396,9 +330,7 @@ async function salvarPerfilNoFirestore(usuario, nomePerfil, username, foto) {
       transaction.delete(usernameAnteriorRef);
     }
   });
-
   await updateProfile(usuario, { displayName: nomeLimpo });
-
   return {
     nome: nomeLimpo,
     username: usernameLimpo,
@@ -406,7 +338,6 @@ async function salvarPerfilNoFirestore(usuario, nomePerfil, username, foto) {
     foto: String(foto || "")
   };
 }
-
 async function garantirPerfilAdmin(usuario) {
   const admin = obterAdminAtual(usuario);
   if (!admin || !usuario) return null;
@@ -422,7 +353,6 @@ async function garantirPerfilAdmin(usuario) {
   }
   return null;
 }
-
 async function carregarPerfilAtual(usuario) {
   perfilAtual = null;
   fotoPerfilPendente = undefined;
@@ -445,10 +375,8 @@ async function carregarPerfilAtual(usuario) {
   }
   atualizarInterfacePerfil(usuario);
 }
-
 function atualizarInterfacePerfil(usuario = auth.currentUser) {
   const logado = Boolean(usuario);
-
   if (perfilAtalho) perfilAtalho.hidden = !logado;
   if (notificacoesWrap) {
     notificacoesWrap.hidden = !logado;
@@ -456,7 +384,6 @@ function atualizarInterfacePerfil(usuario = auth.currentUser) {
   }
   if (perfilDeslogado) perfilDeslogado.hidden = logado;
   if (perfilConteudo) perfilConteudo.hidden = !logado;
-
   if (!logado) {
     if (perfilAtalhoImg) perfilAtalhoImg.hidden = true;
     if (perfilAtalhoInicial) {
@@ -465,15 +392,12 @@ function atualizarInterfacePerfil(usuario = auth.currentUser) {
     }
     return;
   }
-
   const perfil = perfilAtual || obterPerfil(usuario.uid);
   const nome = perfil?.nome || perfil?.username || usuario.displayName || "Usuário";
   const username = perfil?.username || "";
   const foto = perfil?.foto || "";
-
   definirImagemOuInicial(perfilAtalhoImg, perfilAtalhoInicial, foto, nome);
   definirImagemOuInicial(perfilFotoAtual, perfilInicialGrande, foto, nome);
-
   if (perfilNomeExibicao) perfilNomeExibicao.textContent = nome;
   if (perfilUsernameExibicao) {
     perfilUsernameExibicao.textContent = username ? `@${username}` : "@usuario";
@@ -481,7 +405,6 @@ function atualizarInterfacePerfil(usuario = auth.currentUser) {
   if (perfilEmail) perfilEmail.textContent = usuario.email || "";
   if (perfilNomeInput) perfilNomeInput.value = nome;
   if (perfilUsuarioInput) perfilUsuarioInput.value = username;
-
   if (perfilSeloAdmin) {
     perfilSeloAdmin.replaceChildren();
     if (usuarioEhAdmin(usuario)) {
@@ -490,14 +413,12 @@ function atualizarInterfacePerfil(usuario = auth.currentUser) {
   }
 }
 
-
 function idNotificacao(...partes) {
   return partes
     .filter(Boolean)
     .map(parte => String(parte).replaceAll("/", "_"))
     .join("--");
 }
-
 async function criarNotificacao({
   destinatarioUid,
   tipo,
@@ -507,7 +428,6 @@ async function criarNotificacao({
   eventoId = ""
 }) {
   const usuario = auth.currentUser;
-
   if (
     !usuario?.uid ||
     !destinatarioUid ||
@@ -515,7 +435,6 @@ async function criarNotificacao({
   ) {
     return;
   }
-
   const id = eventoId || idNotificacao(
     tipo,
     postId,
@@ -523,7 +442,6 @@ async function criarNotificacao({
     respostaId,
     usuario.uid
   );
-
   await setDoc(
     doc(db, "notificacoes", destinatarioUid, "itens", id),
     {
@@ -538,10 +456,8 @@ async function criarNotificacao({
     }
   );
 }
-
 async function removerNotificacao(destinatarioUid, notificacaoId) {
   if (!auth.currentUser?.uid || !destinatarioUid || !notificacaoId) return;
-
   try {
     await deleteDoc(
       doc(
@@ -553,25 +469,21 @@ async function removerNotificacao(destinatarioUid, notificacaoId) {
       )
     );
   } catch (erro) {
-    // A reação principal não deve falhar só porque a notificação já não existe.
     if (erro?.code !== "permission-denied") {
       console.error("Erro ao remover notificação:", erro);
     }
   }
 }
-
 function textoDaNotificacao(notificacao) {
   const nomeAtor = obterNomePorUid(
     notificacao.atorUid,
     "Alguém"
   );
-
   if (notificacao.tipo === "aviso_admin") {
     const titulo = notificacao.titulo || "Aviso da equipe";
     const texto = notificacao.texto || "";
     return texto ? `${titulo}: ${texto}` : titulo;
   }
-
   const textos = {
     curtida_post: `${nomeAtor} curtiu sua publicação.`,
     comentario_post: `${nomeAtor} comentou na sua publicação.`,
@@ -579,29 +491,22 @@ function textoDaNotificacao(notificacao) {
     curtida_comentario: `${nomeAtor} curtiu seu comentário.`,
     curtida_resposta: `${nomeAtor} curtiu sua resposta.`
   };
-
   return textos[notificacao.tipo] || `${nomeAtor} interagiu com você.`;
 }
-
 function abrirDestinoNotificacao(notificacao) {
   notificacoesPainel.hidden = true;
   notificacoesBotao.setAttribute("aria-expanded", "false");
-
   if (notificacao.tipo === "aviso_admin" && !notificacao.postId) {
     return;
   }
-
   window.showPage?.("comunidade");
-
   window.setTimeout(() => {
     const card = document.getElementById(`post-${notificacao.postId}`);
     if (!card) return;
-
     card.scrollIntoView({
       behavior: "smooth",
       block: "center"
     });
-
     card.classList.add("post-destaque-notificacao");
     window.setTimeout(
       () => card.classList.remove("post-destaque-notificacao"),
@@ -609,12 +514,9 @@ function abrirDestinoNotificacao(notificacao) {
     );
   }, 120);
 }
-
 function renderizarNotificacoes() {
   if (!notificacoesLista) return;
-
   notificacoesLista.replaceChildren();
-
   const ordenadas = [...notificacoesAtuais]
     .sort((a, b) => {
       const ta = a.criadoEm?.toMillis?.() || 0;
@@ -622,14 +524,11 @@ function renderizarNotificacoes() {
       return tb - ta;
     })
     .slice(0, 40);
-
   const naoLidas = ordenadas.filter(item => !item.lida).length;
-
   if (notificacoesBadge) {
     notificacoesBadge.hidden = naoLidas === 0;
     notificacoesBadge.textContent = naoLidas > 99 ? "99+" : String(naoLidas);
   }
-
   if (ordenadas.length === 0) {
     const vazio = document.createElement("p");
     vazio.className = "notificacoes-vazio";
@@ -637,13 +536,11 @@ function renderizarNotificacoes() {
     notificacoesLista.appendChild(vazio);
     return;
   }
-
   ordenadas.forEach(notificacao => {
     const item = document.createElement("button");
     item.type = "button";
     item.className = "notificacao-item";
     item.classList.toggle("nao-lida", !notificacao.lida);
-
     const avatar = document.createElement("div");
     avatar.className = "notificacao-avatar";
     aplicarAvatar(
@@ -651,20 +548,15 @@ function renderizarNotificacoes() {
       notificacao.atorUid,
       obterNomePorUid(notificacao.atorUid, "U")
     );
-
     const conteudo = document.createElement("div");
     conteudo.className = "notificacao-conteudo";
-
     const texto = document.createElement("div");
     texto.className = "notificacao-texto";
     texto.textContent = textoDaNotificacao(notificacao);
-
     const data = document.createElement("span");
     data.className = "notificacao-data";
     data.textContent = formatarData(notificacao.criadoEm);
-
     conteudo.append(texto, data);
-
     if (!notificacao.lida) {
       const ponto = document.createElement("span");
       ponto.className = "notificacao-ponto";
@@ -673,7 +565,6 @@ function renderizarNotificacoes() {
     } else {
       item.append(avatar, conteudo);
     }
-
     item.addEventListener("click", async () => {
       if (!notificacao.lida && auth.currentUser) {
         try {
@@ -692,22 +583,17 @@ function renderizarNotificacoes() {
           console.error("Erro ao marcar notificação como lida:", erro);
         }
       }
-
       abrirDestinoNotificacao(notificacao);
     });
-
     notificacoesLista.appendChild(item);
   });
 }
-
 function iniciarNotificacoes(usuario) {
   if (unsubscribeNotificacoes) {
     unsubscribeNotificacoes();
     unsubscribeNotificacoes = null;
   }
-
   notificacoesAtuais = [];
-
   if (!usuario?.uid) {
     if (notificacoesWrap) {
       notificacoesWrap.hidden = true;
@@ -718,12 +604,10 @@ function iniciarNotificacoes(usuario) {
     renderizarNotificacoes();
     return;
   }
-
   if (notificacoesWrap) {
     notificacoesWrap.hidden = false;
     notificacoesWrap.style.display = "block";
   }
-
   unsubscribeNotificacoes = onSnapshot(
     collection(db, "notificacoes", usuario.uid, "itens"),
     snapshot => {
@@ -736,13 +620,10 @@ function iniciarNotificacoes(usuario) {
     erro => console.error("Erro ao carregar notificações:", erro)
   );
 }
-
 async function marcarTodasNotificacoesComoLidas() {
   const usuario = auth.currentUser;
   if (!usuario?.uid) return;
-
   const pendentes = notificacoesAtuais.filter(item => !item.lida);
-
   await Promise.all(
     pendentes.map(item =>
       setDoc(
@@ -759,65 +640,50 @@ async function marcarTodasNotificacoesComoLidas() {
     )
   );
 }
-
 function limparListenersCurtidasDoPost(postId) {
   const prefixo = `${postId}:`;
-
   [...unsubscribeCurtidasItens.entries()].forEach(([chave, unsubscribe]) => {
     if (!chave.startsWith(prefixo)) return;
     unsubscribe();
     unsubscribeCurtidasItens.delete(chave);
   });
 }
-
 function observarCurtidasItem(chave, colecaoCurtidas, botao, contador) {
   const anterior = unsubscribeCurtidasItens.get(chave);
   if (anterior) anterior();
-
   const unsubscribe = onSnapshot(
     colecaoCurtidas,
     snapshot => {
       const uid = auth.currentUser?.uid || "";
       const curtido = Boolean(uid && snapshot.docs.some(item => item.id === uid));
-
       botao.dataset.curtido = String(curtido);
       botao.classList.toggle("ativo", curtido);
       botao.setAttribute("aria-pressed", String(curtido));
-
       const icone = botao.querySelector(".curtida-icone");
       if (icone) icone.textContent = curtido ? "♥" : "♡";
-
       contador.textContent = String(snapshot.size);
     },
     erro => console.error("Erro ao carregar curtidas:", erro)
   );
-
   unsubscribeCurtidasItens.set(chave, unsubscribe);
 }
-
 function criarBotaoCurtirItem() {
   const botao = document.createElement("button");
   botao.type = "button";
   botao.className = "btn-curtir-comentario";
   botao.dataset.curtido = "false";
   botao.setAttribute("aria-pressed", "false");
-
   const icone = document.createElement("span");
   icone.className = "curtida-icone";
   icone.textContent = "♡";
-
   const texto = document.createElement("span");
   texto.textContent = "Curtir";
-
   const contador = document.createElement("span");
   contador.className = "curtida-contador";
   contador.textContent = "0";
-
   botao.append(icone, texto, contador);
-
   return { botao, contador };
 }
-
 async function alternarCurtidaItem({
   botao,
   refCurtida,
@@ -829,22 +695,18 @@ async function alternarCurtidaItem({
   notificacaoId
 }) {
   if (!usuarioPodeInteragir()) return;
-
   const usuario = auth.currentUser;
   const curtido = botao.dataset.curtido === "true";
-
   try {
     if (curtido) {
       await deleteDoc(refCurtida);
       await removerNotificacao(donoUid, notificacaoId);
       return;
     }
-
     await setDoc(refCurtida, {
       uid: usuario.uid,
       criadoEm: serverTimestamp()
     });
-
     await criarNotificacao({
       destinatarioUid: donoUid,
       tipo: tipoNotificacao,
@@ -862,7 +724,6 @@ async function alternarCurtidaItem({
     );
   }
 }
-
 function mostrarMensagem(texto, tipo = "sucesso", tempo = 5000) {
   mensagem.textContent = texto;
   mensagem.className = `mensagem-comunidade mensagem-${tipo}`;
@@ -875,32 +736,23 @@ function mostrarMensagem(texto, tipo = "sucesso", tempo = 5000) {
     }, tempo);
   }
 }
-
 function mostrarPainelAuth(modo) {
   const cadastro = modo === "cadastro";
   if (cadastroErro) cadastroErro.textContent = "";
   if (loginErro) loginErro.textContent = "";
-
   painelCadastro.hidden = !cadastro;
   painelLogin.hidden = cadastro;
-
   tabCadastro.classList.toggle("ativo", cadastro);
   tabLogin.classList.toggle("ativo", !cadastro);
-
   tabCadastro.setAttribute("aria-selected", String(cadastro));
   tabLogin.setAttribute("aria-selected", String(!cadastro));
 }
-
 tabCadastro.addEventListener("click", () => mostrarPainelAuth("cadastro"));
 tabLogin.addEventListener("click", () => mostrarPainelAuth("login"));
-
 document.getElementById("ir-login").addEventListener("click", () => mostrarPainelAuth("login"));
 document.getElementById("ir-cadastro").addEventListener("click", () => mostrarPainelAuth("cadastro"));
 
 
-// -------------------------------
-// Cadastro
-// -------------------------------
 document.getElementById("form-cadastro").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (cadastroErro) cadastroErro.textContent = "";
@@ -909,12 +761,10 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
   const usernameKey = normalizarUsername(username);
   const email = document.getElementById("cadastro-email").value.trim();
   const senha = document.getElementById("cadastro-senha").value;
-
   if (!nomePerfil || nomePerfil.length > 40) {
     cadastroErro.textContent = "Digite um nome de perfil com até 40 caracteres.";
     return;
   }
-
   if (!usernameValido(username)) {
     cadastroErro.textContent = "Use de 3 a 24 caracteres, somente letras minúsculas, números, ponto, _ ou -.";
     return;
@@ -923,14 +773,12 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
     cadastroErro.textContent = "Esse nome de usuário está reservado.";
     return;
   }
-
   try {
     const usernameExistente = await getDoc(doc(db, "usernames", usernameKey));
     if (usernameExistente.exists()) {
       cadastroErro.textContent = "Esse nome de usuário já está em uso.";
       return;
     }
-
     const credencial = await createUserWithEmailAndPassword(auth, email, senha);
     try {
       await salvarPerfilNoFirestore(credencial.user, nomePerfil, username, "");
@@ -938,7 +786,6 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
       try { await deleteUser(credencial.user); } catch (erroExcluirConta) { console.error("Erro ao desfazer cadastro:", erroExcluirConta); }
       throw erroPerfil;
     }
-
     await carregarPerfilAtual(credencial.user);
     atualizarInterfaceUsuario(credencial.user);
     event.target.reset();
@@ -960,16 +807,12 @@ document.getElementById("form-cadastro").addEventListener("submit", async (event
   }
 });
 
-// -------------------------------
-// Login
-// -------------------------------
+
 document.getElementById("form-login").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (loginErro) loginErro.textContent = "";
-
   const email = document.getElementById("login-email").value.trim();
   const senha = document.getElementById("login-senha").value;
-
   try {
     const credencial = await signInWithEmailAndPassword(auth, email, senha);
     atualizarInterfaceUsuario(credencial.user);
@@ -983,8 +826,6 @@ document.getElementById("form-login").addEventListener("submit", async (event) =
     }
   }
 });
-
-
 
 function posicionarPainelNotificacoesMobile() {
   if (!notificacoesPainel) return;
@@ -1002,24 +843,18 @@ function posicionarPainelNotificacoesMobile() {
   notificacoesPainel.style.setProperty("--notifications-top", `${top}px`);
   notificacoesPainel.style.setProperty("--notifications-height", `${Math.max(0, Math.floor(viewportBottom - top - 8))}px`);
 }
-
 notificacoesBotao?.addEventListener("click", event => {
   event.stopPropagation();
-
   const abrir = notificacoesPainel.hidden;
-
   if (abrir) {
     posicionarPainelNotificacoesMobile();
   }
-
   notificacoesPainel.hidden = !abrir;
   notificacoesBotao.setAttribute("aria-expanded", String(abrir));
 });
-
 notificacoesPainel?.addEventListener("click", event => {
   event.stopPropagation();
 });
-
 function atualizarPosicaoNotificacoesAbertas() {
   if (
     notificacoesPainel &&
@@ -1028,41 +863,34 @@ function atualizarPosicaoNotificacoesAbertas() {
     posicionarPainelNotificacoesMobile();
   }
 }
-
 window.addEventListener(
   "scroll",
   atualizarPosicaoNotificacoesAbertas,
   { passive: true }
 );
-
 window.addEventListener(
   "resize",
   atualizarPosicaoNotificacoesAbertas,
   { passive: true }
 );
-
 window.visualViewport?.addEventListener(
   "resize",
   atualizarPosicaoNotificacoesAbertas,
   { passive: true }
 );
-
 window.visualViewport?.addEventListener(
   "scroll",
   atualizarPosicaoNotificacoesAbertas,
   { passive: true }
 );
-
 notificacoesMarcarLidas?.addEventListener("click", async event => {
   event.stopPropagation();
-
   try {
     await marcarTodasNotificacoesComoLidas();
   } catch (erro) {
     console.error("Erro ao marcar notificações:", erro);
   }
 });
-
 document.addEventListener("click", event => {
   if (
     !notificacoesPainel ||
@@ -1071,27 +899,21 @@ document.addEventListener("click", event => {
   ) {
     return;
   }
-
   notificacoesPainel.hidden = true;
   notificacoesBotao?.setAttribute("aria-expanded", "false");
 });
 
 
-// -------------------------------
-// Sessão
-// -------------------------------
 document.getElementById("btn-sair").addEventListener("click", async () => {
   await signOut(auth);
   mostrarPainelAuth("cadastro");
   mostrarMensagem("Você saiu da sua conta.");
 });
-
 onAuthStateChanged(auth, async usuario => {
   await carregarPerfilAtual(usuario);
   atualizarInterfaceUsuario(usuario);
   atualizarPainelAdmin(usuario);
   iniciarNotificacoes(usuario);
-
   const adminAtual = obterAdminAtual(usuario);
   if (adminAtual && usuario?.uid) {
     try {
@@ -1100,7 +922,6 @@ onAuthStateChanged(auth, async usuario => {
       console.error("Erro ao registrar administrador verificado:", erro);
     }
   }
-
   window.setTimeout(() => {
     comentariosAbertos.forEach((elemento, postId) => {
       if (elemento?.isConnected) carregarComentarios(postId, elemento);
@@ -1108,12 +929,10 @@ onAuthStateChanged(auth, async usuario => {
     });
   }, 0);
 });
-
 function atualizarInterfaceUsuario(usuario) {
   if (comunidadeTopoAuth) {
     comunidadeTopoAuth.hidden = Boolean(usuario);
   }
-
   if (!usuario) {
     areaAuth.hidden = false;
     usuarioLogado.hidden = true;
@@ -1130,40 +949,31 @@ function atualizarInterfaceUsuario(usuario) {
     criarPublicacao.hidden = true;
     btnPublicacaoPlus.setAttribute("aria-expanded", "false");
     nomeUsuario.replaceChildren();
-
     const identidadeLogada = document.createElement("span");
     identidadeLogada.className = "usuario-logado-identidade";
-
     const linhaNome = document.createElement("span");
     linhaNome.className = "usuario-logado-nome-linha";
-
     const nomeLogado = document.createElement("span");
     nomeLogado.className = "usuario-logado-nome";
     nomeLogado.textContent = obterNomePorUid(
       usuario.uid,
       usuario.displayName || usuario.email || "Usuário"
     );
-
     linhaNome.appendChild(nomeLogado);
-
     if (usuarioEhAdmin(usuario)) {
       linhaNome.appendChild(criarSeloVerificado());
     }
-
     const usernameLogado = document.createElement("span");
     usernameLogado.className = "usuario-logado-username";
     const handle = obterUsernamePorUid(usuario.uid, perfilAtual?.username || "");
     usernameLogado.textContent = handle ? `@${handle}` : "";
-
     identidadeLogada.append(linhaNome, usernameLogado);
     nomeUsuario.appendChild(identidadeLogada);
   }
-
   atualizarInterfacePerfil(usuario);
   agendarRenderPosts();
 }
 
-// Perfis públicos: nome de usuário e foto atual
 onSnapshot(collection(db, "usuarios"), snapshot => {
   perfisUsuarios.clear();
   snapshot.forEach(item => perfisUsuarios.set(item.id, { uid: item.id, ...item.data() }));
@@ -1179,20 +989,16 @@ onSnapshot(collection(db, "usuarios"), snapshot => {
   });
 }, erro => console.error("Erro ao carregar perfis:", erro));
 
-// Administradores verificados visíveis publicamente
 onSnapshot(collection(db, "adminsPublicos"), snapshot => {
   adminUidsPublicos.clear();
   snapshot.forEach(item => adminUidsPublicos.add(item.id));
-
   agendarRenderPosts();
-
   comentariosAbertos.forEach((elemento, postId) => {
     if (elemento?.isConnected) carregarComentarios(postId, elemento);
   });
 }, erro => {
   console.error("Erro ao carregar administradores verificados:", erro);
 });
-
 function usuarioPodeInteragir() {
   const usuario = auth.currentUser;
   if (!usuario) {
@@ -1209,28 +1015,23 @@ function usuarioPodeInteragir() {
   }
   return true;
 }
-
 function fecharCriacaoPublicacao() {
   criarPublicacao.hidden = true;
   btnNovaPublicacao.hidden = true;
   btnPublicacaoPlus.setAttribute("aria-expanded", "false");
 }
-
 btnPublicacaoPlus.addEventListener("click", () => {
   if (!usuarioPodeInteragir()) return;
-
   if (!criarPublicacao.hidden) {
     criarPublicacao.hidden = true;
     btnNovaPublicacao.hidden = false;
     btnPublicacaoPlus.setAttribute("aria-expanded", "true");
     return;
   }
-
   const mostrarOpcao = btnNovaPublicacao.hidden;
   btnNovaPublicacao.hidden = !mostrarOpcao;
   btnPublicacaoPlus.setAttribute("aria-expanded", String(mostrarOpcao));
 });
-
 btnNovaPublicacao.addEventListener("click", () => {
   if (!usuarioPodeInteragir()) return;
   btnNovaPublicacao.hidden = true;
@@ -1238,7 +1039,6 @@ btnNovaPublicacao.addEventListener("click", () => {
   btnPublicacaoPlus.setAttribute("aria-expanded", "true");
   document.getElementById("post-titulo").focus();
 });
-
 btnCancelarPublicacao.addEventListener("click", () => {
   document.getElementById("form-publicacao").reset();
   contadorTexto.textContent = "0 / 1500";
@@ -1248,13 +1048,9 @@ btnCancelarPublicacao.addEventListener("click", () => {
 });
 
 
-// -------------------------------
-// Imagens sem Firebase Storage
-// A foto é reprocessada no navegador e salva como JPEG leve no Firestore.
-// -------------------------------
+
 const LIMITE_IMAGEM_DATA_URL = 280000;
 const LIMITE_ARQUIVO_ORIGINAL = 12 * 1024 * 1024;
-
 function lerArquivoComoDataURL(arquivo) {
   return new Promise((resolve, reject) => {
     const leitor = new FileReader();
@@ -1263,7 +1059,6 @@ function lerArquivoComoDataURL(arquivo) {
     leitor.readAsDataURL(arquivo);
   });
 }
-
 function carregarImagem(dataUrl) {
   return new Promise((resolve, reject) => {
     const imagem = new Image();
@@ -1272,7 +1067,6 @@ function carregarImagem(dataUrl) {
     imagem.src = dataUrl;
   });
 }
-
 async function comprimirImagem(arquivo) {
   if (!arquivo) return "";
   if (!arquivo.type?.startsWith("image/")) {
@@ -1281,34 +1075,27 @@ async function comprimirImagem(arquivo) {
   if (arquivo.size > LIMITE_ARQUIVO_ORIGINAL) {
     throw new Error("A imagem original deve ter no máximo 12 MB.");
   }
-
   const original = await lerArquivoComoDataURL(arquivo);
   const imagem = await carregarImagem(original);
-
   let largura = imagem.naturalWidth || imagem.width;
   let altura = imagem.naturalHeight || imagem.height;
   const maxLado = 1280;
   const escalaInicial = Math.min(1, maxLado / Math.max(largura, altura));
   largura = Math.max(1, Math.round(largura * escalaInicial));
   altura = Math.max(1, Math.round(altura * escalaInicial));
-
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) throw new Error("Seu navegador não conseguiu preparar a imagem.");
-
   let resultado = "";
   let qualidade = 0.78;
-
   for (let tentativa = 0; tentativa < 12; tentativa++) {
     canvas.width = largura;
     canvas.height = altura;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, largura, altura);
     ctx.drawImage(imagem, 0, 0, largura, altura);
-
     resultado = canvas.toDataURL("image/jpeg", qualidade);
     if (resultado.length <= LIMITE_IMAGEM_DATA_URL) return resultado;
-
     if (qualidade > 0.48) {
       qualidade -= 0.08;
     } else {
@@ -1317,13 +1104,11 @@ async function comprimirImagem(arquivo) {
       qualidade = 0.62;
     }
   }
-
   if (resultado.length > LIMITE_IMAGEM_DATA_URL) {
     throw new Error("A imagem ficou grande demais mesmo após a compressão. Escolha outra imagem.");
   }
   return resultado;
 }
-
 async function comprimirFotoPerfil(arquivo) {
   if (!arquivo) return "";
   if (!arquivo.type?.startsWith("image/")) throw new Error("Escolha uma imagem.");
@@ -1350,10 +1135,8 @@ async function comprimirFotoPerfil(arquivo) {
   if (resultado.length > 80000) throw new Error("Escolha uma foto menor.");
   return resultado;
 }
-
 function configurarPreviewImagem(input, caixa, imagem, remover) {
   if (!input || !caixa || !imagem || !remover) return;
-
   input.addEventListener("change", async () => {
     const arquivo = input.files?.[0];
     if (!arquivo) {
@@ -1361,7 +1144,6 @@ function configurarPreviewImagem(input, caixa, imagem, remover) {
       imagem.removeAttribute("src");
       return;
     }
-
     try {
       const dataUrl = await lerArquivoComoDataURL(arquivo);
       imagem.src = dataUrl;
@@ -1371,23 +1153,19 @@ function configurarPreviewImagem(input, caixa, imagem, remover) {
       caixa.hidden = true;
     }
   });
-
   remover.addEventListener("click", () => {
     input.value = "";
     imagem.removeAttribute("src");
     caixa.hidden = true;
   });
 }
-
 configurarPreviewImagem(postImagemInput, postImagemPreview, postImagemPreviewImg, postImagemRemover);
-
 perfilIrLogin?.addEventListener("click", () => {
   window.showPage?.("comunidade");
   mostrarPainelAuth("login");
   areaAuth.hidden = false;
   areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
 });
-
 perfilFotoInput?.addEventListener("change", async () => {
   const arquivo = perfilFotoInput.files?.[0];
   if (!arquivo) {
@@ -1408,7 +1186,6 @@ perfilFotoInput?.addEventListener("change", async () => {
     mensagemPerfil(erro.message || "Não foi possível preparar a foto.", "erro");
   }
 });
-
 perfilRemoverFoto?.addEventListener("click", () => {
   fotoPerfilPendente = "";
   perfilFotoInput.value = "";
@@ -1416,22 +1193,18 @@ perfilRemoverFoto?.addEventListener("click", () => {
   perfilFotoPreviewImg.removeAttribute("src");
   mensagemPerfil("A foto será removida quando você salvar.");
 });
-
 formPerfil?.addEventListener("submit", async event => {
   event.preventDefault();
   const usuario = auth.currentUser;
   if (!usuario) return mensagemPerfil("Faça login novamente.", "erro");
   const nomePerfil = perfilNomeInput.value.trim();
   const username = perfilUsuarioInput.value.trim();
-
   if (!nomePerfil || nomePerfil.length > 40) {
     return mensagemPerfil("Digite um nome de perfil com até 40 caracteres.", "erro");
   }
-
   if (!usernameValido(username)) {
     return mensagemPerfil("Use de 3 a 24 caracteres, somente letras minúsculas, números, ponto, _ ou -.", "erro");
   }
-
   const fotoFinal = fotoPerfilPendente === undefined
     ? (perfilAtual?.foto || "")
     : fotoPerfilPendente;
@@ -1458,34 +1231,25 @@ formPerfil?.addEventListener("submit", async event => {
 });
 
 
-// -------------------------------
-// Nova publicação
-// -------------------------------
 postTexto.addEventListener("input", () => {
   contadorTexto.textContent = `${postTexto.value.length} / 1500`;
 });
-
 document.getElementById("form-publicacao").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!usuarioPodeInteragir()) return;
-
   const usuario = auth.currentUser;
   const titulo = document.getElementById("post-titulo").value.trim();
   const texto = postTexto.value.trim();
   const arquivoImagem = postImagemInput?.files?.[0] || null;
-
   if (!titulo || !texto) {
     mostrarMensagem("Preencha título e conteúdo.", "erro");
     return;
   }
-
   try {
     btnPublicar.disabled = true;
     btnPublicar.textContent = arquivoImagem ? "Preparando imagem…" : "Publicando…";
-
     const imagem = arquivoImagem ? await comprimirImagem(arquivoImagem) : "";
     btnPublicar.textContent = "Publicando…";
-
     await addDoc(collection(db, "posts"), {
       uid: usuario.uid,
       autor: obterNomePerfilAtual(),
@@ -1494,7 +1258,6 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
       imagem,
       criadoEm: serverTimestamp()
     });
-
     event.target.reset();
     contadorTexto.textContent = "0 / 1500";
     postImagemPreview.hidden = true;
@@ -1511,31 +1274,21 @@ document.getElementById("form-publicacao").addEventListener("submit", async (eve
   }
 });
 
-// -------------------------------
-// Ordenação do feed
-// -------------------------------
-const filtrosComunidade = document.querySelector(".filtros-comunidade");
 
+const filtrosComunidade = document.querySelector(".filtros-comunidade");
 filtrosComunidade?.addEventListener("click", event => {
   const botao = event.target.closest(".filtro-post");
   if (!botao || !filtrosComunidade.contains(botao)) return;
-
   document.querySelectorAll(".filtro-post").forEach(btn => {
     btn.classList.toggle("ativo", btn === botao);
   });
-
   ordenacaoAtual = botao.dataset.order || "recentes";
-
-  // Reordena os cards que já estão na tela sem esperar nova leitura do Firebase.
+  
   reordenarCards();
 });
 
 
-// -------------------------------
-// Feed em tempo real
-// -------------------------------
 const consultaPosts = query(collection(db, "posts"), orderBy("criadoEm", "desc"));
-
 onSnapshot(consultaPosts, snapshot => {
   postsSalvos = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
   agendarRenderPosts();
@@ -1543,20 +1296,16 @@ onSnapshot(consultaPosts, snapshot => {
   console.error("Erro ao carregar feed:", erro);
   feed.textContent = `Não foi possível carregar as publicações (${erro.code || "erro"}).`;
 });
-
 function limparListenersFeed() {
   unsubscribeReacoes.forEach(unsubscribe => unsubscribe());
   unsubscribeReacoes = [];
-
   unsubscribeContagemComentarios.forEach(unsubscribe => unsubscribe());
   unsubscribeContagemComentarios = [];
-
   comentariosPrincipaisPorPost.clear();
   respostasPorComentario.clear();
   versaoContagemComentarios.clear();
   comentariosAbertos.clear();
 }
-
 function obterEstatisticas(postId) {
   if (!estatisticasPosts.has(postId)) {
     estatisticasPosts.set(postId, {
@@ -1568,12 +1317,9 @@ function obterEstatisticas(postId) {
   }
   return estatisticasPosts.get(postId);
 }
-
 function reordenarCards() {
   if (!feed) return;
-
   const cards = [...feed.querySelectorAll(".post-comunidade")];
-
   cards.sort((a, b) => {
     const criadoA = Number(a.dataset.criado || 0);
     const criadoB = Number(b.dataset.criado || 0);
@@ -1581,44 +1327,32 @@ function reordenarCards() {
     const likesB = Number(b.dataset.likes || 0);
     const comentariosA = Number(a.dataset.comentarios || 0);
     const comentariosB = Number(b.dataset.comentarios || 0);
-
     if (ordenacaoAtual === "populares") {
-      // Popularidade = curtidas + comentários/respostas.
       const popularidadeA = likesA + comentariosA;
       const popularidadeB = likesB + comentariosB;
-
       if (popularidadeB !== popularidadeA) {
         return popularidadeB - popularidadeA;
       }
-
       if (likesB !== likesA) return likesB - likesA;
       if (comentariosB !== comentariosA) {
         return comentariosB - comentariosA;
       }
-
       return criadoB - criadoA;
     }
-
     if (ordenacaoAtual === "curtidos") {
       if (likesB !== likesA) return likesB - likesA;
-
-      // Em empate, o mais recente aparece primeiro.
+      
       return criadoB - criadoA;
     }
-
     return criadoB - criadoA;
   });
-
   cards.forEach(card => feed.appendChild(card));
 }
-
 function renderizarPosts() {
   if (!feed) return;
   limparListenersFeed();
   feed.replaceChildren();
-
   const posts = [...postsSalvos];
-
   if (posts.length === 0) {
     const vazio = document.createElement("div");
     vazio.className = "feed-vazio";
@@ -1626,103 +1360,80 @@ function renderizarPosts() {
     feed.appendChild(vazio);
       return;
   }
-
   posts.sort((a, b) => {
     const ea = obterEstatisticas(a.id);
     const eb = obterEstatisticas(b.id);
     const criadoA = a.criadoEm?.toMillis?.() || 0;
     const criadoB = b.criadoEm?.toMillis?.() || 0;
-
     if (ordenacaoAtual === "populares") {
       const popularidadeA = ea.likes + ea.comentarios;
       const popularidadeB = eb.likes + eb.comentarios;
-
       if (popularidadeB !== popularidadeA) {
         return popularidadeB - popularidadeA;
       }
-
       if (eb.likes !== ea.likes) return eb.likes - ea.likes;
       if (eb.comentarios !== ea.comentarios) {
         return eb.comentarios - ea.comentarios;
       }
-
       return criadoB - criadoA;
     }
-
     if (ordenacaoAtual === "curtidos") {
       if (eb.likes !== ea.likes) return eb.likes - ea.likes;
       return criadoB - criadoA;
     }
-
     return criadoB - criadoA;
   });
-
   posts.forEach(post => feed.appendChild(criarCardPost(post)));
 }
-
 function criarCardPost(post) {
   const card = document.createElement("article");
   card.className = "post-comunidade";
   card.id = `post-${post.id}`;
   card.dataset.postUid = post.uid || "";
   card.dataset.minhaReacao = "";
-
   const stats = obterEstatisticas(post.id);
   card.dataset.likes = String(stats.likes);
   card.dataset.score = String(stats.score);
   card.dataset.comentarios = String(stats.comentarios);
   card.dataset.criado = String(post.criadoEm?.toMillis?.() || Date.now());
-
   const cabecalho = document.createElement("div");
   cabecalho.className = "post-cabecalho";
-
   const avatar = document.createElement("div");
   avatar.className = "post-avatar";
   aplicarAvatar(avatar, post.uid, post.autor || "Usuário");
-
   const autorArea = document.createElement("div");
   autorArea.className = "post-autor";
   const autorLinha = document.createElement("div");
   autorLinha.className = "post-autor-linha";
-
   const autor = document.createElement("strong");
   autor.textContent = obterNomePorUid(post.uid, post.autor || "Usuário");
   autorLinha.appendChild(autor);
-
   if (uidEhAdminPublico(post.uid)) {
     autorLinha.appendChild(criarSeloVerificado());
   }
-
   const usernameAutor = document.createElement("span");
   usernameAutor.className = "post-username";
   const usernamePost = obterUsernamePorUid(post.uid, "");
   usernameAutor.textContent = usernamePost ? `@${usernamePost}` : "";
-
   const data = document.createElement("span");
   data.className = "post-data";
   data.textContent = formatarData(post.criadoEm);
-
   autorArea.append(autorLinha, usernameAutor, data);
   cabecalho.append(avatar, autorArea);
-
-  // Menu ••• da publicação principal
+  
   const postMenuWrap = document.createElement("div");
   postMenuWrap.className = "post-menu-wrap";
-
   const postMenuBotao = document.createElement("button");
   postMenuBotao.type = "button";
   postMenuBotao.className = "post-menu-botao";
   postMenuBotao.textContent = "•••";
   postMenuBotao.setAttribute("aria-label", "Opções da publicação");
   postMenuBotao.setAttribute("aria-expanded", "false");
-
   const postMenu = document.createElement("div");
   postMenu.className = "post-menu";
   postMenu.hidden = true;
-
   postMenuBotao.addEventListener("click", event => {
     event.stopPropagation();
-
     document.querySelectorAll(".post-menu").forEach(outro => {
       if (outro !== postMenu) {
         outro.hidden = true;
@@ -1731,14 +1442,11 @@ function criarCardPost(post) {
           ?.setAttribute("aria-expanded", "false");
       }
     });
-
     const abrir = postMenu.hidden;
     postMenu.hidden = !abrir;
     postMenuBotao.setAttribute("aria-expanded", String(abrir));
   });
-
   postMenu.addEventListener("click", event => event.stopPropagation());
-
   const usuarioPostAtual = auth.currentUser;
   const ehDonoPost = Boolean(
     usuarioPostAtual?.uid &&
@@ -1746,23 +1454,18 @@ function criarCardPost(post) {
     usuarioPostAtual.uid === post.uid
   );
   const ehAdminPost = usuarioEhAdmin(usuarioPostAtual);
-
   if (ehDonoPost || ehAdminPost) {
     const excluirPost = document.createElement("button");
     excluirPost.type = "button";
     excluirPost.className = "post-menu-item post-menu-excluir";
     excluirPost.textContent = "Excluir";
-
     excluirPost.addEventListener("click", async () => {
       postMenu.hidden = true;
       postMenuBotao.setAttribute("aria-expanded", "false");
-
       const textoConfirmacao = ehAdminPost && !ehDonoPost
         ? "Excluir esta publicação como administrador?"
         : "Excluir sua publicação?";
-
       if (!window.confirm(textoConfirmacao)) return;
-
       try {
         await deleteDoc(doc(db, "posts", post.id));
         mostrarMensagem("Publicação excluída.");
@@ -1775,18 +1478,15 @@ function criarCardPost(post) {
         );
       }
     });
-
     postMenu.appendChild(excluirPost);
   } else {
     const denunciarPost = document.createElement("button");
     denunciarPost.type = "button";
     denunciarPost.className = "post-menu-item post-menu-denunciar";
     denunciarPost.textContent = "Denunciar";
-
     denunciarPost.addEventListener("click", async () => {
       postMenu.hidden = true;
       postMenuBotao.setAttribute("aria-expanded", "false");
-
       if (!auth.currentUser) {
         mostrarPainelAuth("login");
         areaAuth.hidden = false;
@@ -1794,10 +1494,8 @@ function criarCardPost(post) {
         areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
         return;
       }
-
       try {
         const usuario = auth.currentUser;
-
         await setDoc(
           doc(db, "posts", post.id, "denuncias", usuario.uid),
           {
@@ -1806,7 +1504,6 @@ function criarCardPost(post) {
             criadoEm: serverTimestamp()
           }
         );
-
         mostrarMensagem("Publicação denunciada.");
       } catch (erro) {
         console.error("Erro ao denunciar publicação:", erro);
@@ -1817,59 +1514,44 @@ function criarCardPost(post) {
         );
       }
     });
-
     postMenu.appendChild(denunciarPost);
   }
-
   postMenuWrap.append(postMenuBotao, postMenu);
   cabecalho.appendChild(postMenuWrap);
-
   const titulo = document.createElement("h4");
   titulo.textContent = post.titulo || "Sem título";
-
   const texto = document.createElement("div");
   texto.className = "post-texto";
   texto.textContent = post.texto || "";
-
   card.append(cabecalho, titulo);
 
-
   card.appendChild(texto);
-
   if (post.imagem) {
     const miniatura = document.createElement("button");
     miniatura.type = "button";
     miniatura.className = "post-imagem-miniatura";
     miniatura.setAttribute("aria-label", "Ampliar imagem da publicação");
-
     const imagemPost = document.createElement("img");
     imagemPost.className = "post-imagem";
     imagemPost.src = post.imagem;
     imagemPost.alt = `Imagem da publicação: ${post.titulo || "publicação"}`;
     imagemPost.loading = "lazy";
     imagemPost.decoding = "async";
-
     miniatura.appendChild(imagemPost);
     miniatura.addEventListener("click", () => abrirImagemAmpliada(
       post.imagem,
       post.titulo || "Imagem da publicação"
     ));
-
     card.appendChild(miniatura);
   }
 
-
-  // VOTAÇÃO ESTILO REDDIT + COMENTÁRIOS
   const acoes = document.createElement("div");
   acoes.className = "post-acoes";
-
   const votacao = criarControleVotacao();
-
   const btnComentar = document.createElement("button");
   btnComentar.type = "button";
   btnComentar.className = "btn-comentar";
   btnComentar.setAttribute("aria-expanded", "false");
-
   const iconeComentario = document.createElement("span");
   iconeComentario.textContent = "💬";
   const textoComentario = document.createElement("span");
@@ -1878,26 +1560,21 @@ function criarCardPost(post) {
   contadorComentarios.className = "comentarios-contador";
   contadorComentarios.textContent = String(stats.comentarios);
   btnComentar.append(iconeComentario, textoComentario, contadorComentarios);
-
   acoes.append(votacao.container, btnComentar);
   card.appendChild(acoes);
-
   votacao.cima.addEventListener("click", () => registrarReacao(post.id, "like", card));
   votacao.baixo.addEventListener("click", () => registrarReacao(post.id, "dislike", card));
   observarReacoes(post.id, card, votacao);
   observarContagemComentarios(post.id, card, contadorComentarios);
-
   const areaComentarios = document.createElement("div");
   areaComentarios.className = "area-comentarios";
   areaComentarios.hidden = true;
   const lista = document.createElement("div");
   lista.className = "lista-comentarios";
   areaComentarios.appendChild(lista);
-
   btnComentar.addEventListener("click", async () => {
     areaComentarios.hidden = !areaComentarios.hidden;
     btnComentar.setAttribute("aria-expanded", String(!areaComentarios.hidden));
-
     if (!areaComentarios.hidden) {
       comentariosAbertos.set(post.id, lista);
       await carregarComentarios(post.id, lista);
@@ -1905,7 +1582,6 @@ function criarCardPost(post) {
       comentariosAbertos.delete(post.id);
     }
   });
-
   if (auth.currentUser) {
     const formulario = document.createElement("form");
     formulario.className = "form-comentario";
@@ -1918,13 +1594,11 @@ function criarCardPost(post) {
     botao.type = "submit";
     botao.textContent = "Enviar";
     formulario.append(input, botao);
-
     formulario.addEventListener("submit", async event => {
       event.preventDefault();
       if (!usuarioPodeInteragir()) return;
       const comentario = input.value.trim();
       if (!comentario) return;
-
       try {
         const usuario = auth.currentUser;
         const comentarioRef = await addDoc(
@@ -1936,7 +1610,6 @@ function criarCardPost(post) {
             criadoEm: serverTimestamp()
           }
         );
-
         await criarNotificacao({
           destinatarioUid: post.uid || "",
           tipo: "comentario_post",
@@ -1948,7 +1621,6 @@ function criarCardPost(post) {
             comentarioRef.id
           )
         });
-
         input.value = "";
         await carregarComentarios(post.id, lista);
       } catch (erro) {
@@ -1956,7 +1628,6 @@ function criarCardPost(post) {
         mostrarMensagem(`Não foi possível comentar (${erro.code || "erro"}).`, "erro", 8000);
       }
     });
-
     areaComentarios.appendChild(formulario);
   } else {
     const aviso = document.createElement("p");
@@ -1964,56 +1635,43 @@ function criarCardPost(post) {
     aviso.textContent = "Faça login para comentar.";
     areaComentarios.appendChild(aviso);
   }
-
   card.appendChild(areaComentarios);
   return card;
 }
-
 function criarControleVotacao() {
   const container = document.createElement("div");
   container.className = "controle-votos";
   container.setAttribute("aria-label", "Votação da publicação");
-
   const cima = document.createElement("button");
   cima.type = "button";
   cima.className = "botao-voto voto-cima";
   cima.setAttribute("aria-label", "Votar positivo");
   cima.setAttribute("aria-pressed", "false");
-
   const setaCima = document.createElement("span");
   setaCima.className = "icone-voto";
   setaCima.textContent = "▲";
-
   const contadorLikes = document.createElement("span");
   contadorLikes.className = "contador-voto contador-like";
   contadorLikes.textContent = "0";
-
   cima.append(setaCima, contadorLikes);
-
   const separador = document.createElement("span");
   separador.className = "separador-votos";
   separador.setAttribute("aria-hidden", "true");
-
   const baixo = document.createElement("button");
   baixo.type = "button";
   baixo.className = "botao-voto voto-baixo";
   baixo.setAttribute("aria-label", "Votar negativo");
   baixo.setAttribute("aria-pressed", "false");
-
   const setaBaixo = document.createElement("span");
   setaBaixo.className = "icone-voto";
   setaBaixo.textContent = "▼";
-
   const contadorDislikes = document.createElement("span");
   contadorDislikes.className = "contador-voto contador-dislike";
   contadorDislikes.textContent = "0";
-
   baixo.append(setaBaixo, contadorDislikes);
-
   container.append(cima, separador, baixo);
   return { container, cima, baixo, contadorLikes, contadorDislikes };
 }
-
 function observarReacoes(postId, card, votacao) {
   const ref = collection(db, "posts", postId, "reacoes");
   const unsubscribe = onSnapshot(ref, snapshot => {
@@ -2021,20 +1679,17 @@ function observarReacoes(postId, card, votacao) {
     let dislikes = 0;
     let minhaReacao = "";
     const uid = auth.currentUser?.uid;
-
     snapshot.forEach(item => {
       const reacao = item.data();
       if (reacao.tipo === "like") likes++;
       if (reacao.tipo === "dislike") dislikes++;
       if (uid && item.id === uid) minhaReacao = reacao.tipo;
     });
-
     const score = likes - dislikes;
     const stats = obterEstatisticas(postId);
     stats.likes = likes;
     stats.dislikes = dislikes;
     stats.score = score;
-
     votacao.contadorLikes.textContent = String(likes);
     votacao.contadorDislikes.textContent = String(dislikes);
     votacao.cima.title = `${likes} voto(s) positivo(s)`;
@@ -2042,45 +1697,34 @@ function observarReacoes(postId, card, votacao) {
     card.dataset.likes = String(likes);
     card.dataset.score = String(score);
     card.dataset.minhaReacao = minhaReacao;
-
     votacao.cima.classList.toggle("ativo", minhaReacao === "like");
     votacao.baixo.classList.toggle("ativo", minhaReacao === "dislike");
     votacao.cima.setAttribute("aria-pressed", String(minhaReacao === "like"));
     votacao.baixo.setAttribute("aria-pressed", String(minhaReacao === "dislike"));
-
     agendarReordenacao();
   }, erro => console.error("Erro ao carregar reações:", erro));
-
   unsubscribeReacoes.push(unsubscribe);
 }
-
 function aplicarContagemComentarios(postId, card, contador) {
   const principais = comentariosPrincipaisPorPost.get(postId) || 0;
   let respostas = 0;
   const prefixo = `${postId}:`;
-
   respostasPorComentario.forEach((quantidade, chave) => {
     if (chave.startsWith(prefixo)) respostas += quantidade;
   });
-
   const total = principais + respostas;
   const stats = obterEstatisticas(postId);
   stats.comentarios = total;
-
   contador.textContent = String(total);
   contador.title = `${total} comentário(s), incluindo respostas`;
   card.dataset.comentarios = String(total);
-
   agendarReordenacao();
 }
-
 async function recontarRespostasPost(postId, comentariosDocs, versao, card, contador) {
   for (let indice = 0; indice < comentariosDocs.length; indice++) {
     if (versaoContagemComentarios.get(postId) !== versao) return;
-
     const comentarioId = comentariosDocs[indice].id;
     const chave = chaveResposta(postId, comentarioId);
-
     try {
       const snapshot = await getDocs(
         collection(
@@ -2092,52 +1736,41 @@ async function recontarRespostasPost(postId, comentariosDocs, versao, card, cont
           "respostas"
         )
       );
-
       respostasPorComentario.set(chave, snapshot.size);
     } catch (erro) {
       console.error("Erro ao contar respostas:", erro);
       respostasPorComentario.set(chave, 0);
     }
-
-    // Entrega o controle ao navegador a cada poucas consultas.
+    
     if (indice % 3 === 2) {
       await proximoFrame();
     }
   }
-
   if (versaoContagemComentarios.get(postId) === versao) {
     aplicarContagemComentarios(postId, card, contador);
   }
 }
-
 function atualizarContagemComentariosPost(postId) {
   const card = document.getElementById(`post-${postId}`);
   const contador = card?.querySelector(".comentarios-contador");
   if (!card || !contador) return;
-
   const versao = (versaoContagemComentarios.get(postId) || 0) + 1;
   versaoContagemComentarios.set(postId, versao);
-
   executarQuandoLivre(async () => {
     try {
       const comentariosSnapshot = await getDocs(
         collection(db, "posts", postId, "comentarios")
       );
-
       if (versaoContagemComentarios.get(postId) !== versao) return;
-
       comentariosPrincipaisPorPost.set(postId, comentariosSnapshot.size);
-
       const idsAtuais = new Set(
         comentariosSnapshot.docs.map(item => chaveResposta(postId, item.id))
       );
-
       [...respostasPorComentario.keys()].forEach(chave => {
         if (chave.startsWith(`${postId}:`) && !idsAtuais.has(chave)) {
           respostasPorComentario.delete(chave);
         }
       });
-
       aplicarContagemComentarios(postId, card, contador);
       await recontarRespostasPost(
         postId,
@@ -2151,32 +1784,25 @@ function atualizarContagemComentariosPost(postId) {
     }
   });
 }
-
 function observarContagemComentarios(postId, card, contador) {
   const comentariosRef = collection(db, "posts", postId, "comentarios");
-
   const unsubscribe = onSnapshot(
     comentariosRef,
     snapshot => {
       const versao = (versaoContagemComentarios.get(postId) || 0) + 1;
       versaoContagemComentarios.set(postId, versao);
       comentariosPrincipaisPorPost.set(postId, snapshot.size);
-
       const idsAtuais = new Set(
         snapshot.docs.map(item => chaveResposta(postId, item.id))
       );
-
       [...respostasPorComentario.keys()].forEach(chave => {
         if (chave.startsWith(`${postId}:`) && !idsAtuais.has(chave)) {
           respostasPorComentario.delete(chave);
         }
       });
-
-      // Mostra imediatamente os comentários principais.
+      
       aplicarContagemComentarios(postId, card, contador);
-
-      // As respostas são contadas no tempo ocioso, sem criar um listener
-      // permanente para cada comentário da página.
+      
       executarQuandoLivre(() => {
         recontarRespostasPost(
           postId,
@@ -2189,13 +1815,10 @@ function observarContagemComentarios(postId, card, contador) {
     },
     erro => console.error("Erro ao contar comentários:", erro)
   );
-
   unsubscribeContagemComentarios.push(unsubscribe);
 }
-
 async function registrarReacao(postId, tipo, card) {
   if (!usuarioPodeInteragir()) return;
-
   const usuario = auth.currentUser;
   const ref = doc(db, "posts", postId, "reacoes", usuario.uid);
   const atual = card.dataset.minhaReacao || "";
@@ -2205,24 +1828,19 @@ async function registrarReacao(postId, tipo, card) {
     postId,
     usuario.uid
   );
-
   try {
     if (atual === tipo) {
       await deleteDoc(ref);
-
       if (tipo === "like") {
         await removerNotificacao(donoPostUid, notifId);
       }
-
       return;
     }
-
     await setDoc(ref, {
       uid: usuario.uid,
       tipo,
       criadoEm: serverTimestamp()
     });
-
     if (tipo === "like") {
       await criarNotificacao({
         destinatarioUid: donoPostUid,
@@ -2242,9 +1860,7 @@ async function registrarReacao(postId, tipo, card) {
     );
   }
 }
-
 let menuComentarioAberto = null;
-
 document.addEventListener("click", () => {
   document.querySelectorAll(".post-menu").forEach(menu => {
     menu.hidden = true;
@@ -2252,34 +1868,28 @@ document.addEventListener("click", () => {
       ?.querySelector(".post-menu-botao")
       ?.setAttribute("aria-expanded", "false");
   });
-
   if (!menuComentarioAberto) return;
   menuComentarioAberto.hidden = true;
   const botao = menuComentarioAberto.parentElement?.querySelector(".comentario-menu-botao");
   botao?.setAttribute("aria-expanded", "false");
   menuComentarioAberto = null;
 });
-
 function configurarMenuComentario(menu, botao) {
   botao.addEventListener("click", event => {
     event.stopPropagation();
-
     if (menuComentarioAberto && menuComentarioAberto !== menu) {
       menuComentarioAberto.hidden = true;
       menuComentarioAberto.parentElement
         ?.querySelector(".comentario-menu-botao")
         ?.setAttribute("aria-expanded", "false");
     }
-
     const abrir = menu.hidden;
     menu.hidden = !abrir;
     botao.setAttribute("aria-expanded", String(abrir));
     menuComentarioAberto = abrir ? menu : null;
   });
-
   menu.addEventListener("click", event => event.stopPropagation());
 }
-
 function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarregar) {
   const usuarioAtual = auth.currentUser;
   const ehAdminAtual = usuarioEhAdmin(usuarioAtual);
@@ -2288,36 +1898,28 @@ function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarr
     respostaUid &&
     String(usuarioAtual.uid) === String(respostaUid)
   );
-
   const wrap = document.createElement("div");
   wrap.className = "comentario-menu-wrap resposta-menu-wrap";
-
   const botao = document.createElement("button");
   botao.type = "button";
   botao.className = "comentario-menu-botao";
   botao.textContent = "•••";
   botao.setAttribute("aria-label", "Opções da resposta");
   botao.setAttribute("aria-expanded", "false");
-
   const menu = document.createElement("div");
   menu.className = "comentario-menu";
   menu.hidden = true;
-
   configurarMenuComentario(menu, botao);
-
   if (ehAdminAtual || ehDono) {
     const excluir = document.createElement("button");
     excluir.type = "button";
     excluir.className = "comentario-menu-item comentario-menu-excluir";
     excluir.textContent = "Excluir";
-
     excluir.addEventListener("click", async () => {
       menu.hidden = true;
       menuComentarioAberto = null;
       botao.setAttribute("aria-expanded", "false");
-
       if (!window.confirm("Excluir esta resposta?")) return;
-
       try {
         await deleteDoc(
           doc(
@@ -2342,19 +1944,16 @@ function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarr
         );
       }
     });
-
     menu.appendChild(excluir);
   } else {
     const denunciar = document.createElement("button");
     denunciar.type = "button";
     denunciar.className = "comentario-menu-item comentario-menu-denunciar";
     denunciar.textContent = "Denunciar";
-
     denunciar.addEventListener("click", async () => {
       menu.hidden = true;
       menuComentarioAberto = null;
       botao.setAttribute("aria-expanded", "false");
-
       if (!auth.currentUser) {
         mostrarPainelAuth("login");
         areaAuth.hidden = false;
@@ -2362,10 +1961,8 @@ function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarr
         areaAuth.scrollIntoView({ behavior: "smooth", block: "center" });
         return;
       }
-
       try {
         const usuario = auth.currentUser;
-
         await setDoc(
           doc(
             db,
@@ -2386,7 +1983,6 @@ function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarr
             criadoEm: serverTimestamp()
           }
         );
-
         mostrarMensagem("Resposta denunciada.");
       } catch (erro) {
         console.error("Erro ao denunciar resposta:", erro);
@@ -2397,14 +1993,11 @@ function criarMenuResposta(postId, comentarioId, respostaId, respostaUid, recarr
         );
       }
     });
-
     menu.appendChild(denunciar);
   }
-
   wrap.append(botao, menu);
   return wrap;
 }
-
 async function carregarRespostasDoComentario(
   postId,
   comentarioId,
@@ -2412,7 +2005,6 @@ async function carregarRespostasDoComentario(
   abrirFormularioResposta
 ) {
   elemento.replaceChildren();
-
   try {
     const resultado = await getDocs(
       collection(
@@ -2424,83 +2016,64 @@ async function carregarRespostasDoComentario(
         "respostas"
       )
     );
-
     respostasPorComentario.set(
       chaveResposta(postId, comentarioId),
       resultado.size
     );
-
     const respostas = resultado.docs.map(item => ({
       id: item.id,
       ...item.data()
     }));
-
     respostas.sort((a, b) => {
       const ta = a.criadoEm?.toMillis?.() || 0;
       const tb = b.criadoEm?.toMillis?.() || 0;
       return ta - tb;
     });
-
     elemento.hidden = respostas.length === 0;
-
     respostas.forEach(resposta => {
       const caixa = document.createElement("div");
       caixa.className = "comentario resposta-comentario";
-
       const avatar = document.createElement("div");
       avatar.className = "comentario-avatar resposta-avatar";
       aplicarAvatar(avatar, resposta.uid, resposta.autor || "Usuário");
-
       const conteudo = document.createElement("div");
       conteudo.className = "comentario-conteudo";
-
       const nomeLinha = document.createElement("div");
       nomeLinha.className = "comentario-nome-linha";
-
       const nome = document.createElement("strong");
       nome.textContent = obterNomePorUid(
         resposta.uid,
         resposta.autor || "Usuário"
       );
       nomeLinha.appendChild(nome);
-
       if (uidEhAdminPublico(resposta.uid)) {
         nomeLinha.appendChild(criarSeloVerificado());
       }
-
       const username = document.createElement("div");
       username.className = "comentario-username";
       const handle = obterUsernamePorUid(resposta.uid, "");
       username.textContent = handle ? `@${handle}` : "";
-
       const texto = document.createElement("div");
       texto.className = "comentario-texto resposta-texto";
-
       if (resposta.respondendoA) {
         const mencao = document.createElement("span");
         mencao.className = "resposta-mencao";
         mencao.textContent = `@${resposta.respondendoA} `;
         texto.appendChild(mencao);
       }
-
       texto.appendChild(document.createTextNode(resposta.texto || ""));
-
       const acoesResposta = document.createElement("div");
       acoesResposta.className =
         "comentario-acoes-inline resposta-acoes-inline";
-
       const curtidaResposta = criarBotaoCurtirItem();
-
-      // Toda resposta também pode ser respondida.
+      
       const responderResposta = document.createElement("button");
       responderResposta.type = "button";
       responderResposta.className =
         "btn-responder-comentario btn-responder-resposta";
       responderResposta.textContent = "Responder";
-
       responderResposta.addEventListener("click", () => {
         if (!usuarioPodeInteragir()) return;
-
         abrirFormularioResposta?.({
           uid: resposta.uid || "",
           handle: obterUsernamePorUid(resposta.uid, ""),
@@ -2511,21 +2084,17 @@ async function carregarRespostasDoComentario(
           ehResposta: true
         });
       });
-
       acoesResposta.append(
         curtidaResposta.botao,
         responderResposta
       );
-
       conteudo.append(
         nomeLinha,
         username,
         texto,
         acoesResposta
       );
-
       caixa.append(avatar, conteudo);
-
       const curtidasRespostaRef = collection(
         db,
         "posts",
@@ -2536,24 +2105,20 @@ async function carregarRespostasDoComentario(
         resposta.id,
         "curtidas"
       );
-
       const chaveCurtidaResposta =
         `${postId}:resposta:${comentarioId}:${resposta.id}`;
-
       observarCurtidasItem(
         chaveCurtidaResposta,
         curtidasRespostaRef,
         curtidaResposta.botao,
         curtidaResposta.contador
       );
-
       curtidaResposta.botao.addEventListener("click", () => {
         const usuario = auth.currentUser;
         if (!usuario) {
           usuarioPodeInteragir();
           return;
         }
-
         alternarCurtidaItem({
           botao: curtidaResposta.botao,
           refCurtida: doc(
@@ -2581,7 +2146,6 @@ async function carregarRespostasDoComentario(
           )
         });
       });
-
       caixa.appendChild(
         criarMenuResposta(
           postId,
@@ -2596,7 +2160,6 @@ async function carregarRespostasDoComentario(
           )
         )
       );
-
       elemento.appendChild(caixa);
     });
   } catch (erro) {
@@ -2605,29 +2168,23 @@ async function carregarRespostasDoComentario(
     elemento.textContent = "Erro ao carregar respostas.";
   }
 }
-
 async function carregarComentarios(postId, elemento) {
   limparListenersCurtidasDoPost(postId);
   elemento.textContent = "Carregando comentários...";
-
   try {
     const resultado = await getDocs(
       collection(db, "posts", postId, "comentarios")
     );
-
     const itens = resultado.docs.map(item => ({
       ref: item,
       dados: item.data()
     }));
-
     itens.sort((a, b) => {
       const ta = a.dados.criadoEm?.toMillis?.() || 0;
       const tb = b.dados.criadoEm?.toMillis?.() || 0;
       return ta - tb;
     });
-
     elemento.replaceChildren();
-
     if (itens.length === 0) {
       const vazio = document.createElement("span");
       vazio.className = "comentarios-vazio";
@@ -2635,63 +2192,48 @@ async function carregarComentarios(postId, elemento) {
       elemento.appendChild(vazio);
       return;
     }
-
     const usuarioAtual = auth.currentUser;
     const ehAdminAtual = usuarioEhAdmin(usuarioAtual);
     const uidAtual = String(usuarioAtual?.uid || "");
-
     itens.forEach(({ ref: item, dados: comentario }) => {
       const bloco = document.createElement("div");
       bloco.className = "comentario-bloco";
-
       const caixa = document.createElement("div");
       caixa.className = "comentario comentario-principal";
-
       const avatar = document.createElement("div");
       avatar.className = "comentario-avatar";
       aplicarAvatar(avatar, comentario.uid, comentario.autor || "Usuário");
-
       const conteudo = document.createElement("div");
       conteudo.className = "comentario-conteudo";
-
       const nomeLinha = document.createElement("div");
       nomeLinha.className = "comentario-nome-linha";
-
       const nome = document.createElement("strong");
       nome.textContent = obterNomePorUid(
         comentario.uid,
         comentario.autor || "Usuário"
       );
       nomeLinha.appendChild(nome);
-
       if (uidEhAdminPublico(comentario.uid)) {
         nomeLinha.appendChild(criarSeloVerificado());
       }
-
       const username = document.createElement("div");
       username.className = "comentario-username";
       const handleComentario = obterUsernamePorUid(comentario.uid, "");
       username.textContent = handleComentario ? `@${handleComentario}` : "";
-
       const corpo = document.createElement("div");
       corpo.className = "comentario-texto";
       corpo.textContent = comentario.texto || "";
-
       const acoesComentario = document.createElement("div");
       acoesComentario.className = "comentario-acoes-inline";
-
       const curtidaComentario = criarBotaoCurtirItem();
-
       const responder = document.createElement("button");
       responder.type = "button";
       responder.className = "btn-responder-comentario";
       responder.textContent = "Responder";
-
       acoesComentario.append(
         curtidaComentario.botao,
         responder
       );
-
       conteudo.append(
         nomeLinha,
         username,
@@ -2699,7 +2241,6 @@ async function carregarComentarios(postId, elemento) {
         acoesComentario
       );
       caixa.append(avatar, conteudo);
-
       const curtidasComentarioRef = collection(
         db,
         "posts",
@@ -2708,23 +2249,19 @@ async function carregarComentarios(postId, elemento) {
         item.id,
         "curtidas"
       );
-
       const chaveCurtidaComentario = `${postId}:comentario:${item.id}`;
-
       observarCurtidasItem(
         chaveCurtidaComentario,
         curtidasComentarioRef,
         curtidaComentario.botao,
         curtidaComentario.contador
       );
-
       curtidaComentario.botao.addEventListener("click", () => {
         const usuario = auth.currentUser;
         if (!usuario) {
           usuarioPodeInteragir();
           return;
         }
-
         alternarCurtidaItem({
           botao: curtidaComentario.botao,
           refCurtida: doc(
@@ -2748,43 +2285,34 @@ async function carregarComentarios(postId, elemento) {
           )
         });
       });
-
       const uidComentario = String(comentario.uid || "");
       const ehDono = Boolean(
         uidAtual &&
         uidComentario &&
         uidAtual === uidComentario
       );
-
       const menuWrap = document.createElement("div");
       menuWrap.className = "comentario-menu-wrap";
-
       const menuBotao = document.createElement("button");
       menuBotao.type = "button";
       menuBotao.className = "comentario-menu-botao";
       menuBotao.textContent = "•••";
       menuBotao.setAttribute("aria-label", "Opções do comentário");
       menuBotao.setAttribute("aria-expanded", "false");
-
       const menu = document.createElement("div");
       menu.className = "comentario-menu";
       menu.hidden = true;
-
       configurarMenuComentario(menu, menuBotao);
-
       if (ehAdminAtual || ehDono) {
         const excluir = document.createElement("button");
         excluir.type = "button";
         excluir.className = "comentario-menu-item comentario-menu-excluir";
         excluir.textContent = "Excluir";
-
         excluir.addEventListener("click", async () => {
           menu.hidden = true;
           menuComentarioAberto = null;
           menuBotao.setAttribute("aria-expanded", "false");
-
           if (!window.confirm("Excluir este comentário?")) return;
-
           try {
             await deleteDoc(
               doc(db, "posts", postId, "comentarios", item.id)
@@ -2800,19 +2328,16 @@ async function carregarComentarios(postId, elemento) {
             );
           }
         });
-
         menu.appendChild(excluir);
       } else {
         const denunciar = document.createElement("button");
         denunciar.type = "button";
         denunciar.className = "comentario-menu-item comentario-menu-denunciar";
         denunciar.textContent = "Denunciar";
-
         denunciar.addEventListener("click", async () => {
           menu.hidden = true;
           menuComentarioAberto = null;
           menuBotao.setAttribute("aria-expanded", "false");
-
           if (!auth.currentUser) {
             mostrarPainelAuth("login");
             areaAuth.hidden = false;
@@ -2827,10 +2352,8 @@ async function carregarComentarios(postId, elemento) {
             });
             return;
           }
-
           try {
             const usuario = auth.currentUser;
-
             await setDoc(
               doc(
                 db,
@@ -2848,7 +2371,6 @@ async function carregarComentarios(postId, elemento) {
                 criadoEm: serverTimestamp()
               }
             );
-
             mostrarMensagem("Comentário denunciado.");
           } catch (erro) {
             console.error("Erro ao denunciar comentário:", erro);
@@ -2859,44 +2381,34 @@ async function carregarComentarios(postId, elemento) {
             );
           }
         });
-
         menu.appendChild(denunciar);
       }
-
       menuWrap.append(menuBotao, menu);
       caixa.appendChild(menuWrap);
-
       const formResposta = document.createElement("form");
       formResposta.className = "form-resposta-comentario";
       formResposta.hidden = true;
-
       const alvo = document.createElement("div");
       alvo.className = "resposta-alvo";
       alvo.textContent = handleComentario
         ? `Respondendo a @${handleComentario}`
         : `Respondendo a ${comentario.autor || "Usuário"}`;
-
       const linhaResposta = document.createElement("div");
       linhaResposta.className = "resposta-linha";
-
       const inputResposta = document.createElement("input");
       inputResposta.type = "text";
       inputResposta.maxLength = 500;
       inputResposta.placeholder = "Escreva sua resposta";
       inputResposta.required = true;
-
       const enviar = document.createElement("button");
       enviar.type = "submit";
       enviar.textContent = "Responder";
-
       const cancelar = document.createElement("button");
       cancelar.type = "button";
       cancelar.className = "btn-cancelar-resposta";
       cancelar.textContent = "Cancelar";
-
       linhaResposta.append(inputResposta, enviar, cancelar);
       formResposta.append(alvo, linhaResposta);
-
       let alvoRespostaUid = comentario.uid || "";
       let alvoRespostaHandle = handleComentario || "";
       let alvoRespostaNome = obterNomePorUid(
@@ -2904,7 +2416,6 @@ async function carregarComentarios(postId, elemento) {
         comentario.autor || "Usuário"
       );
       let alvoEhResposta = false;
-
       function abrirFormularioResposta({
         uid = "",
         handle = "",
@@ -2912,26 +2423,21 @@ async function carregarComentarios(postId, elemento) {
         ehResposta = false
       } = {}) {
         if (!usuarioPodeInteragir()) return;
-
         alvoRespostaUid = uid;
         alvoRespostaHandle = handle;
         alvoRespostaNome = nome || "Usuário";
         alvoEhResposta = Boolean(ehResposta);
-
         elemento
           .querySelectorAll(".form-resposta-comentario")
           .forEach(form => {
             if (form !== formResposta) form.hidden = true;
           });
-
         alvo.textContent = alvoRespostaHandle
           ? `Respondendo a @${alvoRespostaHandle}`
           : `Respondendo a ${alvoRespostaNome}`;
-
         formResposta.hidden = false;
         inputResposta.focus();
       }
-
       responder.addEventListener("click", () => {
         abrirFormularioResposta({
           uid: comentario.uid || "",
@@ -2943,27 +2449,20 @@ async function carregarComentarios(postId, elemento) {
           ehResposta: false
         });
       });
-
       cancelar.addEventListener("click", () => {
         formResposta.hidden = true;
         inputResposta.value = "";
       });
-
       const listaRespostas = document.createElement("div");
       listaRespostas.className = "lista-respostas-comentario";
       listaRespostas.hidden = true;
-
       formResposta.addEventListener("submit", async event => {
         event.preventDefault();
-
         if (!usuarioPodeInteragir()) return;
-
         const textoResposta = inputResposta.value.trim();
         if (!textoResposta) return;
-
         try {
           const usuario = auth.currentUser;
-
           const respostaRef = await addDoc(
             collection(
               db,
@@ -2982,7 +2481,6 @@ async function carregarComentarios(postId, elemento) {
               criadoEm: serverTimestamp()
             }
           );
-
           await criarNotificacao({
             destinatarioUid: alvoRespostaUid,
             tipo: "resposta_comentario",
@@ -2996,17 +2494,14 @@ async function carregarComentarios(postId, elemento) {
               respostaRef.id
             )
           });
-
           inputResposta.value = "";
           formResposta.hidden = true;
-
           await carregarRespostasDoComentario(
             postId,
             item.id,
             listaRespostas,
             abrirFormularioResposta
           );
-
           atualizarContagemComentariosPost(postId);
           mostrarMensagem("Resposta enviada.");
         } catch (erro) {
@@ -3018,10 +2513,8 @@ async function carregarComentarios(postId, elemento) {
           );
         }
       });
-
       bloco.append(caixa, formResposta, listaRespostas);
       elemento.appendChild(bloco);
-
       carregarRespostasDoComentario(
         postId,
         item.id,
@@ -3035,45 +2528,36 @@ async function carregarComentarios(postId, elemento) {
   }
 }
 
-
 function abrirImagemAmpliada(src, titulo = "Imagem") {
   let overlay = document.getElementById("imagem-ampliada-overlay");
-
   if (!overlay) {
     overlay = document.createElement("div");
     overlay.id = "imagem-ampliada-overlay";
     overlay.className = "imagem-ampliada-overlay";
     overlay.hidden = true;
-
     const conteudo = document.createElement("div");
     conteudo.className = "imagem-ampliada-conteudo";
-
     const fechar = document.createElement("button");
     fechar.type = "button";
     fechar.className = "imagem-ampliada-fechar";
     fechar.textContent = "×";
     fechar.setAttribute("aria-label", "Fechar imagem");
-
     const img = document.createElement("img");
     img.id = "imagem-ampliada-img";
     img.alt = "";
-
     conteudo.append(fechar, img);
     overlay.appendChild(conteudo);
     document.body.appendChild(overlay);
-
     fechar.addEventListener("click", () => {
       overlay.hidden = true;
       document.body.classList.remove("imagem-ampliada-aberta");
     });
-
     overlay.addEventListener("click", event => {
       if (event.target === overlay) {
         overlay.hidden = true;
         document.body.classList.remove("imagem-ampliada-aberta");
       }
     });
-
     document.addEventListener("keydown", event => {
       if (event.key === "Escape" && !overlay.hidden) {
         overlay.hidden = true;
@@ -3081,15 +2565,12 @@ function abrirImagemAmpliada(src, titulo = "Imagem") {
       }
     });
   }
-
   const img = overlay.querySelector("#imagem-ampliada-img");
   img.src = src;
   img.alt = titulo;
-
   overlay.hidden = false;
   document.body.classList.add("imagem-ampliada-aberta");
 }
-
 function formatarData(timestamp) {
   if (!timestamp?.toDate) return "Agora";
   return timestamp.toDate().toLocaleString("pt-BR", {
@@ -3102,9 +2583,6 @@ function formatarData(timestamp) {
 }
 
 
-// ============================================================
-// NOTÍCIAS + PAINEL ADMINISTRATIVO
-// ============================================================
 
 const noticiasFeed = document.getElementById("noticias-feed");
 const adminModal = document.getElementById("admin-modal");
@@ -3148,9 +2626,7 @@ const adminNotificacaoTexto = document.getElementById("admin-notificacao-texto")
 const adminNotificacaoContador = document.getElementById("admin-notificacao-contador");
 const adminNotificacaoEnviar = document.getElementById("admin-notificacao-enviar");
 const adminNotificacaoMsg = document.getElementById("admin-notificacao-msg");
-
 configurarPreviewImagem(noticiaImagemInput, noticiaImagemPreview, noticiaImagemPreviewImg, noticiaImagemRemover);
-
 let noticiasSalvas = [];
 let adminContagemCliques = 0;
 let adminResetCliquesTimer = null;
@@ -3171,33 +2647,26 @@ let adminDadosCache = {
   }
 };
 
-
 function adminTextoSeguro(valor, fallback = "") {
   const texto = String(valor ?? "").trim();
   return texto || fallback;
 }
-
 function adminResumoTexto(texto, limite = 180) {
   const limpo = adminTextoSeguro(texto);
   if (limpo.length <= limite) return limpo;
   return `${limpo.slice(0, limite - 1)}…`;
 }
-
 function adminAtivarTab(tab) {
   adminTabAtual = tab || "dashboard";
-
   adminMenuItens.forEach(botao => {
     const ativo = botao.dataset.adminTab === adminTabAtual;
     botao.classList.toggle("ativo", ativo);
   });
-
   adminViews.forEach(view => {
     view.hidden = view.id !== `admin-view-${adminTabAtual}`;
   });
-
   carregarAdminAba(adminTabAtual);
 }
-
 function adminCriarChip(texto, alerta = false) {
   const chip = document.createElement("span");
   chip.className = alerta
@@ -3206,7 +2675,6 @@ function adminCriarChip(texto, alerta = false) {
   chip.textContent = texto;
   return chip;
 }
-
 function adminBotao(texto, classe = "") {
   const botao = document.createElement("button");
   botao.type = "button";
@@ -3214,23 +2682,19 @@ function adminBotao(texto, classe = "") {
   if (classe) botao.classList.add(classe);
   return botao;
 }
-
 function adminAbrirPost(postId) {
   fecharAdminModal();
   window.showPage?.("comunidade");
-
   window.setTimeout(() => {
     const card = document.getElementById(`post-${postId}`);
     if (!card) {
       mostrarMensagem("A publicação não está mais disponível.", "aviso");
       return;
     }
-
     card.scrollIntoView({
       behavior: "smooth",
       block: "center"
     });
-
     card.classList.add("post-destaque-notificacao");
     window.setTimeout(
       () => card.classList.remove("post-destaque-notificacao"),
@@ -3238,17 +2702,14 @@ function adminAbrirPost(postId) {
     );
   }, 150);
 }
-
 function adminPerfilLabel(uid) {
   const perfil = obterPerfil(uid);
   const nome = perfil?.nome || "Usuário";
   const username = perfil?.username ? `@${perfil.username}` : "";
   return { nome, username };
 }
-
 function renderizarAdminDashboard() {
   const resumo = adminDadosCache.resumo;
-
   if (adminMetricaUsuarios) {
     adminMetricaUsuarios.textContent = String(resumo.usuarios || 0);
   }
@@ -3265,7 +2726,6 @@ function renderizarAdminDashboard() {
     adminMetricaDenuncias.textContent =
       resumo.denuncias === null ? "…" : String(resumo.denuncias);
   }
-
   if (adminTabDenuncias) {
     adminTabDenuncias.textContent = resumo.denuncias
       ? `Denúncias (${resumo.denuncias})`
@@ -3275,110 +2735,84 @@ function renderizarAdminDashboard() {
       Boolean(resumo.denuncias)
     );
   }
-
   if (adminDashboardStatus) {
     adminDashboardStatus.textContent = "Dados do feed";
   }
-
   if (adminUsuariosAtivos) {
     adminUsuariosAtivos.replaceChildren();
-
     const ativos = [...adminDadosCache.usuarios]
       .sort((a, b) => b.posts - a.posts)
       .slice(0, 5);
-
     if (!ativos.length) {
       const vazio = document.createElement("p");
       vazio.textContent = "Nenhum usuário encontrado.";
       adminUsuariosAtivos.appendChild(vazio);
     }
-
     ativos.forEach(usuario => {
       const linha = document.createElement("div");
       linha.className = "admin-ranking-item";
-
       const identidade = document.createElement("div");
       identidade.className = "admin-ranking-identidade";
-
       const nome = document.createElement("strong");
       nome.textContent = usuario.nome;
-
       const handle = document.createElement("span");
       handle.textContent = usuario.username
         ? `@${usuario.username}`
         : "Sem nome de usuário";
-
       identidade.append(nome, handle);
-
       const numero = document.createElement("span");
       numero.className = "admin-ranking-numero";
       numero.textContent =
         usuario.posts === 1
           ? "1 publicação"
           : `${usuario.posts} publicações`;
-
       linha.append(identidade, numero);
       adminUsuariosAtivos.appendChild(linha);
     });
   }
-
   if (adminDenunciasResumo) {
     adminDenunciasResumo.replaceChildren();
-
     if (!adminDenunciasCarregadas) {
       const aviso = document.createElement("p");
       aviso.textContent = "Abra a aba Denúncias para carregar a moderação.";
       adminDenunciasResumo.appendChild(aviso);
       return;
     }
-
     const ultimas = [...adminDadosCache.denuncias]
       .sort((a, b) => b.criadoMs - a.criadoMs)
       .slice(0, 5);
-
     if (!ultimas.length) {
       const vazio = document.createElement("p");
       vazio.textContent = "Nenhuma denúncia pendente.";
       adminDenunciasResumo.appendChild(vazio);
     }
-
     ultimas.forEach(denuncia => {
       const linha = document.createElement("button");
       linha.type = "button";
       linha.className = "admin-resumo-denuncia";
-
       const info = document.createElement("div");
       info.className = "admin-ranking-identidade";
-
       const titulo = document.createElement("strong");
       titulo.textContent = denuncia.tipoLabel;
-
       const meta = document.createElement("small");
       meta.textContent = `${denuncia.denuncianteNome} • ${formatarData(denuncia.criadoEm)}`;
-
       info.append(titulo, meta);
-
       const abrir = document.createElement("span");
       abrir.className = "admin-ranking-numero";
       abrir.textContent = "Ver";
-
       linha.append(info, abrir);
       linha.addEventListener("click", () => adminAtivarTab("denuncias"));
       adminDenunciasResumo.appendChild(linha);
     });
   }
 }
-
 function renderizarAdminPublicacoes() {
   if (!adminPublicacoesList) return;
-
   const termo = (adminPublicacoesBusca?.value || "")
     .trim()
     .toLowerCase();
-
   const itens = adminDadosCache.publicacoes.filter(post => {
     if (!termo) return true;
-
     const perfil = adminPerfilLabel(post.uid);
     const campo = [
       post.titulo,
@@ -3386,52 +2820,38 @@ function renderizarAdminPublicacoes() {
       perfil.nome,
       perfil.username
     ].join(" ").toLowerCase();
-
     return campo.includes(termo.replace(/^@/, ""));
   });
-
   adminPublicacoesList.replaceChildren();
-
   if (!itens.length) {
     const vazio = document.createElement("p");
     vazio.textContent = "Nenhuma publicação encontrada.";
     adminPublicacoesList.appendChild(vazio);
     return;
   }
-
   itens.forEach(post => {
     const item = document.createElement("article");
     item.className = "admin-item";
-
     const topo = document.createElement("div");
     topo.className = "admin-item-topo";
-
     const identidade = document.createElement("div");
     identidade.className = "admin-item-identidade";
-
     const titulo = document.createElement("strong");
     titulo.textContent = post.titulo || "Publicação";
-
     const perfil = adminPerfilLabel(post.uid);
     const meta = document.createElement("small");
     meta.textContent = `${perfil.nome}${perfil.username ? ` • ${perfil.username}` : ""} • ${formatarData(post.criadoEm)}`;
-
     identidade.append(titulo, meta);
-
     const acoes = document.createElement("div");
     acoes.className = "admin-item-acoes";
-
     const ver = adminBotao("Ver no feed");
     ver.addEventListener("click", () => adminAbrirPost(post.id));
-
     const excluir = adminBotao("Excluir", "admin-acao-perigo");
     excluir.addEventListener("click", async () => {
       if (!window.confirm(`Excluir a publicação "${post.titulo || "Publicação"}"?`)) {
         return;
       }
-
       excluir.disabled = true;
-
       try {
         await deleteDoc(doc(db, "posts", post.id));
         adminToolsMsg.textContent = "Publicação excluída.";
@@ -3448,14 +2868,11 @@ function renderizarAdminPublicacoes() {
         excluir.disabled = false;
       }
     });
-
     acoes.append(ver, excluir);
     topo.append(identidade, acoes);
-
     const texto = document.createElement("p");
     texto.className = "admin-item-texto";
     texto.textContent = adminResumoTexto(post.texto, 220);
-
     const chips = document.createElement("div");
     chips.className = "admin-item-meta";
     chips.append(
@@ -3466,20 +2883,16 @@ function renderizarAdminPublicacoes() {
         post.denuncias > 0
       )
     );
-
     item.append(topo, texto, chips);
     adminPublicacoesList.appendChild(item);
   });
 }
-
 function renderizarAdminUsuarios() {
   if (!adminUsuariosList) return;
-
   const termo = (adminUsuariosBusca?.value || "")
     .trim()
     .toLowerCase()
     .replace(/^@/, "");
-
   const usuarios = adminDadosCache.usuarios
     .filter(usuario => {
       if (!termo) return true;
@@ -3488,39 +2901,29 @@ function renderizarAdminUsuarios() {
         .includes(termo);
     })
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-
   adminUsuariosList.replaceChildren();
-
   if (!usuarios.length) {
     const vazio = document.createElement("p");
     vazio.textContent = "Nenhum usuário encontrado.";
     adminUsuariosList.appendChild(vazio);
     return;
   }
-
   usuarios.forEach(usuario => {
     const item = document.createElement("article");
     item.className = "admin-item";
-
     const topo = document.createElement("div");
     topo.className = "admin-item-topo";
-
     const identidade = document.createElement("div");
     identidade.className = "admin-item-identidade";
-
     const nome = document.createElement("strong");
     nome.textContent = usuario.nome;
-
     const meta = document.createElement("small");
     meta.textContent = usuario.username
       ? `@${usuario.username}`
       : "Sem nome de usuário";
-
     identidade.append(nome, meta);
-
     const acoes = document.createElement("div");
     acoes.className = "admin-item-acoes";
-
     const verPosts = adminBotao("Ver publicações");
     verPosts.addEventListener("click", () => {
       if (adminPublicacoesBusca) {
@@ -3531,7 +2934,6 @@ function renderizarAdminUsuarios() {
       renderizarAdminPublicacoes();
       adminAtivarTab("publicacoes");
     });
-
     const notificar = adminBotao("Notificar");
     notificar.addEventListener("click", () => {
       if (adminNotificacaoDestinatario) {
@@ -3540,10 +2942,8 @@ function renderizarAdminUsuarios() {
       adminAtivarTab("notificacoes");
       adminNotificacaoTitulo?.focus();
     });
-
     acoes.append(verPosts, notificar);
     topo.append(identidade, acoes);
-
     const chips = document.createElement("div");
     chips.className = "admin-item-meta";
     chips.append(
@@ -3554,76 +2954,57 @@ function renderizarAdminUsuarios() {
       ),
       adminCriarChip("Perfil cadastrado")
     );
-
     item.append(topo, chips);
     adminUsuariosList.appendChild(item);
   });
 }
-
 function removerDenunciaAdminDoCache(denuncia) {
   adminDadosCache.denuncias = adminDadosCache.denuncias.filter(
     item => item.reportRef?.path !== denuncia.reportRef?.path
   );
-
   adminDadosCache.resumo.denuncias = adminDadosCache.denuncias.length;
   prepararAdminDadosLeves();
   renderizarAdminDenuncias();
   renderizarAdminDashboard();
-
   if (adminTabAtual === "publicacoes") {
     renderizarAdminPublicacoes();
   }
 }
-
 function renderizarAdminDenuncias() {
   if (!adminDenunciasList) return;
-
   const denuncias = [...adminDadosCache.denuncias]
     .sort((a, b) => b.criadoMs - a.criadoMs);
-
   adminDenunciasList.replaceChildren();
-
   if (!denuncias.length) {
     const vazio = document.createElement("p");
     vazio.textContent = "Nenhuma denúncia pendente.";
     adminDenunciasList.appendChild(vazio);
     return;
   }
-
   denuncias.forEach(denuncia => {
     const item = document.createElement("article");
     item.className = "admin-item";
-
     const tipo = document.createElement("span");
     tipo.className = "admin-denuncia-tipo";
     tipo.textContent = denuncia.tipoLabel;
-
     const topo = document.createElement("div");
     topo.className = "admin-item-topo";
-
     const identidade = document.createElement("div");
     identidade.className = "admin-item-identidade";
-
     const titulo = document.createElement("strong");
     titulo.textContent = denuncia.autorConteudo;
-
     const meta = document.createElement("small");
     meta.textContent =
       `Denunciado por ${denuncia.denuncianteNome}${denuncia.denuncianteUsername ? ` (@${denuncia.denuncianteUsername})` : ""} • ${formatarData(denuncia.criadoEm)}`;
-
     identidade.append(titulo, meta);
     topo.appendChild(identidade);
-
     const texto = document.createElement("p");
     texto.className = "admin-item-texto";
     texto.textContent = adminResumoTexto(denuncia.textoConteudo, 260);
-
     const acoes = document.createElement("div");
     acoes.className = "admin-item-acoes";
-
     const ver = adminBotao("Ver publicação");
     ver.addEventListener("click", () => adminAbrirPost(denuncia.postId));
-
     const ignorar = adminBotao("Ignorar denúncia");
     ignorar.addEventListener("click", async () => {
       ignorar.disabled = true;
@@ -3640,17 +3021,13 @@ function renderizarAdminDenuncias() {
         ignorar.disabled = false;
       }
     });
-
     const excluir = adminBotao("Excluir conteúdo", "admin-acao-perigo");
     excluir.addEventListener("click", async () => {
       if (!window.confirm("Excluir o conteúdo denunciado?")) return;
-
       excluir.disabled = true;
-
       try {
         await deleteDoc(denuncia.reportRef);
         await deleteDoc(denuncia.contentRef);
-
         adminToolsMsg.textContent = "Conteúdo denunciado excluído.";
         adminToolsMsg.className = "admin-msg sucesso";
         removerDenunciaAdminDoCache(denuncia);
@@ -3662,24 +3039,19 @@ function renderizarAdminDenuncias() {
         excluir.disabled = false;
       }
     });
-
     acoes.append(ver, ignorar, excluir);
     item.append(tipo, topo, texto, acoes);
     adminDenunciasList.appendChild(item);
   });
 }
-
 function atualizarDestinatariosNotificacaoAdmin() {
   if (!adminNotificacaoDestinatario) return;
-
   const valorAnterior = adminNotificacaoDestinatario.value || "todos";
   adminNotificacaoDestinatario.replaceChildren();
-
   const todos = document.createElement("option");
   todos.value = "todos";
   todos.textContent = "Todos os usuários";
   adminNotificacaoDestinatario.appendChild(todos);
-
   [...adminDadosCache.usuarios]
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
     .forEach(usuario => {
@@ -3690,18 +3062,14 @@ function atualizarDestinatariosNotificacaoAdmin() {
         : usuario.nome;
       adminNotificacaoDestinatario.appendChild(option);
     });
-
   const existe = [...adminNotificacaoDestinatario.options]
     .some(option => option.value === valorAnterior);
-
   adminNotificacaoDestinatario.value = existe
     ? valorAnterior
     : "todos";
 }
-
 function prepararAdminDadosLeves() {
   const denunciasPorPost = new Map();
-
   adminDadosCache.denuncias.forEach(denuncia => {
     if (!denuncia.postId) return;
     denunciasPorPost.set(
@@ -3709,11 +3077,9 @@ function prepararAdminDadosLeves() {
       (denunciasPorPost.get(denuncia.postId) || 0) + 1
     );
   });
-
   adminDadosCache.publicacoes = [...postsSalvos]
     .map(post => {
       const stats = obterEstatisticas(post.id);
-
       return {
         ...post,
         likes: Number(stats.likes || 0),
@@ -3726,9 +3092,7 @@ function prepararAdminDadosLeves() {
       const tb = b.criadoEm?.toMillis?.() || 0;
       return tb - ta;
     });
-
   const postsPorUsuario = new Map();
-
   postsSalvos.forEach(post => {
     if (!post.uid) return;
     postsPorUsuario.set(
@@ -3736,7 +3100,6 @@ function prepararAdminDadosLeves() {
       (postsPorUsuario.get(post.uid) || 0) + 1
     );
   });
-
   adminDadosCache.usuarios = [...perfisUsuarios.values()].map(perfil => ({
     uid: perfil.uid,
     nome: perfil.nome || "Usuário",
@@ -3747,47 +3110,38 @@ function prepararAdminDadosLeves() {
     curtidasRecebidas: 0,
     atividade: Number(postsPorUsuario.get(perfil.uid) || 0)
   }));
-
   adminDadosCache.resumo.usuarios = adminDadosCache.usuarios.length;
   adminDadosCache.resumo.publicacoes = postsSalvos.length;
   adminDadosCache.resumo.comentarios = [...estatisticasPosts.values()]
     .reduce((total, stats) => total + Number(stats.comentarios || 0), 0);
   adminDadosCache.resumo.curtidas = [...estatisticasPosts.values()]
     .reduce((total, stats) => total + Number(stats.likes || 0), 0);
-
   if (adminDenunciasCarregadas) {
     adminDadosCache.resumo.denuncias = adminDadosCache.denuncias.length;
   }
 }
-
 async function carregarDenunciasAdmin(forcar = false) {
   if (adminDenunciasCarregadas && !forcar) {
     renderizarAdminDenuncias();
     return;
   }
-
   if (adminDenunciasList) {
     adminDenunciasList.replaceChildren();
     const carregando = document.createElement("p");
     carregando.textContent = "Carregando denúncias...";
     adminDenunciasList.appendChild(carregando);
   }
-
   const denuncias = [];
-
   try {
     for (let indicePost = 0; indicePost < postsSalvos.length; indicePost++) {
       const post = postsSalvos[indicePost];
-
       const [denunciasPost, comentarios] = await Promise.all([
         getDocs(collection(db, "posts", post.id, "denuncias")),
         getDocs(collection(db, "posts", post.id, "comentarios"))
       ]);
-
       denunciasPost.forEach(reportDoc => {
         const report = reportDoc.data();
         const denunciante = adminPerfilLabel(report.uid);
-
         denuncias.push({
           tipo: "post",
           tipoLabel: "Publicação denunciada",
@@ -3806,10 +3160,8 @@ async function carregarDenunciasAdmin(forcar = false) {
             `${post.titulo || "Publicação"} — ${post.texto || ""}`
         });
       });
-
       for (const comentarioDoc of comentarios.docs) {
         const comentario = comentarioDoc.data();
-
         const [denunciasComentario, respostas] = await Promise.all([
           getDocs(
             collection(
@@ -3832,11 +3184,9 @@ async function carregarDenunciasAdmin(forcar = false) {
             )
           )
         ]);
-
         denunciasComentario.forEach(reportDoc => {
           const report = reportDoc.data();
           const denunciante = adminPerfilLabel(report.uid);
-
           denuncias.push({
             tipo: "comentario",
             tipoLabel: "Comentário denunciado",
@@ -3860,10 +3210,8 @@ async function carregarDenunciasAdmin(forcar = false) {
             textoConteudo: comentario.texto || "Comentário"
           });
         });
-
         for (const respostaDoc of respostas.docs) {
           const resposta = respostaDoc.data();
-
           const denunciasResposta = await getDocs(
             collection(
               db,
@@ -3876,11 +3224,9 @@ async function carregarDenunciasAdmin(forcar = false) {
               "denuncias"
             )
           );
-
           denunciasResposta.forEach(reportDoc => {
             const report = reportDoc.data();
             const denunciante = adminPerfilLabel(report.uid);
-
             denuncias.push({
               tipo: "resposta",
               tipoLabel: "Resposta denunciada",
@@ -3908,26 +3254,21 @@ async function carregarDenunciasAdmin(forcar = false) {
           });
         }
       }
-
-      // Evita concentrar toda a montagem em um único frame.
+      
       if (indicePost % 2 === 1) {
         await proximoFrame();
       }
     }
-
     adminDadosCache.denuncias = denuncias;
     adminDenunciasCarregadas = true;
     prepararAdminDadosLeves();
-
     renderizarAdminDenuncias();
     renderizarAdminDashboard();
-
     if (adminTabAtual === "publicacoes") {
       renderizarAdminPublicacoes();
     }
   } catch (erro) {
     console.error("Erro ao carregar denúncias:", erro);
-
     if (adminDenunciasList) {
       adminDenunciasList.replaceChildren();
       const falha = document.createElement("p");
@@ -3937,64 +3278,50 @@ async function carregarDenunciasAdmin(forcar = false) {
     }
   }
 }
-
 async function carregarAdminAba(tab, forcar = false) {
   if (!usuarioEhAdmin()) return;
-
   prepararAdminDadosLeves();
-
   if (tab === "dashboard") {
     renderizarAdminDashboard();
     return;
   }
-
   if (tab === "publicacoes") {
     renderizarAdminPublicacoes();
     return;
   }
-
   if (tab === "usuarios") {
     renderizarAdminUsuarios();
     return;
   }
-
   if (tab === "denuncias") {
     await carregarDenunciasAdmin(forcar);
     return;
   }
-
   if (tab === "noticias") {
     renderizarAdminNoticias();
     return;
   }
-
   if (tab === "notificacoes") {
     atualizarDestinatariosNotificacaoAdmin();
   }
 }
-
 async function carregarAdminDados() {
   if (!usuarioEhAdmin() || adminCarregandoDados) return;
-
   adminCarregandoDados = true;
-
   if (adminAtualizar) {
     adminAtualizar.disabled = true;
     adminAtualizar.textContent = "Atualizando...";
   }
-
   try {
     await carregarAdminAba(adminTabAtual, true);
   } finally {
     adminCarregandoDados = false;
-
     if (adminAtualizar) {
       adminAtualizar.disabled = false;
       adminAtualizar.textContent = "Atualizar dados";
     }
   }
 }
-
 async function enviarNotificacaoAdmin({
   destinatarioUid,
   titulo,
@@ -4002,11 +3329,9 @@ async function enviarNotificacaoAdmin({
   eventoId
 }) {
   const admin = obterAdminAtual();
-
   if (!admin || !destinatarioUid || destinatarioUid === admin.uid) {
     return false;
   }
-
   await setDoc(
     doc(
       db,
@@ -4028,55 +3353,42 @@ async function enviarNotificacaoAdmin({
       criadoEm: serverTimestamp()
     }
   );
-
   return true;
 }
-
 adminMenuItens.forEach(botao => {
   botao.addEventListener("click", () => {
     adminAtivarTab(botao.dataset.adminTab);
   });
 });
-
 adminAtualizar?.addEventListener("click", () => {
   carregarAdminDados();
 });
-
 adminPublicacoesBusca?.addEventListener("input", () => {
   renderizarAdminPublicacoes();
 });
-
 adminUsuariosBusca?.addEventListener("input", () => {
   renderizarAdminUsuarios();
 });
-
 adminNotificacaoTexto?.addEventListener("input", () => {
   if (adminNotificacaoContador) {
     adminNotificacaoContador.textContent =
       `${adminNotificacaoTexto.value.length} / 240`;
   }
 });
-
 adminNotificacaoForm?.addEventListener("submit", async event => {
   event.preventDefault();
-
   const admin = obterAdminAtual();
-
   if (!admin) {
     adminNotificacaoMsg.textContent =
       "Sua sessão administrativa expirou.";
     adminNotificacaoMsg.className = "admin-msg erro";
     return;
   }
-
   const alvo = adminNotificacaoDestinatario.value;
   const titulo = adminNotificacaoTitulo.value.trim();
   const texto = adminNotificacaoTexto.value.trim();
-
   if (!titulo || !texto) return;
-
   let destinatarios = [];
-
   if (alvo === "todos") {
     destinatarios = adminDadosCache.usuarios
       .map(usuario => usuario.uid)
@@ -4086,27 +3398,22 @@ adminNotificacaoForm?.addEventListener("submit", async event => {
       uid => uid && uid !== admin.uid
     );
   }
-
   if (!destinatarios.length) {
     adminNotificacaoMsg.textContent =
       "Nenhum destinatário disponível.";
     adminNotificacaoMsg.className = "admin-msg erro";
     return;
   }
-
   const eventoId = idNotificacao(
     "aviso-admin",
     Date.now(),
     admin.uid
   );
-
   try {
     adminNotificacaoEnviar.disabled = true;
     adminNotificacaoEnviar.textContent = "Enviando...";
     adminNotificacaoMsg.textContent = "";
-
     let enviados = 0;
-
     for (const uid of destinatarios) {
       const enviado = await enviarNotificacaoAdmin({
         destinatarioUid: uid,
@@ -4114,19 +3421,15 @@ adminNotificacaoForm?.addEventListener("submit", async event => {
         texto,
         eventoId
       });
-
       if (enviado) enviados += 1;
     }
-
     event.target.reset();
     adminNotificacaoDestinatario.value = "todos";
     adminNotificacaoContador.textContent = "0 / 240";
-
     adminNotificacaoMsg.textContent =
       enviados === 1
         ? "Notificação enviada para 1 usuário."
         : `Notificação enviada para ${enviados} usuários.`;
-
     adminNotificacaoMsg.className = "admin-msg sucesso";
   } catch (erro) {
     console.error("Erro ao enviar notificação administrativa:", erro);
@@ -4139,7 +3442,6 @@ adminNotificacaoForm?.addEventListener("submit", async event => {
   }
 });
 
-
 function abrirAdminModal() {
   if (!adminModal) return;
   adminModal.hidden = false;
@@ -4147,7 +3449,6 @@ function abrirAdminModal() {
   document.body.classList.add("admin-modal-aberto");
   adminModalAberto = true;
   atualizarPainelAdmin(auth.currentUser);
-
   window.setTimeout(() => {
     if (usuarioEhAdmin()) {
       document.querySelector('[data-admin-tab="dashboard"]')?.focus();
@@ -4156,7 +3457,6 @@ function abrirAdminModal() {
     }
   }, 30);
 }
-
 function fecharAdminModal() {
   if (!adminModal) return;
   adminModal.hidden = true;
@@ -4166,66 +3466,50 @@ function fecharAdminModal() {
   if (adminLoginMsg) adminLoginMsg.textContent = "";
   if (adminToolsMsg) adminToolsMsg.textContent = "";
 }
-
 function registrarCliqueAdmin(event) {
-  // Evita seleção de texto, propagação do clique e fechamento acidental
-  // do painel no mesmo gesto que o abriu.
+  
   event?.preventDefault();
   event?.stopPropagation();
-
   if (adminModalAberto) return;
-
   adminContagemCliques += 1;
-
   if (adminResetCliquesTimer) {
     window.clearTimeout(adminResetCliquesTimer);
   }
-
-  // Se demorar mais de 3 segundos entre a sequência, recomeça.
+  
   adminResetCliquesTimer = window.setTimeout(() => {
     adminContagemCliques = 0;
     adminResetCliquesTimer = null;
   }, 3000);
-
   if (adminContagemCliques >= 5) {
     adminContagemCliques = 0;
     if (adminResetCliquesTimer) {
       window.clearTimeout(adminResetCliquesTimer);
       adminResetCliquesTimer = null;
     }
-
     abrirAdminModal();
   }
 }
-
 adminTrigger?.addEventListener("click", registrarCliqueAdmin);
 adminTrigger?.addEventListener("keydown", event => {
   if (event.key === "Enter" || event.key === " ") {
     registrarCliqueAdmin(event);
   }
 });
-
 adminFechar?.addEventListener("click", event => {
   event.stopPropagation();
   fecharAdminModal();
 });
 
-// O painel NÃO fecha ao clicar no fundo. Isso evita que o quinto clique
-// usado para abrir o acesso seja interpretado como um clique de fechamento.
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && adminModalAberto) fecharAdminModal();
 });
-
 function atualizarPainelAdmin(usuario) {
   if (!adminLoginArea || !adminTools) return;
-
   const admin = obterAdminAtual(usuario);
   const estaLogadoComoAdmin = Boolean(admin);
-
   adminLoginArea.hidden = estaLogadoComoAdmin;
   adminTools.hidden = !estaLogadoComoAdmin;
-
   if (estaLogadoComoAdmin) {
     adminNome.replaceChildren();
     const textoPainel = document.createElement("span");
@@ -4239,31 +3523,24 @@ function atualizarPainelAdmin(usuario) {
     adminNome.classList.remove("admin-nome-verificado");
   }
 }
-
 adminLoginForm?.addEventListener("submit", async event => {
   event.preventDefault();
-
   const idDigitado = document.getElementById("admin-id").value.trim().toUpperCase();
   const senha = document.getElementById("admin-senha").value;
   const admin = ADMIN_LOGIN_MAP[idDigitado];
-
   if (!admin) {
     adminLoginMsg.textContent = "ID de administrador inválido.";
     adminLoginMsg.className = "admin-msg erro";
     return;
   }
-
   adminLoginMsg.textContent = "Entrando...";
   adminLoginMsg.className = "admin-msg";
-
   try {
     const credencial = await signInWithEmailAndPassword(auth, admin.email, senha);
-
     if (!usuarioEhAdmin(credencial.user)) {
       await signOut(auth);
       throw new Error("Conta sem permissão administrativa.");
     }
-
     event.target.reset();
     adminLoginMsg.textContent = "";
     atualizarPainelAdmin(credencial.user);
@@ -4273,7 +3550,6 @@ adminLoginForm?.addEventListener("submit", async event => {
     adminLoginMsg.className = "admin-msg erro";
   }
 });
-
 adminSair?.addEventListener("click", async () => {
   await signOut(auth);
   atualizarPainelAdmin(null);
@@ -4282,37 +3558,29 @@ adminSair?.addEventListener("click", async () => {
     adminLoginMsg.className = "admin-msg";
   }
 });
-
 adminNoticiaForm?.addEventListener("submit", async event => {
   event.preventDefault();
-
   const admin = obterAdminAtual();
   if (!admin) {
     adminToolsMsg.textContent = "Sua sessão administrativa expirou. Entre novamente.";
     adminToolsMsg.className = "admin-msg erro";
     return;
   }
-
   const titulo = document.getElementById("noticia-titulo").value.trim();
   const texto = document.getElementById("noticia-texto").value.trim();
   let link = document.getElementById("noticia-link").value.trim();
   const arquivoImagem = noticiaImagemInput?.files?.[0] || null;
-
   if (!titulo || !texto) return;
-
   if (link && !/^https?:\/\//i.test(link)) {
     adminToolsMsg.textContent = "O link precisa começar com http:// ou https://.";
     adminToolsMsg.className = "admin-msg erro";
     return;
   }
-
   try {
     btnPublicarNoticia.disabled = true;
     btnPublicarNoticia.textContent = arquivoImagem ? "Preparando imagem..." : "Publicando...";
-
     const imagem = arquivoImagem ? await comprimirImagem(arquivoImagem) : "";
     btnPublicarNoticia.textContent = "Publicando...";
-
     await addDoc(collection(db, "noticias"), {
       titulo,
       texto,
@@ -4321,7 +3589,6 @@ adminNoticiaForm?.addEventListener("submit", async event => {
       autor: admin.nome,
       criadoEm: serverTimestamp()
     });
-
     event.target.reset();
     if (noticiaImagemPreview) noticiaImagemPreview.hidden = true;
     if (noticiaImagemPreviewImg) noticiaImagemPreviewImg.removeAttribute("src");
@@ -4337,15 +3604,12 @@ adminNoticiaForm?.addEventListener("submit", async event => {
     btnPublicarNoticia.textContent = "Publicar notícia";
   }
 });
-
 const consultaNoticias = query(collection(db, "noticias"), orderBy("criadoEm", "desc"));
-
 onSnapshot(consultaNoticias, snapshot => {
   noticiasSalvas = snapshot.docs.map(item => ({
     id: item.id,
     ...item.data()
   }));
-
   renderizarNoticias();
   renderizarAdminNoticias();
 }, erro => {
@@ -4358,11 +3622,9 @@ onSnapshot(consultaNoticias, snapshot => {
     noticiasFeed.appendChild(erroEl);
   }
 });
-
 function renderizarNoticias() {
   if (!noticiasFeed) return;
   noticiasFeed.replaceChildren();
-
   if (!noticiasSalvas.length) {
     const vazio = document.createElement("div");
     vazio.className = "noticias-vazio";
@@ -4370,26 +3632,19 @@ function renderizarNoticias() {
     noticiasFeed.appendChild(vazio);
     return;
   }
-
   noticiasSalvas.slice(0, 6).forEach(noticia => {
     const card = document.createElement("article");
     card.className = "noticia-card";
-
     const topo = document.createElement("div");
     topo.className = "noticia-meta";
-
     const autor = document.createElement("span");
     autor.className = "noticia-autor-verificado";
-
     const prefixoAutor = document.createElement("span");
     prefixoAutor.textContent = noticia.autor ? `Por ${noticia.autor}` : "Equipe Inovação Verde";
     autor.append(prefixoAutor, criarSeloVerificado());
-
     const data = document.createElement("span");
     data.textContent = formatarData(noticia.criadoEm);
-
     topo.append(autor, data);
-
     if (noticia.imagem) {
       const imagem = document.createElement("img");
       imagem.className = "noticia-imagem";
@@ -4401,15 +3656,11 @@ function renderizarNoticias() {
     } else {
       card.appendChild(topo);
     }
-
     const titulo = document.createElement("h3");
     titulo.textContent = noticia.titulo || "Notícia";
-
     const texto = document.createElement("p");
     texto.textContent = noticia.texto || "";
-
     card.append(titulo, texto);
-
     if (noticia.link) {
       const link = document.createElement("a");
       link.href = noticia.link;
@@ -4419,48 +3670,39 @@ function renderizarNoticias() {
       link.className = "noticia-link";
       card.appendChild(link);
     }
-
     noticiasFeed.appendChild(card);
   });
 }
-
 function renderizarAdminNoticias() {
   if (!adminNoticiasList) return;
   adminNoticiasList.replaceChildren();
-
   if (!usuarioEhAdmin()) {
     const aviso = document.createElement("p");
     aviso.textContent = "Entre como administrador para gerenciar notícias.";
     adminNoticiasList.appendChild(aviso);
     return;
   }
-
   if (!noticiasSalvas.length) {
     const vazio = document.createElement("p");
     vazio.textContent = "Nenhuma notícia publicada.";
     adminNoticiasList.appendChild(vazio);
     return;
   }
-
   noticiasSalvas.forEach(noticia => {
     const linha = document.createElement("div");
     linha.className = "admin-noticia-item";
-
     const info = document.createElement("div");
     const titulo = document.createElement("strong");
     titulo.textContent = noticia.titulo || "Notícia";
     const meta = document.createElement("small");
     meta.textContent = `${noticia.autor || "Equipe"} • ${formatarData(noticia.criadoEm)}`;
     info.append(titulo, meta);
-
     const remover = document.createElement("button");
     remover.type = "button";
     remover.className = "btn-admin-remover";
     remover.textContent = "Excluir";
-
     remover.addEventListener("click", async () => {
       if (!window.confirm(`Excluir a notícia "${noticia.titulo || "Notícia"}"?`)) return;
-
       remover.disabled = true;
       try {
         await deleteDoc(doc(db, "noticias", noticia.id));
@@ -4473,7 +3715,6 @@ function renderizarAdminNoticias() {
         remover.disabled = false;
       }
     });
-
     linha.append(info, remover);
     adminNoticiasList.appendChild(linha);
   });
