@@ -1,3 +1,30 @@
+// Tema independente do login; a escolha manual tem prioridade sobre o sistema.
+const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+let preferredTheme = null;
+try {
+  const saved = localStorage.getItem('inovacao-verde-theme');
+  if (saved === 'light' || saved === 'dark') preferredTheme = saved;
+} catch (_) {}
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const button = document.getElementById('theme-toggle');
+  if (button) {
+    button.setAttribute('aria-pressed', String(theme === 'dark'));
+    button.title = theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro';
+  }
+}
+function toggleTheme() {
+  preferredTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(preferredTheme);
+  try { localStorage.setItem('inovacao-verde-theme', preferredTheme); } catch (_) {}
+}
+function syncSystemTheme(event) {
+  if (!preferredTheme) applyTheme(event.matches ? 'dark' : 'light');
+}
+if (themeMedia.addEventListener) themeMedia.addEventListener('change', syncSystemTheme);
+else if (themeMedia.addListener) themeMedia.addListener(syncSystemTheme);
+applyTheme(preferredTheme || (themeMedia.matches ? 'dark' : 'light'));
+
 const MOBILE_MENU_BREAKPOINT = 860;
 
 function closeNotifications(restoreFocus = false) {

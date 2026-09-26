@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Inovação Verde: sustentabilidade, empreendedorismo e boas práticas para jovens empreendedores.">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    // Aplica o tema antes do CSS para evitar um clarão ao abrir a página.
+    (() => {
+      let saved;
+      try { saved = localStorage.getItem('inovacao-verde-theme'); } catch (_) {}
+      const theme = saved === 'dark' || saved === 'light' ? saved
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
   <title>Inovação Verde</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,6 +69,10 @@
     </nav>
 
     <div id="nav-acoes-usuario" class="nav-acoes-usuario">
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Modo escuro" aria-pressed="false" title="Modo escuro" onclick="toggleTheme()">
+        <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14A9 9 0 0 1 10 3.5 9 9 0 1 0 20.5 14Z"/></svg>
+        <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+      </button>
       <div id="notificacoes-wrap" class="notificacoes-wrap" hidden>
         <button
           type="button"
